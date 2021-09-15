@@ -7,7 +7,7 @@ module user_variables
 
   integer, parameter ::                      &
     n_sets = 10,                            & ! number of MC set
-    n_start = 1*10**3,                       & ! injected particles/set
+    n_start = 1*10**2,                       & ! injected particles/set
     debug = 0,                               & ! 0, no debugging info 
     restart = 0,                             & ! 1 use old data
     iseed_shift = 0                           ! positive shift of random seed 

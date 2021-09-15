@@ -33,7 +33,7 @@ subroutine init_general(myid)
     write(v_shock_str, '(I10)') v_shock(0)
     filename = filename//'_vshock'//trim(v_shock_str)
   end if
-  filename = filename//'_nsets'//trim(n_sets_str)//'_n_start'//trim(n_start_str)
+  filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
   print *, "filename metadata: ", filename
 
 ! initialisation for random number (NumRec):
