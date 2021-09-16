@@ -1,7 +1,7 @@
 !==============================================================================!
 !==============================================================================!
 module user_variables
-  ! Maybe read user_variables from file?
+  ! Maybe read user_variables from file? Add option to override with cmd-line flag
   implicit none
   save
 
@@ -23,7 +23,7 @@ module SNR_data
   implicit none
   save
 
-  ! move to user variables?
+  ! move to user variables? Add constant v_shock for inj_model = 0 to user_variables?
   integer, parameter ::  inj_model = 2      ! stat. (0), SNR (1/2, Voelk/Russ) 
 
   double precision, parameter ::      &
@@ -150,15 +150,16 @@ module result
   implicit none
   save
 
-  integer, parameter ::                      &
-    n_tbin_in = 200,                         & ! time bins for injected spectrum
-    n_tbin_out = 20,                         & ! time bins for output spectrum
-    n_enbin = 100                              ! ten decades starting in E_min
+  integer, parameter ::                       &
+    n_tbin_in = 200,                          & ! time bins for injected spectrum
+    n_tbin_out = 20,                          & ! time bins for output spectrum
+    n_enbin = 100                               ! ten decades starting in E_min
 
-  double precision :: N_i(2,n_tbin_in),E2N_i(2,n_tbin_in),  &
-    En_f(-pid_max:pid_max,n_enbin),            &
-    En_f_tot(-pid_max:pid_max,n_enbin) 
-
+  double precision :: N_i(2,n_tbin_in),       &
+    E2N_i(2,n_tbin_in),                       &
+    En_f(-pid_max:pid_max,n_enbin),           &
+    En_f_tot(-pid_max:pid_max,n_enbin),       &
+    NE_esc(n_enbin) = 0                         ! # protons escaped at each energy(bin)
 end module result
 !==============================================================================!
 !==============================================================================!

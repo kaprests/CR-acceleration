@@ -285,7 +285,7 @@ subroutine store(pid,En,w)
   double precision En,w,l
 
   l = log10(En)                                                ! energy bin
-  i = int( (l-d_f)/dn )
+  i = int( (l-d_f)/dn ) ! dn = 0.1d0
 
   if (i<=0) then 
      call error('stor_esc, E<=Emin',11)
@@ -296,6 +296,7 @@ subroutine store(pid,En,w)
   end if
 
   En_f(pid,i) = En_f(pid,i) + w*En
+  NE_esc(i) = NE_esc(i) + 1
 
 !  write(*,*) 'store: ',pid,i
   

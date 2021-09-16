@@ -262,6 +262,7 @@ subroutine store(pid,En,w)
   end if
 
   En_f(pid,i) = En_f(pid,i) + w*En
+  NE_esc(i) = NE_esc(i) + 1
 
 !  write(*,*) 'store: ',pid,i
   
