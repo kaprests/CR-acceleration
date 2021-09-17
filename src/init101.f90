@@ -13,6 +13,75 @@ subroutine init(myid)
 end subroutine init
 !============================================================================!
 !============================================================================!
+subroutine parse_cmd_arguments
+   ! Very naive, non flexible argument parser
+   use user_variables
+   implicit none
+   double precision :: vshock ! temp/test
+
+   integer :: i, n_args
+   integer :: j, n_flags
+   character(20) :: flag
+   character(20) :: arg
+   integer :: arg_int
+   character(20), dimension(7), parameter :: flags = &
+                                             [ &
+                                             ! Integer:
+                                             '--nsets     ', &  ! j=1
+                                             '--nstart    ', &  ! j=2
+                                             '--debug     ', &  ! j=3
+                                             '--restart   ', &  ! j=4
+                                             '--iseedshift', &  ! j=5
+                                             ! Float (double precision):
+                                             '--vshock    ', &  ! j=6
+                                             ! Character
+                                             '--fname     ' &      ! j=7
+                                             ]
+
+   n_args = command_argument_count()
+   n_flags = 7
+   if (modulo(n_args, 2) .ne. 0) then
+      ! Sort of crude error handling
+      call error('Argument error, odd number of provided arguments and flags', 0)
+   end if
+   print *, 'Provided parameters/settings: '
+   do i = 1, n_args, 2
+      call get_command_argument(i, flag)
+      call get_command_argument(i + 1, arg)
+      print *, trim(flag)//' '//trim(arg)
+      do j = 1, n_flags, 1
+         if (flag == trim(flags(j))) then
+            if (j == 6) then
+               ! vshock - float arg
+               read (arg, *) vshock
+            elseif (j == 7) then
+               ! fname - string arg
+               basename = arg
+            else
+               ! integer args
+               select case (j)
+               case (1)
+                  print *, "CASE n_sets"
+                  read (arg, *) n_sets
+               case (2)
+                  read (arg, *) n_start
+               case (3)
+                  read (arg, *) debug
+               case (4)
+                  read (arg, *) restart
+               case (5)
+                  read (arg, *) iseed_shift
+               end select
+            end if
+            exit
+         elseif (j == n_flags) then
+            call error('Argument error, invalid flag: '//flag, 0)
+         end if
+      end do
+   end do
+end subroutine parse_cmd_arguments
+!============================================================================!
+!============================================================================!
 subroutine init_general(myid)
    use internal
    use user_variables
@@ -21,6 +90,12 @@ subroutine init_general(myid)
    integer myid
    double precision v_EDST, v_shock
    character(10) :: n_start_str, n_sets_str, v_shock_str
+
+! Parse command line arguments, and apply given settings/config
+! Default values in are code overridden by values in file (future)
+! Values set in file are overridden by command line arguments
+   ! TODO: read parameters from file
+   call parse_cmd_arguments ! Command line arguments
 
 ! Adds configuration metadata to filename
    write (n_sets_str, '(I10)') n_sets

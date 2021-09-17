@@ -5,7 +5,7 @@ module user_variables
    implicit none
    save
 
-   integer, parameter :: &
+   integer :: &
       n_sets = 10, & ! number of MC set
       n_start = 1*10**3, & ! injected particles/set
       debug = 0, & ! 0, no debugging info
