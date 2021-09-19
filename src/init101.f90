@@ -17,14 +17,13 @@ subroutine parse_cmd_arguments
    ! Very naive, non flexible argument parser
    use user_variables
    implicit none
-   double precision :: vshock ! temp/test
 
    integer :: i, n_args
    integer :: j, n_flags
    character(20) :: flag
    character(20) :: arg
    integer :: arg_int
-   character(20), dimension(7), parameter :: flags = &
+   character(20), dimension(8), parameter :: flags = &
                                              [ &
                                              ! Integer:
                                              '--nsets     ', &  ! j=1
@@ -32,10 +31,11 @@ subroutine parse_cmd_arguments
                                              '--debug     ', &  ! j=3
                                              '--restart   ', &  ! j=4
                                              '--iseedshift', &  ! j=5
+                                             '--injmod    ', &  ! j=6
                                              ! Float (double precision):
-                                             '--vshock    ', &  ! j=6
+                                             '--vshock    ', &  ! j=7
                                              ! Character
-                                             '--fname     ' &      ! j=7
+                                             '--fname     ' &      ! j=8
                                              ]
 
    n_args = command_argument_count()
@@ -48,20 +48,25 @@ subroutine parse_cmd_arguments
    do i = 1, n_args, 2
       call get_command_argument(i, flag)
       call get_command_argument(i + 1, arg)
+      if (flag(1:1) == '#') then
+         ! Comment line, ignore
+         cycle
+      end if
       print *, trim(flag)//' '//trim(arg)
       do j = 1, n_flags, 1
          if (flag == trim(flags(j))) then
             if (j == 6) then
-               ! vshock - float arg
-               read (arg, *) vshock
+               read (arg, *) inj_model
             elseif (j == 7) then
+               ! vshock - float arg
+               read (arg, *) shock_velocity
+            elseif (j == 8) then
                ! fname - string arg
                basename = arg
             else
                ! integer args
                select case (j)
                case (1)
-                  print *, "CASE n_sets"
                   read (arg, *) n_sets
                case (2)
                   read (arg, *) n_start
@@ -105,8 +110,9 @@ subroutine init_general(myid)
    filename = trim(basename)
    if (inj_model == 0) then
       ! constant shock velocity
-      write (v_shock_str, '(I10)') v_shock(0)
-      filename = filename//'_vshock'//trim(v_shock_str)
+      print *, v_shock(0)
+      write (v_shock_str, '(f10.3)') v_shock(0)
+      filename = filename//'_vshock'//trim(adjustl(v_shock_str))
    end if
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
    print *, "filename metadata: ", filename

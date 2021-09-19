@@ -10,21 +10,24 @@ module user_variables
       n_start = 1*10**3, & ! injected particles/set
       debug = 0, & ! 0, no debugging info
       restart = 0, & ! 1 use old data
-      iseed_shift = 0                           ! positive shift of random seed
+      iseed_shift = 0, &                        ! positive shift of random seed
+      inj_model = 0                             ! constant shock_velocity
+   double precision :: shock_velocity = 3.d-2   ! velocity of constant shock
 
-   character(4) ::  basename = '_mod'            ! name in output
-   character(len=:), allocatable :: filename     ! name in output
+   character(4) ::  basename = '_mod'           ! name in output
+   character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
 
 end module user_variables
 !==============================================================================!
 !==============================================================================!
 module SNR_data
+   use user_variables, only: inj_model
    implicit none
    save
 
    ! move to user variables? Add constant v_shock for inj_model = 0 to user_variables?
-   integer, parameter ::  inj_model = 2      ! stat. (0), SNR (1/2, Voelk/Russ)
+   !integer, parameter ::  inj_model = 2      ! stat. (0), SNR (1/2, Voelk/Russ)
 
    double precision, parameter :: &
       M_sun = 1.78698d54, &  ! erg
