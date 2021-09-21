@@ -91,6 +91,7 @@ subroutine init_general(myid)
    use internal
    use user_variables
    use SNR_data
+   use result
    implicit none
    integer myid
    double precision v_EDST, v_shock
@@ -116,6 +117,9 @@ subroutine init_general(myid)
    end if
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
    print *, "filename metadata: ", filename
+
+! Allocate dimension of array storing unbinned/raw energies
+   allocate(exit_energies(n_sets, n_start))
 
 ! initialisation for random number (NumRec):
    iseed = 15321 + 2*(1 + iseed_shift)*(myid + 1)

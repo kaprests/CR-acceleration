@@ -53,7 +53,18 @@ subroutine output(set, n_proc)
 
    En_f_tot = 0.d0
 
+   call output_raw
 end subroutine output
+!============================================================================!
+!============================================================================!
+subroutine output_raw
+   use user_variables, only: filename, outdir_raw
+   use result, only : exit_energies
+   implicit none
+   open(10, file = trim(outdir_raw)//'/exit_energies'//filename//'.dat', form='unformatted') 
+   write(10) exit_energies
+   close(10)
+end subroutine output_raw
 !============================================================================!
 !============================================================================!
 subroutine banner(n_proc, i)

@@ -17,6 +17,7 @@ module user_variables
    character(4) ::  basename = '_mod'           ! name in output
    character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
+   character(10) :: outdir_raw = './RawData'
 
 end module user_variables
 !==============================================================================!
@@ -156,13 +157,15 @@ module result
    integer, parameter :: &
       n_tbin_in = 200, & ! time bins for injected spectrum
       n_tbin_out = 20, & ! time bins for output spectrum
-      n_enbin = 100                               ! ten decades starting in E_min
+      n_enbin = 100      ! ten decades starting in E_min
 
    double precision :: N_i(2, n_tbin_in), &
       E2N_i(2, n_tbin_in), &
       En_f(-pid_max:pid_max, n_enbin), &
       En_f_tot(-pid_max:pid_max, n_enbin), &
-      NE_esc(n_enbin) = 0                         ! # protons escaped at each energy(bin)
+! Protons only
+      NE_esc(n_enbin) = 0 ! # protons escaped at each energy(bin)
+   double precision, allocatable :: exit_energies(:, :) ! # unbinned exit energies
 end module result
 !==============================================================================!
 !==============================================================================!

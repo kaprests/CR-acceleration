@@ -50,7 +50,7 @@ subroutine start_particle(set, myid, n_proc)
          sec = 1
 !        write(*,*) 'secondary'
       end if
-      call tracer
+      call tracer(set, n_injected)
       if (myid == 0 .and. mod(n_injected*100, n_start) == 0 .and. sec == 0) &
          write (*, *) set, n_injected*n_proc
 
@@ -59,11 +59,12 @@ subroutine start_particle(set, myid, n_proc)
 end subroutine start_particle
 !=============================================================================!
 !=============================================================================!
-subroutine tracer
+subroutine tracer(set, n_injected)
    use event_internal; use internal, only: n_in
    implicit none
    integer id
    integer, pointer :: A, pid
+   integer, intent(in) :: set, n_injected
 
    A => event(n_in)%A
    pid => event(n_in)%pid
@@ -80,7 +81,7 @@ subroutine tracer
       n_in = n_in - 1
       return
    case (7, 145:159)
-      call diff_accel
+      call diff_accel(set, n_injected)
    case default
       write (*, *) 'A,pid', A, pid
       call error('wrong particle typ in tracer', 0)
@@ -89,7 +90,7 @@ subroutine tracer
 end subroutine tracer
 !=============================================================================!
 !=============================================================================!
-subroutine diff_accel                      ! w/wo diffusion in trapping phase
+subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in trapping phase
    use user_variables, only: debug
    use SNR_data, only: t_max; 
    use constants; use particle_data, only: m_p
@@ -98,6 +99,7 @@ subroutine diff_accel                      ! w/wo diffusion in trapping phase
    use test_var, only: sec, accel
 
    implicit none
+   integer, intent(in) :: set, n_injected
    integer k, n_step
    double precision r, m, f, df, dt, dE, delta, l_0, l_0_0
    double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2
@@ -234,6 +236,7 @@ subroutine diff_accel                      ! w/wo diffusion in trapping phase
             if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                !              write(*,*) 'tired',n_in,n_out
                call store(pid, E, w)
+               call store_raw(E, set, n_injected)
                n_in = n_in - 1
                n_out = n_out + 1
                return
@@ -301,5 +304,16 @@ subroutine store(pid, En, w)
 !  write(*,*) 'store: ',pid,i
 
 end subroutine store
+!=============================================================================!
+!=============================================================================!
+subroutine store_raw(En, set_num, particle_num)
+   ! Stores particles energies upon exit
+   ! Raw, unbinned energies
+   use result
+   implicit none
+   double precision, intent(in) :: En
+   integer, intent(in) :: set_num, particle_num
+   exit_energies(set_num, particle_num) = En
+end subroutine store_raw
 !=============================================================================!
 !=============================================================================!
