@@ -4,7 +4,6 @@ module user_variables
    ! Maybe read user_variables from file? Add option to override with cmd-line flag
    implicit none
    save
-
    integer :: &
       n_sets = 10, & ! number of MC set
       n_start = 1*10**2, & ! injected particles/set
@@ -13,12 +12,13 @@ module user_variables
       iseed_shift = 0, &                        ! positive shift of random seed
       inj_model = 0                             ! constant shock_velocity
    double precision :: shock_velocity = 3.d-2   ! velocity of constant shock
+   double precision :: gamma_fact               ! gamma of constant velocity shock
+   logical :: gamma_set = .false.                  ! True if gamma was set instead of vshock
 
    character(4) ::  basename = '_mod'           ! name in output
    character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
    character(10) :: outdir_raw = './RawData'
-
 end module user_variables
 !==============================================================================!
 !==============================================================================!
@@ -26,8 +26,6 @@ module SNR_data
    use user_variables, only: inj_model
    implicit none
    save
-
-   ! move to user variables? Add constant v_shock for inj_model = 0 to user_variables?
    !integer, parameter ::  inj_model = 2      ! stat. (0), SNR (1/2, Voelk/Russ)
 
    double precision, parameter :: &
@@ -44,7 +42,6 @@ module SNR_data
       alpha_sh = 0.6d0                    ! inj_model 4
 
    double precision t_ch, R_ch, v_ch, t_EDST, R_EDST !,v_EDST
-
 end module SNR_data
 !==============================================================================!
 !==============================================================================!
@@ -89,7 +86,6 @@ module stack                                      ! not used here
       type(var) :: var
    end type one_particle
    type(one_particle), target :: events(n_maxs)
-
 end module stack
 !==============================================================================!
 !==============================================================================!
@@ -145,7 +141,6 @@ module internal
    double precision, parameter ::  dn = 0.1d0
 
    integer n_tot
-
 end module internal
 !==============================================================================!
 !==============================================================================!
@@ -166,6 +161,7 @@ module result
 ! Protons only
       NE_esc(n_enbin) = 0 ! # protons escaped at each energy(bin)
    double precision, allocatable :: exit_energies(:, :) ! # unbinned exit energies
+   double precision :: rel_energy_gain_total_sum
 end module result
 !==============================================================================!
 !==============================================================================!

@@ -23,7 +23,7 @@ subroutine parse_cmd_arguments
    character(20) :: flag
    character(20) :: arg
    integer :: arg_int
-   character(20), dimension(8), parameter :: flags = &
+   character(20), dimension(9), parameter :: flags = &
                                              [ &
                                              ! Integer:
                                              '--nsets     ', &  ! j=1
@@ -34,12 +34,13 @@ subroutine parse_cmd_arguments
                                              '--injmod    ', &  ! j=6
                                              ! Float (double precision):
                                              '--vshock    ', &  ! j=7
+                                             '--gamma     ', &  ! j=8
                                              ! Character
-                                             '--fname     ' &      ! j=8
+                                             '--fname     ' &   ! j=9
                                              ]
 
    n_args = command_argument_count()
-   n_flags = 7
+   n_flags = 9
    if (modulo(n_args, 2) .ne. 0) then
       ! Sort of crude error handling
       call error('Argument error, odd number of provided arguments and flags', 0)
@@ -60,7 +61,13 @@ subroutine parse_cmd_arguments
             elseif (j == 7) then
                ! vshock - float arg
                read (arg, *) shock_velocity
+               gamma_set = .false.
             elseif (j == 8) then
+               ! gamma - float arg
+               read (arg, *) gamma_fact
+               shock_velocity = sqrt(1 - 1/(gamma_fact**2))
+               gamma_set = .true.
+            elseif (j == 9) then
                ! fname - string arg
                basename = arg
             else
@@ -95,7 +102,7 @@ subroutine init_general(myid)
    implicit none
    integer myid
    double precision v_EDST, v_shock
-   character(10) :: n_start_str, n_sets_str, v_shock_str
+   character(10) :: n_start_str, n_sets_str, v_shock_str, gamma_str
 
 ! Parse command line arguments, and apply given settings/config
 ! Default values in are code overridden by values in file (future)
@@ -111,9 +118,15 @@ subroutine init_general(myid)
    filename = trim(basename)
    if (inj_model == 0) then
       ! constant shock velocity
-      print *, v_shock(0)
-      write (v_shock_str, '(f10.3)') v_shock(0)
-      filename = filename//'_vshock'//trim(adjustl(v_shock_str))
+      if (gamma_set) then
+         ! gamma instead of vshock
+         write (gamma_str, '(f10.3)') gamma_fact
+         filename = filename//'_gamma'//trim(adjustl(gamma_str))
+      else
+         print *, v_shock(0)
+         write (v_shock_str, '(f10.3)') v_shock(0)
+         filename = filename//'_vshock'//trim(adjustl(v_shock_str))
+      end if
    end if
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
    print *, "filename metadata: ", filename

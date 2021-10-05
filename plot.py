@@ -52,6 +52,7 @@ if __name__ == "__main__":
     data = np.fromfile(path, sep=' ')
     data = data.reshape(int(len(data)/4), 4).T
     E, m, logE, logm = data
+    print(E)
     plt.step(logE, logm)
     plt.show()
     
@@ -64,6 +65,7 @@ if __name__ == "__main__":
 
     bin_energies = 10**(log10_bin_middle)
     m = N_gte_En * bin_energies**2 # should be ~ constant for v_shock << c WRONG m somehow
+    print(bin_energies)
     
     plt.step(np.log10(bin_energies), np.log10(m))
     plt.show()

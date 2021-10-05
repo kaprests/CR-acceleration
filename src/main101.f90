@@ -108,6 +108,10 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
    double precision, pointer :: E, x(:), t, w
    double precision :: gamma_v, cos_theta
 
+   ! ############
+   integer :: num_crossings
+   double precision :: rel_energy_gain, E_old, rel_energy_gain_sum
+
    pid => event(n_in)%pid
    A => event(n_in)%A
    Z => event(n_in)%Z
@@ -125,6 +129,8 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
    m = A*m_p
    f = 0.d0
 
+   rel_energy_gain_sum = 0
+   num_crossings = 0
    do
       df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
       call scales_charged(m, Z, E, t, w, df, dt, dE)
@@ -157,7 +163,7 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
       end if
 
       do k = 1, n_step
-         r_sh1 = t_shock(t)                                ! [distance] = [time] => [speed] = 1
+         r_sh1 = t_shock(t)
          d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! old distance
 
          if (d1 < r_sh1) then ! Particle in downstream
@@ -167,7 +173,7 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
             if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
             if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
             if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
-            v_2 = 0.75d0*v_shock(t)
+            v_2 = 0.75d0*v_shock(t) ! NEEDS REL CORR
             if (v_2 <= 0.d0) call error('v_2<=0', 0)
 
             gamma_v = 1/sqrt(1 - v_2**2) ! assuming c = 1
@@ -186,7 +192,7 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
          t = t + dt
          E = E + dE
          r_sh2 = t_shock(t)
-         v_2 = 0.75d0*v_shock(t)
+         v_2 = 0.75d0*v_shock(t) ! NEEDS REL CORR
 
          if (d2 < r_sh2 .and. r_sh1 < d1) then ! we hve crossed to the left (US->DS)
             ! Again, angle of v_2 from position x (as seen in the lab frame)
@@ -195,7 +201,7 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
             if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
             if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
             if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
-            v_2 = 0.75d0*v_shock(t)
+            v_2 = 0.75d0*v_shock(t) ! NEEDS REL CORR
             if (v_2 <= 0.d0) call error('v_2<=0', 0)
 
             cos_theta = &
@@ -203,9 +209,27 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
                sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
                cos(theta)*cos(theta_v)
 
-            gamma_v = 1/sqrt(1 - v_2**2) ! c = 1?
+            gamma_v = 1/sqrt(1 - v_2**2)
+            E_old = E
             E = gamma_v*E*(1 - v_2*cos_theta)
+            rel_energy_gain = (E - E_old)/E_old
+            rel_energy_gain_sum = rel_energy_gain_sum + rel_energy_gain
             accel = 1
+            num_crossings = num_crossings + 1
+
+            if (E < E_old) then
+               print *, "############################"
+               print *, "DS -> US"
+               print *, "E_old: ", E_old, ", E: ", E
+               print *, "gamma_v: ", gamma_v
+               print *, "v (beta): ", v_2
+               print *, "cos(theta): ", cos_theta
+               print *, "theta (step): ", theta
+               print *, "phi (step): ", phi
+               print *, "theta_v (shock):", theta_v
+               print *, "phi_v (shock):", phi_v
+               print *, "############################"
+            end if
          else if (d2 > r_sh2 .and. r_sh1 > d1) then ! we have crossed to the right (DS -> US)
             !E = E*(1.d0+v_shock(t))             ! c = 1?
             ! Again, angle of v_2 from position x, i.e. radial direction from lab center at x
@@ -214,7 +238,7 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
             if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
             if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
             if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
-            v_2 = 0.75d0*v_shock(t) ! DS sees US approach at same velocity v_2
+            v_2 = 0.75d0*v_shock(t) ! DS sees US approach at same velocity v_2 REL CORR
             if (v_2 <= 0.d0) call error('v_2<=0', 0)
 
             cos_theta = &
@@ -223,8 +247,26 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
                cos(theta)*cos(theta_v)
 
             gamma_v = 1/sqrt(1 - v_2**2) ! c = 1?
+            E_old = E
             E = gamma_v*E*(1 + v_2*cos_theta)
+            rel_energy_gain = (E - E_old)/E_old
+            rel_energy_gain_sum = rel_energy_gain_sum + rel_energy_gain
             accel = 1
+            num_crossings = num_crossings + 1
+
+            if (E < E_old) then
+               print *, "############################"
+               print *, "US -> DS"
+               print *, "E_old: ", E_old, ", E: ", E
+               print *, "gamma_v: ", gamma_v
+               print *, "v (beta): ", v_2
+               print *, "cos(theta): ", cos_theta
+               print *, "theta (step): ", theta
+               print *, "phi (step): ", phi
+               print *, "theta_v (shock):", theta_v
+               print *, "phi_v (shock):", phi_v
+               print *, "############################"
+            end if
          end if
 
          dmax = 3.d0*l_0_0/v_2
@@ -235,7 +277,10 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
          if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta) then
             if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                !              write(*,*) 'tired',n_in,n_out
-               call store(pid, E, w)
+               if (t > t_max) then
+                  print *, "Time exit"
+               end if
+               call store(pid, E, w, num_crossings, rel_energy_gain_sum)
                call store_raw(E, set, n_injected)
                n_in = n_in - 1
                n_out = n_out + 1
@@ -281,11 +326,14 @@ subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
 end subroutine scales_charged
 !=============================================================================!
 !=============================================================================!
-subroutine store(pid, En, w)
-   use internal; use result
+subroutine store(pid, En, w, num_crossings, rel_energy_gain_sum)
+   use internal; use result, only : n_enbin, En_f, NE_esc, rel_energy_gain_total_sum
    implicit none
    integer pid, i
    double precision En, w, l
+   integer, intent(in) :: num_crossings
+   double precision, intent(in) :: rel_energy_gain_sum
+   double precision  :: rel_energy_gain_avg
 
    l = log10(En)                                                ! energy bin
    i = int((l - d_f)/dn) ! dn = 0.1d0
@@ -300,7 +348,8 @@ subroutine store(pid, En, w)
 
    En_f(pid, i) = En_f(pid, i) + w*En
    NE_esc(i) = NE_esc(i) + 1
-
+   rel_energy_gain_avg = rel_energy_gain_sum / num_crossings
+   rel_energy_gain_total_sum = rel_energy_gain_total_sum + rel_energy_gain_sum
 !  write(*,*) 'store: ',pid,i
 
 end subroutine store

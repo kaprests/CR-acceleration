@@ -71,8 +71,12 @@ subroutine banner(n_proc, i)
    use user_variables
    use SNR_data
    use internal
+   use result, only : rel_energy_gain_total_sum
    implicit none
    integer n_proc, i
+   double precision :: rel_energy_gain_total_average
+   
+   rel_energy_gain_total_average = rel_energy_gain_total_sum / (n_sets * n_start)
 
    write (*, *)
    write (*, *) ' files saved as ', filename
@@ -91,6 +95,9 @@ subroutine banner(n_proc, i)
    else
       call error('xi_scat<1 ..?', 1)
    end if
+   write (*, *) '!  Average relative E gain, ', rel_energy_gain_total_average, '  !'
+!   write (*, *) '!  Vshock,              ', shock_velocity, '  !'
+!   write (*, *) '!  Vshock^2,            ', shock_velocity**2, '  !'
    write (*, *) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 
 end subroutine banner
