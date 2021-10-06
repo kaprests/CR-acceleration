@@ -131,7 +131,13 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
 
    rel_energy_gain_sum = 0
    num_crossings = 0
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!! Simulate DSA until exit !!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    do
+      !!! Step size, step number etc. !!!
+
       df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
       call scales_charged(m, Z, E, t, w, df, dt, dE)
       l_0 = R_L(E, t)/dble(Z)
@@ -140,7 +146,7 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
 
       ! find step size and new position:
       call isotropic(phi, theta)
-      if (dt >= l_0) then                       ! one random step of size l_0
+      if (dt >= l_0) then                     ! one random step of size l_0
          dE = dE*l_0/dt
          dt = l_0
          n_step = 1
@@ -162,22 +168,32 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
          call error('wrong step number', 0)
       end if
 
+      !!! perform random step(s) !!!
       do k = 1, n_step
-         r_sh1 = t_shock(t)
-         d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! old distance
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!
+         !!! Diffusion/advection !!!
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+         ! distance before step
+         r_sh1 = t_shock(t)                              ! old shock position
+         d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! old distance/particle radial position
+
+         ! Perform random step
          if (d1 < r_sh1) then ! Particle in downstream
-            ! find direction of v_2 from position x:
-            theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3))
-            phi_v = atan(x(2)/x(1))
-            if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
-            if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
-            if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
+            ! find direction of v_2 from position x (radially outward):
+            call radially_outward(theta_v, phi_v, x(1), x(2), x(3))
+!            theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3))
+!            phi_v = atan(x(2)/x(1))
+!            if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
+!            if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
+!            if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
+
+            ! update shock velocity
             v_2 = 0.75d0*v_shock(t) ! NEEDS REL CORR
             if (v_2 <= 0.d0) call error('v_2<=0', 0)
 
-            gamma_v = 1/sqrt(1 - v_2**2) ! assuming c = 1
             ! Lorentz transformed random step (advection)
+            gamma_v = 1/sqrt(1 - v_2**2)                 ! v_2 dimless (v_2 = beta = v/c)
             x(1) = x(1) + v_2*cos(phi_v)*sin(theta_v)*dt + l_0*sin(theta)*cos(phi)/gamma_v
             x(2) = x(2) + v_2*sin(phi_v)*sin(theta_v)*dt + l_0*sin(theta)*sin(phi)/gamma_v
             x(3) = x(3) + v_2*cos(theta_v)*dt + l_0*cos(theta)/gamma_v
@@ -188,19 +204,23 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
             x(3) = x(3) + l_0*cos(theta)
          end if
 
+         ! distance after step
          d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! new distance
          t = t + dt
          E = E + dE
          r_sh2 = t_shock(t)
-         v_2 = 0.75d0*v_shock(t) ! NEEDS REL CORR
 
-         if (d2 < r_sh2 .and. r_sh1 < d1) then ! we hve crossed to the left (US->DS)
+         !!!!!!!!!!!!!!!!!!!!!!
+         !!! Shock crossing !!!
+         !!!!!!!!!!!!!!!!!!!!!!
+         if (d2 < r_sh2 .and. r_sh1 < d1) then ! Crossed shock (US->DS)
             ! Again, angle of v_2 from position x (as seen in the lab frame)
-            theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3)) ! Would it be better to use the old x?
-            phi_v = atan(x(2)/x(1))
-            if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
-            if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
-            if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
+            call radially_outward(theta_v, phi_v, x(1), x(2), x(3))
+!            theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3)) ! Would it be better to use the old x?
+!            phi_v = atan(x(2)/x(1))
+!            if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
+!            if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
+!            if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
             v_2 = 0.75d0*v_shock(t) ! NEEDS REL CORR
             if (v_2 <= 0.d0) call error('v_2<=0', 0)
 
@@ -210,9 +230,9 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
                cos(theta)*cos(theta_v)
 
             gamma_v = 1/sqrt(1 - v_2**2)
-            E_old = E
-            E = gamma_v*E*(1 - v_2*cos_theta)
-            rel_energy_gain = (E - E_old)/E_old
+            E_old = E                                          ! Old energy
+            E = gamma_v*E*(1 - v_2*cos_theta)                  ! New energy
+            rel_energy_gain = (E - E_old)/E_old                ! rel energy gain
             rel_energy_gain_sum = rel_energy_gain_sum + rel_energy_gain
             accel = 1
             num_crossings = num_crossings + 1
@@ -230,14 +250,14 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
                print *, "phi_v (shock):", phi_v
                print *, "############################"
             end if
-         else if (d2 > r_sh2 .and. r_sh1 > d1) then ! we have crossed to the right (DS -> US)
-            !E = E*(1.d0+v_shock(t))             ! c = 1?
+         else if (d2 > r_sh2 .and. r_sh1 > d1) then ! Cossed shock (DS -> US)
             ! Again, angle of v_2 from position x, i.e. radial direction from lab center at x
-            theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3)) ! Would it be better to use the old x?
-            phi_v = atan(x(2)/x(1))
-            if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
-            if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
-            if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
+            call radially_outward(theta_v, phi_v, x(1), x(2), x(3))
+!            theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3)) ! Would it be better to use the old x?
+!            phi_v = atan(x(2)/x(1))
+!            if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
+!            if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
+!            if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
             v_2 = 0.75d0*v_shock(t) ! DS sees US approach at same velocity v_2 REL CORR
             if (v_2 <= 0.d0) call error('v_2<=0', 0)
 
@@ -246,7 +266,7 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
                sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
                cos(theta)*cos(theta_v)
 
-            gamma_v = 1/sqrt(1 - v_2**2) ! c = 1?
+            gamma_v = 1/sqrt(1 - v_2**2)
             E_old = E
             E = gamma_v*E*(1 + v_2*cos_theta)
             rel_energy_gain = (E - E_old)/E_old
@@ -269,6 +289,7 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
             end if
          end if
 
+         v_2 = 0.75d0*v_shock(t) ! NEEDS REL CORR
          dmax = 3.d0*l_0_0/v_2
          f = f + df*dt                      ! \int dt f(t)
          delta = exp(-f)                    ! exp(-\int dt f(t))
@@ -365,4 +386,16 @@ subroutine store_raw(En, set_num, particle_num)
    exit_energies(set_num, particle_num) = En
 end subroutine store_raw
 !=============================================================================!
+!=============================================================================!
+subroutine radially_outward(theta_rad, phi_rad, x1, x2, x3)
+   use constants, only : pi, two_pi
+   implicit none
+   double precision, intent(in) :: x1, x2, x3
+   double precision, intent(inout) :: theta_rad, phi_rad
+   theta_rad = atan2(sqrt(x1**2 + x2**2), x3)
+   phi_rad = atan(x2/x1)
+   if (x1 < 0.d0 .and. x2 > 0) phi_rad = phi_rad + pi
+   if (x1 < 0.d0 .and. x2 < 0) phi_rad = phi_rad + pi
+   if (x1 > 0.d0 .and. x2 < 0) phi_rad = phi_rad + two_pi
+end subroutine radially_outward
 !=============================================================================!
