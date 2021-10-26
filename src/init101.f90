@@ -64,8 +64,9 @@ subroutine parse_cmd_arguments
                gamma_set = .false.
             elseif (j == 8) then
                ! gamma - float arg
-               read (arg, *) gamma_fact
-               shock_velocity = sqrt(1 - 1/(gamma_fact**2))
+               read (arg, *) gamma_sh
+               !shock_velocity = sqrt(1 - 1/(gamma_sh**2))
+               shock_velocity = 1 - 1/(2*gamma_sh**2)
                gamma_set = .true.
             elseif (j == 9) then
                ! fname - string arg
@@ -120,7 +121,7 @@ subroutine init_general(myid)
       ! constant shock velocity
       if (gamma_set) then
          ! gamma instead of vshock
-         write (gamma_str, '(f10.3)') gamma_fact
+         write (gamma_str, '(f10.3)') gamma_sh
          filename = filename//'_gamma'//trim(adjustl(gamma_str))
       else
          print *, v_shock(0)
@@ -219,7 +220,7 @@ subroutine inject !(i)
       t = 1.d2            ! t_inj_init
       x(1) = 0.d0
       x(2) = 0.d0
-      x(3) = t_shock(t)
+      x(3) = t_shock(t) * 1.01
    case (1, 2, 4)
       do
          r = ran0()

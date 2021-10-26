@@ -107,6 +107,8 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
    integer, pointer :: pid, A, Z
    double precision, pointer :: E, x(:), t, w
    double precision :: gamma_v, cos_theta
+   double precision :: get_v_2
+   double precision :: d0, r_sh0
 
    ! ############
    integer :: num_crossings
@@ -121,7 +123,7 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
    w => event(n_in)%w
 
    d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
-   if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6) then
+   if (sec == 0 .and. abs(d1/t_shock(t) - 1.01d0) .gt. 1.d-6) then
       call error('wrong initial condition, shock', 0)
    end if
 
@@ -144,8 +146,27 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
       l_0_0 = l_0
       if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
+      ! Find step direction
+      r_sh0 = t_shock(t)                              ! shock position
+      d0 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! particle radial position
+      if (v_shock(t) < 0.1) then
+         ! Non relativistic -> Always isotropic random walk
+         call isotropic(phi, theta)
+      else
+         ! Assume (Ultra) relativistic 
+         if (d0 < r_sh0) then
+            ! Particle in downstream -> Isotropic step
+            call isotropic(phi, theta)
+         else if (num_crossings ==0) then
+            ! Particle in US, has not been in DS -> Isotropic
+            call isotropic(phi, theta)
+         else
+            ! Particle in US, has been in DS -> Anisotropic
+            call anisotropic_upstream(phi, theta, x(1), x(2), x(3))
+         endif
+      endif
+
       ! find step size and new position:
-      call isotropic(phi, theta)
       if (dt >= l_0) then                     ! one random step of size l_0
          dE = dE*l_0/dt
          dt = l_0
@@ -174,54 +195,43 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
          !!! Diffusion/advection !!!
          !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-         ! distance before step
+         ! distances before step
          r_sh1 = t_shock(t)                              ! old shock position
          d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! old distance/particle radial position
 
          ! Perform random step
          if (d1 < r_sh1) then ! Particle in downstream
             ! find direction of v_2 from position x (radially outward):
-            call radially_outward(theta_v, phi_v, x(1), x(2), x(3))
-!            theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3))
-!            phi_v = atan(x(2)/x(1))
-!            if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
-!            if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
-!            if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
+            call radially_outward(phi_v,theta_v, x(1), x(2), x(3))
 
-            ! update shock velocity
-            v_2 = 0.75d0*v_shock(t) ! NEEDS REL CORR
+            ! v_2: velocity of downstream as seen in US
+            v_2 = get_v_2(v_shock(t))
             if (v_2 <= 0.d0) call error('v_2<=0', 0)
 
             ! Lorentz transformed random step (advection)
-            gamma_v = 1/sqrt(1 - v_2**2)                 ! v_2 dimless (v_2 = beta = v/c)
+            gamma_v = 1.d0/sqrt(1.d0 - v_2**2)                 ! v_2 dimless (v_2 = beta = v/c)
             x(1) = x(1) + v_2*cos(phi_v)*sin(theta_v)*dt + l_0*sin(theta)*cos(phi)/gamma_v
             x(2) = x(2) + v_2*sin(phi_v)*sin(theta_v)*dt + l_0*sin(theta)*sin(phi)/gamma_v
             x(3) = x(3) + v_2*cos(theta_v)*dt + l_0*cos(theta)/gamma_v
          else ! Particle in upstream
-            ! random step (isotropic)
+            ! random step (isotropic or anisotropic)
             x(1) = x(1) + l_0*cos(phi)*sin(theta)
             x(2) = x(2) + l_0*sin(phi)*sin(theta)
             x(3) = x(3) + l_0*cos(theta)
          end if
 
-         ! distance after step
-         d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! new distance
+         ! distances after step
+         d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! new particle distance
          t = t + dt
          E = E + dE
-         r_sh2 = t_shock(t)
+         r_sh2 = t_shock(t)                                  ! new shock dist
 
          !!!!!!!!!!!!!!!!!!!!!!
          !!! Shock crossing !!!
          !!!!!!!!!!!!!!!!!!!!!!
          if (d2 < r_sh2 .and. r_sh1 < d1) then ! Crossed shock (US->DS)
-            ! Again, angle of v_2 from position x (as seen in the lab frame)
-            call radially_outward(theta_v, phi_v, x(1), x(2), x(3))
-!            theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3)) ! Would it be better to use the old x?
-!            phi_v = atan(x(2)/x(1))
-!            if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
-!            if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
-!            if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
-            v_2 = 0.75d0*v_shock(t) ! NEEDS REL CORR
+            call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! angle of v_2 at pos x
+            v_2 = get_v_2(v_shock(t)) ! US sees DS approach at velocity v_2
             if (v_2 <= 0.d0) call error('v_2<=0', 0)
 
             cos_theta = &
@@ -229,7 +239,7 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
                sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
                cos(theta)*cos(theta_v)
 
-            gamma_v = 1/sqrt(1 - v_2**2)
+            gamma_v = 1.d0/sqrt(1.d0 - v_2**2)                 ! v_2 dimless (v_2 = beta = v/c)
             E_old = E                                          ! Old energy
             E = gamma_v*E*(1 - v_2*cos_theta)                  ! New energy
             rel_energy_gain = (E - E_old)/E_old                ! rel energy gain
@@ -237,28 +247,26 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
             accel = 1
             num_crossings = num_crossings + 1
 
+            ! DS particles isotropized
+            !call isotropic(phi, theta)
             if (E < E_old) then
-               print *, "############################"
-               print *, "DS -> US"
-               print *, "E_old: ", E_old, ", E: ", E
-               print *, "gamma_v: ", gamma_v
-               print *, "v (beta): ", v_2
-               print *, "cos(theta): ", cos_theta
-               print *, "theta (step): ", theta
-               print *, "phi (step): ", phi
-               print *, "theta_v (shock):", theta_v
-               print *, "phi_v (shock):", phi_v
-               print *, "############################"
+!               print *, "############################"
+!               print *, "US -> DS"
+!               print *, "E_old: ", E_old, ", E: ", E
+!               print *, "gamma_v: ", gamma_v
+!               print *, "v (beta): ", v_2
+!               print *, "cos(theta): ", cos_theta
+!               print *, "theta (step): ", theta
+!               print *, "phi (step): ", phi
+!               print *, "theta_v (shock):", theta_v
+!               print *, "phi_v (shock):", phi_v
+!               print *, "x1: ", x(1), " x2: ", x(2), " x3: ", x(3)
+!               print *, "num_crossings: ", num_crossings
+!               print *, "############################"
             end if
          else if (d2 > r_sh2 .and. r_sh1 > d1) then ! Cossed shock (DS -> US)
-            ! Again, angle of v_2 from position x, i.e. radial direction from lab center at x
-            call radially_outward(theta_v, phi_v, x(1), x(2), x(3))
-!            theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3)) ! Would it be better to use the old x?
-!            phi_v = atan(x(2)/x(1))
-!            if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
-!            if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
-!            if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
-            v_2 = 0.75d0*v_shock(t) ! DS sees US approach at same velocity v_2 REL CORR
+            call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! direction of v_2 and shock
+            v_2 = get_v_2(v_shock(t)) ! DS sees US approach at same velocity v_2
             if (v_2 <= 0.d0) call error('v_2<=0', 0)
 
             cos_theta = &
@@ -266,30 +274,34 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
                sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
                cos(theta)*cos(theta_v)
 
-            gamma_v = 1/sqrt(1 - v_2**2)
+            gamma_v = 1.d0/sqrt(1.d0 - v_2**2)
             E_old = E
             E = gamma_v*E*(1 + v_2*cos_theta)
             rel_energy_gain = (E - E_old)/E_old
             rel_energy_gain_sum = rel_energy_gain_sum + rel_energy_gain
             accel = 1
             num_crossings = num_crossings + 1
-
+            
+            ! US particles anisotropized
+            !call anisotropic_upstream(phi, theta, x(1), x(2), x(3))
             if (E < E_old) then
-               print *, "############################"
-               print *, "US -> DS"
-               print *, "E_old: ", E_old, ", E: ", E
-               print *, "gamma_v: ", gamma_v
-               print *, "v (beta): ", v_2
-               print *, "cos(theta): ", cos_theta
-               print *, "theta (step): ", theta
-               print *, "phi (step): ", phi
-               print *, "theta_v (shock):", theta_v
-               print *, "phi_v (shock):", phi_v
-               print *, "############################"
+!               print *, "############################"
+!               print *, "DS -> US"
+!               print *, "E_old: ", E_old, ", E: ", E
+!               print *, "gamma_v: ", gamma_v
+!               print *, "v (beta): ", v_2
+!               print *, "cos(theta): ", cos_theta
+!               print *, "x1: ", x(1), " x2: ", x(2), " x3: ", x(3)
+!               print *, "theta (step): ", theta
+!               print *, "phi (step): ", phi
+!               print *, "theta_v (shock):", theta_v
+!               print *, "phi_v (shock):", phi_v
+!               print *, "num_crossings: ", num_crossings
+!               print *, "############################"
             end if
          end if
 
-         v_2 = 0.75d0*v_shock(t) ! NEEDS REL CORR
+         v_2 = get_v_2(v_shock(t))
          dmax = 3.d0*l_0_0/v_2
          f = f + df*dt                      ! \int dt f(t)
          delta = exp(-f)                    ! exp(-\int dt f(t))
@@ -298,8 +310,12 @@ subroutine diff_accel(set, n_injected)                    ! w/wo diffusion in tr
          if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta) then
             if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                !              write(*,*) 'tired',n_in,n_out
-               if (t > t_max) then
-                  print *, "Time exit"
+               r_sh0 = t_shock(t)
+               d0 = sqrt(x(1)**2+x(2)**2+x(3)**2)
+               if (t > t_max .and. d0 < r_sh0) then
+                  print *, "Time exit - particle in downstream - num_cross: ", num_crossings
+               else if (t > t_max .and. d0 > r_sh0) then
+                  print *, "Time exit - particle in upstream - num_cross: ", num_crossings
                end if
                call store(pid, E, w, num_crossings, rel_energy_gain_sum)
                call store_raw(E, set, n_injected)
@@ -387,15 +403,63 @@ subroutine store_raw(En, set_num, particle_num)
 end subroutine store_raw
 !=============================================================================!
 !=============================================================================!
-subroutine radially_outward(theta_rad, phi_rad, x1, x2, x3)
+subroutine radially_outward(phi_rad, theta_rad, x1, x2, x3)
+   ! Finds the angles corresponding to radially out at point x, i.e. shock normal
    use constants, only : pi, two_pi
    implicit none
    double precision, intent(in) :: x1, x2, x3
-   double precision, intent(inout) :: theta_rad, phi_rad
+   double precision, intent(inout) :: phi_rad, theta_rad
    theta_rad = atan2(sqrt(x1**2 + x2**2), x3)
    phi_rad = atan(x2/x1)
    if (x1 < 0.d0 .and. x2 > 0) phi_rad = phi_rad + pi
    if (x1 < 0.d0 .and. x2 < 0) phi_rad = phi_rad + pi
    if (x1 > 0.d0 .and. x2 < 0) phi_rad = phi_rad + two_pi
 end subroutine radially_outward
+!=============================================================================!
+!=============================================================================!
+subroutine anisotropic_upstream(phi, theta, x1, x2, x3)
+   ! Angles of anisotropized upstream particles
+   ! Limited, random deflection centered around the shock normal
+   use constants, only : pi, two_pi
+   use user_variables, only: gamma_sh
+   implicit none
+   double precision, intent(in) :: x1, x2, x3
+   double precision, intent(inout) :: phi, theta
+   double precision :: max_deflection, theta_def, phi_def
+   double precision :: ran0
+   max_deflection = 2/gamma_sh
+   call radially_outward(phi, theta, x1, x2, x3)
+   theta_def = -max_deflection + 2*max_deflection*ran0()
+   phi_def = -max_deflection + 2*max_deflection*ran0()
+   theta = theta + theta_def
+   phi = phi + phi_def
+   if (theta < 0) then
+      theta = -theta
+      phi = phi + pi
+   else if (theta > pi) then
+      theta = two_pi - theta
+      phi = phi + pi
+   endif
+   phi = modulo(phi, two_pi)
+end subroutine anisotropic_upstream
+!=============================================================================!
+!=============================================================================!
+double precision function get_v_2(v_shock) result(v)
+   use user_variables, only: gamma_sh
+   implicit none
+   double precision, intent(in) :: v_shock
+   if (v_shock <= 0.1 .and. 0 < v_shock) then
+      ! Non relativistic regime
+      v = 0.75d0 * v_shock
+   else if (0.9 <= v_shock .and. v_shock < 1) then
+      ! (Ultra) relativistic regime
+      v = 1.d0 - 1.d0/(gamma_sh**2)
+   else if (0.1 < v_shock .and. v_shock < 0.9) then
+      ! In between regimes
+      v = 0.75d0 * v_shock
+      call error("v_shock in between regimes 0.1 < v_shock < 0.9", 1)
+   else
+      call error("v_shock outside of allowed range [0, 1]", 0)
+   end if
+end function get_v_2
 !=============================================================================!

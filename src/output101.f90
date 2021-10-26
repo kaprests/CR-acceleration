@@ -95,7 +95,7 @@ subroutine banner(n_proc, i)
    else
       call error('xi_scat<1 ..?', 1)
    end if
-   write (*, *) '!  Average relative E gain, ', rel_energy_gain_total_average, '  !'
+!   write (*, *) '!  Average relative E gain, ', rel_energy_gain_total_average, '  !'
 !   write (*, *) '!  Vshock,              ', shock_velocity, '  !'
 !   write (*, *) '!  Vshock^2,            ', shock_velocity**2, '  !'
    write (*, *) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'

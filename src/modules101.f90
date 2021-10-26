@@ -12,7 +12,7 @@ module user_variables
       iseed_shift = 0, &                        ! positive shift of random seed
       inj_model = 0                             ! constant shock_velocity
    double precision :: shock_velocity = 3.d-2   ! velocity of constant shock
-   double precision :: gamma_fact               ! gamma of constant velocity shock
+   double precision :: gamma_sh                 ! gamma of constant velocity shock
    logical :: gamma_set = .false.                  ! True if gamma was set instead of vshock
 
    character(4) ::  basename = '_mod'           ! name in output

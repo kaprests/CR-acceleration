@@ -227,10 +227,9 @@ double precision function cycle_energy_gain(theta_in, theta_out, v) result(e_gai
    ! Assumed c = 1
    implicit none
    double precision, intent(in) :: theta_in, theta_out, v
-   double precision :: beta
 
    e_gain = &
-      (1 - v*cos(theta_in) + beta*cos(theta_out) - (beta**2)*cos(theta_in)*cos(theta_out)) &
+      (1 - v*cos(theta_in) + v*cos(theta_out) - (v**2)*cos(theta_in)*cos(theta_out)) &
       /(1 - v**2) - 1
 end function cycle_energy_gain
 !=============================================================================!
