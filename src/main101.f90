@@ -59,7 +59,7 @@ end subroutine start_particle
 
 subroutine tracer(set, n_injected)
    use event_internal; use internal, only: n_in
-   use acceleration
+   use non_rel_acceleration
    implicit none
    integer id
    integer, pointer :: A, pid
@@ -80,8 +80,8 @@ subroutine tracer(set, n_injected)
       n_in = n_in - 1
       return
    case (7, 145:159)
-!      call diff_accel(set, n_injected)
-      call random_walk(set, n_injected)
+      call isotropic_random_walk(set, n_injected)
+      !call small_angle_random_walk(set, n_injected)
    case default
       write (*, *) 'A,pid', A, pid
       call error('wrong particle typ in tracer', 0)
