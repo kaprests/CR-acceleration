@@ -2,6 +2,7 @@
 !==============================================================================!
 module user_variables
    ! Maybe read user_variables from file? Add option to override with cmd-line flag
+   use constants, only: pi
    implicit none
    save
    integer :: &
@@ -19,6 +20,13 @@ module user_variables
    character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
    character(10) :: outdir_raw = './RawData'
+
+   ! For shockless random walks
+   integer :: num_steps_tot = 10000
+   character(10) :: num_steps_tot_str 
+   double precision :: theta_max_pi_frac = 1    ! fraction of pi
+   double precision :: theta_max
+   character(10) :: theta_max_str
 end module user_variables
 !==============================================================================!
 !==============================================================================!
@@ -146,6 +154,7 @@ end module internal
 !==============================================================================!
 module result
    use particle
+   use user_variables, only: n_sets, n_start
    implicit none
    save
 
@@ -158,10 +167,15 @@ module result
       E2N_i(2, n_tbin_in), &
       En_f(-pid_max:pid_max, n_enbin), &
       En_f_tot(-pid_max:pid_max, n_enbin), &
-! Protons only
+   ! Protons only
       NE_esc(n_enbin) = 0 ! # protons escaped at each energy(bin)
    double precision, allocatable :: exit_energies(:, :) ! # unbinned exit energies
    double precision :: rel_energy_gain_total_sum
+
+   ! For shockless random walks
+   double precision, allocatable :: final_distances(:)
+   double precision, allocatable :: drift_distances(:, :)
+   double precision, allocatable :: final_positions(:, :)
 end module result
 !==============================================================================!
 !==============================================================================!

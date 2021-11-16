@@ -16,6 +16,7 @@ end subroutine init
 subroutine parse_cmd_arguments
    ! Very naive, non flexible argument parser
    use user_variables
+   use constants, only: pi
    implicit none
 
    integer :: i, n_args
@@ -23,7 +24,7 @@ subroutine parse_cmd_arguments
    character(20) :: flag
    character(20) :: arg
    integer :: arg_int
-   character(20), dimension(9), parameter :: flags = &
+   character(20), dimension(11), parameter :: flags = &
                                              [ &
                                              ! Integer:
                                              '--nsets     ', &  ! j=1
@@ -36,11 +37,15 @@ subroutine parse_cmd_arguments
                                              '--vshock    ', &  ! j=7
                                              '--gamma     ', &  ! j=8
                                              ! Character
-                                             '--fname     ' &   ! j=9
+                                             '--fname     ', &  ! j=9
+                                             ! Integer (shockless random walks)
+                                             '--nsteps    ', &  ! j=10
+                                             ! Float (shockless random walks)
+                                             '--max-pi-fr '  &  ! j=11
                                              ]
 
    n_args = command_argument_count()
-   n_flags = 9
+   n_flags = 11
    if (modulo(n_args, 2) .ne. 0) then
       ! Sort of crude error handling
       call error('Argument error, odd number of provided arguments and flags', 0)
@@ -84,6 +89,11 @@ subroutine parse_cmd_arguments
                   read (arg, *) restart
                case (5)
                   read (arg, *) iseed_shift
+               case (10)
+                  read (arg, *) num_steps_tot
+               case (11)
+                  read (arg, *) theta_max_pi_frac
+                  theta_max = pi*theta_max_pi_frac
                end select
             end if
             exit
@@ -104,6 +114,10 @@ subroutine init_general(myid)
    integer myid
    double precision v_EDST, v_shock
    character(10) :: n_start_str, n_sets_str, v_shock_str, gamma_str
+
+   allocate(final_distances(n_start*n_sets))
+   allocate(drift_distances(100, n_start*n_sets))
+   allocate(final_positions(3, n_start*n_sets))
 
 ! Parse command line arguments, and apply given settings/config
 ! Default values in are code overridden by values in file (future)
@@ -131,6 +145,17 @@ subroutine init_general(myid)
    end if
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
    print *, "filename metadata: ", filename
+
+   ! For shockless random walk
+   write (num_steps_tot_str, '(I10)') num_steps_tot
+   num_steps_tot_str = adjustl(num_steps_tot_str)
+   write (theta_max_str, '(f10.3)') pi*theta_max_pi_frac
+   theta_max_str = adjustl(theta_max_str)
+   print *, "=========================="
+   print *, "For shockless random walk:"
+   print *, "Num steps: ", num_steps_tot
+   print *, "theta max: ", pi*theta_max_pi_frac
+   print *, "=========================="
 
 ! Allocate dimension of array storing unbinned/raw energies
    allocate(exit_energies(n_sets, n_start))
@@ -190,7 +215,6 @@ subroutine init_inject_spec
 
    select case (inj_model)
    case (0)                     ! stationary
-      alpha_f = 1.d0           ! does not matter
    case (1, 4)                   ! thermal / Voelk injection
       alpha_f = 0.9d0           ! close to 1
    case (2)                     ! pressure / Russian

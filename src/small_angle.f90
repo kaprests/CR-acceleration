@@ -9,7 +9,9 @@ module constants
     two_pi = 2.d0*pi,                        &
     degree_rad = pi/180.d0,                  &     
     rad_degree = 180.d0/pi,                  &
-    theta_cone = 5.0                          ! Cone opening, degrees, temporary value
+    E = 1.1d10,                              & ! Particle energy
+    v_sh = 0.8,                              & ! Shock velocity (fraction of light speed)
+    m_p = 938.272d6                            ! Proton mass
 
 end module constants
 !=============================================================================!
@@ -23,8 +25,8 @@ program test
 
   
 ! initial momentum vector
-  theta0=80.d0*degree_rad
-  phi0=00.d0*degree_rad 
+  theta0=30.d0*degree_rad
+  phi0=0.d0*degree_rad 
   
   k(1) = cos(phi0)*sin(theta0)
   k(2) = sin(phi0)*sin(theta0)
@@ -69,7 +71,6 @@ end program test
 !=============================================================================!
 subroutine Euler_backward(alpha,beta,R)
   implicit none
-  integer i,j,k
   double precision alpha,beta,R(3,3),ca,sa,cb,sb
       
   ca = cos(alpha)
@@ -96,12 +97,22 @@ end subroutine Euler_backward
 subroutine small_angle(theta,phi)
   ! Generates a random small angle in rotated frame where p=(1,0,0)
   ! I.e. an angle within some solid angle centered around the z-axis
-  use constants, only: theta_cone, two_pi, degree_rad
+  use constants, only: two_pi, degree_rad, E, v_sh, m_p
   implicit none
-  double precision phi,theta,r
-  double precision ran0
+  double precision :: phi,theta
+  double precision :: theta_cone, cos_theta_cone, theta_max
+  double precision :: ran0
 
-  theta = theta_cone * degree_rad * ran0()
+!  ! need to check units, should do everything in natural units preferably
+!  cos_theta_cone = v_sh/sqrt(1 - (E**2)/(m_p**2))
+!  if (abs(cos_theta_cone) > 1) call error("cosine exceeds 1, small_angle", 0)
+!  theta_cone = acos(cos_theta_cone)
+!  theta_max = 0.1 * theta_cone
+!
+!  print *, "Theta cone: ", theta_cone
+  theta_max = 5.0
+
+  theta = theta_max * degree_rad * ran0()
   phi = two_pi * ran0()
 end subroutine small_angle
 !=============================================================================!
