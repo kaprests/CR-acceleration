@@ -95,8 +95,7 @@ end subroutine tracer
 !=============================================================================!
 !=============================================================================!
 subroutine diff_accel                      ! w/wo diffusion in trapping phase
-   use user_variables, only: debug
-   use SNR_data, only: t_max; 
+   use user_variables, only: debug, t_max
    use constants; use particle_data, only: m_p
    use event_internal; use result
    use internal
@@ -217,7 +216,7 @@ end subroutine diff_accel
 !=============================================================================!
 !=============================================================================!
 subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
-   use SNR_data, only: t_max
+   use user_variables, only: t_max
    use internal
    implicit none
    integer Z

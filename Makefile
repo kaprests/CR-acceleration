@@ -31,7 +31,10 @@ isotropic_rw: $(LIB_FILES) $(SRC_DIR)/isotropic_rw.f90
 	$(FC) -J $(MOD_DIR) $(PFLAGS) $(LIB_FILES) $(SRC_DIR)/isotropic_rw.f90 -o $(BIN_DIR)/$@
 
 small_angle_rw: $(LIB_FILES) $(SRC_DIR)/small_angle_rw.f90
-	$(FC) -J $(MOD_DIR) $(PFLAGS) $(LIB_FILES) $(SRC_DIR)/small_angle_rw.f90 -o $(BIN_DIR)/$@
+	$(FC) -J $(MOD_DIR) $(DFLAGS) $(LIB_FILES) $(SRC_DIR)/small_angle_rw.f90 -o $(BIN_DIR)/$@
+
+pitch_angle_rw: $(LIB_FILES) $(SRC_DIR)/pitch_angle_rw.f90
+	$(FC) -J $(MOD_DIR) $(DFLAGS) $(LIB_FILES) $(SRC_DIR)/pitch_angle_rw.f90 -o $(BIN_DIR)/$@
 
 #small_angle: $(SRC)/modules101.f90 $(SRC)/small_angle.f90 $(SRC)/init101.f90 $(SRC)/functions101.f90 $(SRC)/output101.f90 $(SRC)/aux101.f90
 #	gfortran -J$(MOD) -O -w $(SRC)/modules101.f90 $(SRC)/small_angle.f90 $(SRC)/init101.f90 $(SRC)/functions101.f90 $(SRC)/output101.f90 $(SRC)/aux101.f90 -o $(BIN)/small_angle

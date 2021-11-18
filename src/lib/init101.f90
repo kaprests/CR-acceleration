@@ -24,7 +24,7 @@ subroutine parse_cmd_arguments
    character(20) :: flag
    character(20) :: arg
    integer :: arg_int
-   character(20), dimension(11), parameter :: flags = &
+   character(20), dimension(12), parameter :: flags = &
                                              [ &
                                              ! Integer:
                                              '--nsets     ', &  ! j=1
@@ -41,11 +41,12 @@ subroutine parse_cmd_arguments
                                              ! Integer (shockless random walks)
                                              '--nsteps    ', &  ! j=10
                                              ! Float (shockless random walks)
-                                             '--max-pi-fr '  &  ! j=11
+                                             '--max-pi-fr ', &  ! j=11
+                                             '--t-max     '  &  ! j=12
                                              ]
 
    n_args = command_argument_count()
-   n_flags = 11
+   n_flags = 12
    if (modulo(n_args, 2) .ne. 0) then
       ! Sort of crude error handling
       call error('Argument error, odd number of provided arguments and flags', 0)
@@ -94,6 +95,8 @@ subroutine parse_cmd_arguments
                case (11)
                   read (arg, *) theta_max_pi_frac
                   theta_max = pi*theta_max_pi_frac
+               case (12)
+                  read (arg, *) t_max
                end select
             end if
             exit
@@ -146,14 +149,21 @@ subroutine init_general(myid)
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
    print *, "filename metadata: ", filename
 
+   ! If no t_max given by user, set default exit time t_max_snr from SNR_data
+   if (t_max == -1) then
+      t_max = t_max_snr
+   end if
+
    ! For shockless random walk
    write (num_steps_tot_str, '(I10)') num_steps_tot
    num_steps_tot_str = adjustl(num_steps_tot_str)
    write (theta_max_str, '(f10.3)') pi*theta_max_pi_frac
    theta_max_str = adjustl(theta_max_str)
+   write (t_max_str, '(f10.3)') t_max
+   t_max_str = adjustl(t_max_str)
    print *, "=========================="
    print *, "For shockless random walk:"
-   print *, "Num steps: ", num_steps_tot
+   print *, "t_max: ", t_max
    print *, "theta max: ", pi*theta_max_pi_frac
    print *, "=========================="
 
@@ -205,6 +215,7 @@ end subroutine init_general
 subroutine init_inject_spec
    use SNR_data
    use internal; use result
+   use user_variables, only: t_max
    implicit none
    double precision :: dNdEdt
 

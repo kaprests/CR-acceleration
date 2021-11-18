@@ -1,22 +1,25 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import FortranFile
+from math import pi
 
 DATA_DIR = './Data/'
-num_steps = 1000
+t_max = 101
+theta_pi_frac = 1.0
+theta = theta_pi_frac*pi
 
 if __name__ == "__main__":
     # Isotropic data
-    file = FortranFile(DATA_DIR+f'isotropic_rw_fdist_{num_steps}', 'r')
+    file = FortranFile(DATA_DIR+f'isotropic_rw_fdist_tmax{t_max:.3f}', 'r')
     data_iso_dist = file.read_reals()
-    file = FortranFile(DATA_DIR+f'isotropic_rw_pos_{num_steps}', 'r')
+    file = FortranFile(DATA_DIR+f'isotropic_rw_pos_tmax{t_max:.3f}', 'r')
     data_iso_pos = file.read_reals()
     data_iso_pos = np.reshape(data_iso_pos, (int(len(data_iso_pos)/3), 3))
 
     # Small angle data
-    file = FortranFile(DATA_DIR+f'small_angle_rw_fdist_nsteps{num_steps}_theta3.142', 'r')
+    file = FortranFile(DATA_DIR+f'small_angle_rw_fdist_tmax{t_max:.3f}_theta{theta:.3f}', 'r')
     data_sa_dist = file.read_reals()
-    file = FortranFile(DATA_DIR+f'small_angle_rw_pos_nsteps{num_steps}_theta3.142', 'r')
+    file = FortranFile(DATA_DIR+f'small_angle_rw_pos_tmax{t_max:.3f}_theta{theta:.3f}', 'r')
     data_sa_pos = file.read_reals()
     data_sa_pos = np.reshape(data_sa_pos, (int(len(data_sa_pos)/3), 3))
 

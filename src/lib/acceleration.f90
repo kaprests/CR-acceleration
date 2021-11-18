@@ -8,8 +8,7 @@ contains
 
    subroutine isotropic_random_walk(set, n_injected)
       ! Isotropic random walk
-      use user_variables, only: debug
-      use SNR_data, only: t_max
+      use user_variables, only: debug, t_max
       use constants;
       use particle_data, only: m_p
       use event_internal
@@ -23,7 +22,7 @@ contains
       integer k, n_step
       double precision r, m, f, df, dt, dE, delta, l_0, l_0_0
       double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2
-      double precision ran0, R_L, t_shock, v_shock
+      double precision ran0, R_L, t_shock, v_shock, get_v_2
       integer, pointer :: pid, A, Z
       double precision, pointer :: E, x(:), t, w
       double precision :: gamma_v, cos_theta
@@ -204,7 +203,7 @@ contains
 
 
    subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
-      use SNR_data, only: t_max
+      use user_variables, only: t_max
       use internal
       implicit none
       integer Z
@@ -268,20 +267,6 @@ contains
    end subroutine store_raw
 
 
-   subroutine radially_outward(phi_rad, theta_rad, x1, x2, x3)
-      ! Finds the angles corresponding to radially out at point x, i.e. shock normal
-      use constants, only : pi, two_pi
-      implicit none
-      double precision, intent(in) :: x1, x2, x3
-      double precision, intent(inout) :: phi_rad, theta_rad
-      theta_rad = atan2(sqrt(x1**2 + x2**2), x3)
-      phi_rad = atan(x2/x1)
-      if (x1 < 0.d0 .and. x2 > 0) phi_rad = phi_rad + pi
-      if (x1 < 0.d0 .and. x2 < 0) phi_rad = phi_rad + pi
-      if (x1 > 0.d0 .and. x2 < 0) phi_rad = phi_rad + two_pi
-   end subroutine radially_outward
-
-
    subroutine anisotropic_upstream(phi, theta, x1, x2, x3)
       ! Angles of anisotropized upstream particles
       ! Limited, random deflection centered around the shock normal
@@ -307,26 +292,6 @@ contains
       endif
       phi = modulo(phi, two_pi)
    end subroutine anisotropic_upstream
-
-
-   double precision function get_v_2(v_shock) result(v)
-      use user_variables, only: gamma_sh
-      implicit none
-      double precision, intent(in) :: v_shock
-      if (v_shock <= 0.1 .and. 0 < v_shock) then
-         ! Non relativistic regime
-         v = 0.75d0 * v_shock
-      else if (0.9 <= v_shock .and. v_shock < 1) then
-         ! (Ultra) relativistic regime
-         v = 1.d0 - 1.d0/(gamma_sh**2)
-      else if (0.1 < v_shock .and. v_shock < 0.9) then
-         ! In between regimes
-         v = 0.75d0 * v_shock
-         call error("v_shock in between regimes 0.1 < v_shock < 0.9", 1)
-      else
-         call error("v_shock outside of allowed range [0, 1]", 0)
-      end if
-   end function get_v_2
 
 
 end module non_rel_acceleration

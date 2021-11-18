@@ -1,7 +1,7 @@
 !=============================================================================!
 !=============================================================================!
 program acceleration
-   use result; use user_variables, only: n_sets, outdir, num_steps_tot_str
+   use result; use user_variables, only: n_sets, outdir, t_max_str
    implicit none
    integer myid, n_proc
    integer set
@@ -22,10 +22,10 @@ program acceleration
    end do
 
    ! Write distance data to file
-   open(20, file=trim(outdir)//'/isotropic_rw_fdist_'//trim(num_steps_tot_str), form='unformatted')
+   open(20, file=trim(outdir)//'/isotropic_rw_fdist_tmax'//trim(t_max_str), form='unformatted')
    write(20) final_distances
    close(20)
-   open(20, file=trim(outdir)//'/isotropic_rw_pos_'//trim(num_steps_tot_str), form='unformatted')
+   open(20, file=trim(outdir)//'/isotropic_rw_pos_tmax'//trim(t_max_str), form='unformatted')
    write(20) final_positions
    close(20)
    close (99)
@@ -95,8 +95,7 @@ end subroutine tracer
 !=============================================================================!
 !=============================================================================!
 subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
-   use user_variables, only: debug, num_steps_tot
-   use SNR_data, only: t_max; 
+   use user_variables, only: debug, t_max
    use constants; use particle_data, only: m_p
    use event_internal; use result
    use internal
@@ -187,8 +186,10 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          f = f + df*dt                      ! \int dt f(t)
          delta = exp(-f)                    ! exp(-\int dt f(t))
          
-         ! Exit when max_steps reached
-         if (num_steps_taken >= num_steps_tot) then
+         ! Exit when t_max exceeded
+         if (t > t_max) then
+            print *, "t max: ", t_max
+            print *, "steps taken: ", num_steps_taken
             call store(d2, set, n_injected, x(1), x(2), x(3))
             n_in = n_in - 1
             n_out = n_out + 1
@@ -201,7 +202,7 @@ end subroutine random_walk
 !=============================================================================!
 !=============================================================================!
 subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
-   use SNR_data, only: t_max
+   use user_variables, only: t_max
    use internal
    implicit none
    integer Z

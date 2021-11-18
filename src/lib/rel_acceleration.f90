@@ -8,8 +8,7 @@ contains
 
    subroutine small_angle_random_walk(set, n_injected)
       ! Small angle random walk
-      use user_variables, only: debug
-      use SNR_data, only: t_max
+      use user_variables, only: debug, t_max
       use constants;
       use particle_data, only: m_p
       use event_internal

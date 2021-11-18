@@ -88,7 +88,21 @@ subroutine isotropic(phi, theta)
 end subroutine isotropic
 !=============================================================================!
 !=============================================================================!
-subroutine small_angle_dev(theta, phi, E, v_sh)
+subroutine scattering_angle_dev(theta, phi)
+   ! Random small angle within a cone centered around z-axis
+   use constants, only: pi, two_pi
+   use user_variables, only: theta_max ! Maximal scattering angle 
+   implicit none
+   double precision, intent(out) :: phi, theta
+   double precision :: ran0
+
+   ! Random angle within the max scattering cone
+   theta = theta_max * ran0() ! Theta within max
+   phi = two_pi * ran0() ! Azimuthal angle phi isotropic
+end subroutine scattering_angle_dev
+
+
+subroutine scattering_angle(theta, phi, E, v_sh)
    ! Random small angle within a cone centered around z-axis
    use constants, only: pi, two_pi
    use particle_data, only: m_p
@@ -98,6 +112,21 @@ subroutine small_angle_dev(theta, phi, E, v_sh)
    double precision, intent(in) :: E, v_sh
    double precision :: cos_theta_cone, theta_cone  ! Opening angle of loss cone
    double precision :: ran0
+
+   ! Random angle within the max scattering cone
+   theta = theta_max * ran0() ! Theta within max
+   phi = two_pi * ran0() ! Azimuthal angle phi isotropic
+end subroutine scattering_angle
+
+
+subroutine max_scattering_angle(theta, phi, v_shock, E_particle)
+   ! Computes the loss cone angle, and sets max_pitch scattering angle
+   ! to some fraction of cone angle.
+   use particle_data, only: m_p
+   implicit none
+   double precision, intent(out) :: theta, phi
+   double precision, intent(in) :: v_shock, E_particle
+   double precision :: cos_theta_cone
 
 !   ! Compute loss cone opening, theta_cone
 !   ! Set max scattering, theta_max, to 10% of loss cone opening
@@ -110,10 +139,8 @@ subroutine small_angle_dev(theta, phi, E, v_sh)
    ! theta_max = pi => isotropic 
    ! theta_max = pi/10
 
-   ! Random angle within the max scattering cone
-   theta = theta_max * ran0() ! Theta within max
-   phi = two_pi * ran0() ! Azimuthal angle phi isotropic
-end subroutine small_angle_dev
+   cos_theta_cone = v_shock/sqrt(1 - (E_particle**2)/(m_p**2))
+end subroutine max_scattering_angle
 
 
 subroutine euler_RyRz(theta, phi, R)
@@ -140,6 +167,40 @@ subroutine euler_RyRz(theta, phi, R)
    R(3,2) = 0.d0
    R(3,3) = ct
 end subroutine euler_RyRz
+
+
+subroutine radially_outward(phi_rad, theta_rad, x1, x2, x3)
+   ! Finds the angles corresponding to radially out at point x, i.e. shock normal
+   use constants, only : pi, two_pi
+   implicit none
+   double precision, intent(in) :: x1, x2, x3
+   double precision, intent(inout) :: phi_rad, theta_rad
+   theta_rad = atan2(sqrt(x1**2 + x2**2), x3)
+   phi_rad = atan(x2/x1)
+   if (x1 < 0.d0 .and. x2 > 0) phi_rad = phi_rad + pi
+   if (x1 < 0.d0 .and. x2 < 0) phi_rad = phi_rad + pi
+   if (x1 > 0.d0 .and. x2 < 0) phi_rad = phi_rad + two_pi
+end subroutine radially_outward
+
+
+double precision function get_v_2(v_shock) result(v)  
+   use user_variables, only: gamma_sh
+   implicit none
+   double precision, intent(in) :: v_shock
+   if (v_shock <= 0.1 .and. 0 < v_shock) then
+      ! Non relativistic regime
+      v = 0.75d0 * v_shock
+   else if (0.9 <= v_shock .and. v_shock < 1) then
+      ! (Ultra) relativistic regime
+      v = 1.d0 - 1.d0/(gamma_sh**2)
+   else if (0.1 < v_shock .and. v_shock < 0.9) then
+      ! In between regimes
+      v = 0.75d0 * v_shock
+      call error("v_shock in between regimes 0.1 < v_shock < 0.9", 1)
+   else
+      call error("v_shock outside of allowed range [0, 1]", 0)
+   end if
+end function get_v_2
 
 
 subroutine matrix_vec_mult(M, vec)

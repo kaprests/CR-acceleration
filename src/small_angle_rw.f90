@@ -1,7 +1,7 @@
 !=============================================================================!
 !=============================================================================!
 program acceleration
-   use result; use user_variables, only: n_sets, outdir, num_steps_tot_str, theta_max_str
+   use result; use user_variables, only: n_sets, outdir, theta_max_str, t_max_str
    implicit none
    integer myid, n_proc
    integer set
@@ -22,10 +22,10 @@ program acceleration
    end do
 
    ! Write distance data to file
-   open(20, file=trim(outdir)//'/small_angle_rw_fdist_nsteps'//trim(num_steps_tot_str)//'_theta'//theta_max_str, form='unformatted')
+   open(20, file=trim(outdir)//'/small_angle_rw_fdist_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
    write(20) final_distances
    close(20)
-   open(20, file=trim(outdir)//'/small_angle_rw_pos_nsteps'//trim(num_steps_tot_str)//'_theta'//theta_max_str, form='unformatted')
+   open(20, file=trim(outdir)//'/small_angle_rw_pos_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
    write(20) final_positions
    close(20)
    close (99)
@@ -95,8 +95,7 @@ end subroutine tracer
 !=============================================================================!
 !=============================================================================!
 subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
-   use user_variables, only: debug, num_steps_tot
-   use SNR_data, only: t_max; 
+   use user_variables, only: debug, t_max
    use constants; use particle_data, only: m_p
    use event_internal; use result
    use internal
@@ -112,7 +111,6 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    double precision :: g(3), p(3), R_euler(3,3), theta_e, phi_e
    integer i, j, k
 
-   ! Change back to fixed time 
    num_steps_taken = 0
 
    pid => event(n_in)%pid
@@ -206,6 +204,14 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
       ! Increment step count
       num_steps_taken = num_steps_taken + 1
 
+      if (num_steps_taken == 1000) then
+         print *, "exceeded 1000 steps"
+      end if
+
+      if (num_steps_taken == 10000) then
+         print *, "exceeded 10000 steps"
+      end if
+
       ! Perform step(s)
       do k = 1, n_step 
          d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2) ! Old distance
@@ -223,8 +229,10 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          f = f + df*dt                      ! \int dt f(t)
          delta = exp(-f)                    ! exp(-\int dt f(t))
          
-         ! Exit when max_steps reached
-         if (num_steps_taken >= num_steps_tot) then
+         ! Exit when t_max exceeded
+         if (t > t_max) then
+            print *, "t max: ", t_max
+            print *, "steps taken: ", num_steps_taken
             call store(d2, set, n_injected, x(1), x(2), x(3))
             n_in = n_in - 1
             n_out = n_out + 1
@@ -237,7 +245,7 @@ end subroutine random_walk
 !=============================================================================!
 !=============================================================================!
 subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
-   use SNR_data, only: t_max
+   use user_variables, only: t_max
    use internal
    implicit none
    integer Z

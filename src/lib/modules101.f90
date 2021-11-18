@@ -1,5 +1,15 @@
 !==============================================================================!
 !==============================================================================!
+module constants
+   implicit none
+   save
+   double precision, parameter :: &
+      N_av = 6.022142d23, & ! Avogadro's number
+      pi = 3.1415926536d0, &
+      two_pi = 2.d0*pi
+end module constants
+!==============================================================================!
+!==============================================================================!
 module user_variables
    ! Maybe read user_variables from file? Add option to override with cmd-line flag
    use constants, only: pi
@@ -27,6 +37,8 @@ module user_variables
    double precision :: theta_max_pi_frac = 1    ! fraction of pi
    double precision :: theta_max
    character(10) :: theta_max_str
+   double precision :: t_max = -1 ! -1 temp value, means not set (will default to t_max_str)
+   character(10) :: t_max_str
 end module user_variables
 !==============================================================================!
 !==============================================================================!
@@ -43,24 +55,14 @@ module SNR_data
       n_ISM = 2.d0, &  ! density of the ISM (1/cm^3)
       xi_scat = 1.d3, &  ! artif. enhanc. of interactions
       B0_reg = 1d-6, &  ! regular B/Gauss
-      B0_turb = B0_reg/1.d0, &  ! turbulent B/Gauss
-      t_max = 1.3d4  ! lifetime in yr \gsim t_inj_fin
+      B0_turb = B0_reg/1.d0, & ! turbulent B/Gauss
+      t_max_snr = 1.3d4 ! lifetime in yr \gsim t_inj_fin
 
    double precision, parameter :: &
       alpha_sh = 0.6d0                    ! inj_model 4
 
    double precision t_ch, R_ch, v_ch, t_EDST, R_EDST !,v_EDST
 end module SNR_data
-!==============================================================================!
-!==============================================================================!
-module constants
-   implicit none
-   save
-   double precision, parameter :: &
-      N_av = 6.022142d23, & ! Avogadro's number
-      pi = 3.1415926536d0, &
-      two_pi = 2.d0*pi
-end module constants
 !==============================================================================!
 !==============================================================================!
 module event_internal                           ! used instead of stack
