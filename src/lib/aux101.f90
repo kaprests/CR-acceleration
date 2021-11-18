@@ -102,15 +102,12 @@ subroutine scattering_angle_dev(theta, phi)
 end subroutine scattering_angle_dev
 
 
-subroutine scattering_angle(theta, phi, E, v_sh)
+subroutine scattering_angle(theta, phi, theta_max)
    ! Random small angle within a cone centered around z-axis
    use constants, only: pi, two_pi
-   use particle_data, only: m_p
-   use user_variables, only: theta_max ! Maximal scattering angle 
    implicit none
    double precision, intent(inout) :: phi, theta
-   double precision, intent(in) :: E, v_sh
-   double precision :: cos_theta_cone, theta_cone  ! Opening angle of loss cone
+   double precision, intent(in) :: theta_max
    double precision :: ran0
 
    ! Random angle within the max scattering cone
@@ -119,27 +116,21 @@ subroutine scattering_angle(theta, phi, E, v_sh)
 end subroutine scattering_angle
 
 
-subroutine max_scattering_angle(theta, phi, v_shock, E_particle)
+subroutine max_scattering_angle(theta_max, v_shock, E_particle)
    ! Computes the loss cone angle, and sets max_pitch scattering angle
    ! to some fraction of cone angle.
    use particle_data, only: m_p
    implicit none
-   double precision, intent(out) :: theta, phi
+   double precision, intent(out) :: theta_max
    double precision, intent(in) :: v_shock, E_particle
-   double precision :: cos_theta_cone
+   double precision :: cos_theta_cone, theta_cone
 
-!   ! Compute loss cone opening, theta_cone
-!   ! Set max scattering, theta_max, to 10% of loss cone opening
-!   cos_theta_cone = v_sh/sqrt(1 - (E**2)/(m_p**2))
-!   if (abs(cos_theta_cone) > 1) call error("cosine exceeds 1, small_angle", 0)
-!   theta_cone = acos(cos_theta_cone)
-!   theta_max = 0.1 * theta_cone
-
-   ! Temporary max scattering values
-   ! theta_max = pi => isotropic 
-   ! theta_max = pi/10
-
-   cos_theta_cone = v_shock/sqrt(1 - (E_particle**2)/(m_p**2))
+   ! Compute loss cone opening, theta_cone
+   ! Set max scattering, theta_max, to 10% of loss cone opening
+   cos_theta_cone = v_shock*m_p/sqrt(E_particle**2 -m_p**2)
+   if (abs(cos_theta_cone) > 1) call error("cosine exceeds 1, max_scattering_angle", 0)
+   theta_cone = acos(cos_theta_cone)
+   theta_max = 0.1 * theta_cone
 end subroutine max_scattering_angle
 
 

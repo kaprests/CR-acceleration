@@ -22,10 +22,10 @@ program acceleration
    end do
 
    ! Write distance data to file
-   open(20, file=trim(outdir)//'/small_angle_rw_fdist_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
+   open(20, file=trim(outdir)//'/pitch_angle_rw_fdist_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
    write(20) final_distances
    close(20)
-   open(20, file=trim(outdir)//'/small_angle_rw_pos_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
+   open(20, file=trim(outdir)//'/pitch_angle_rw_pos_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
    write(20) final_positions
    close(20)
    close (99)
@@ -100,17 +100,19 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    use event_internal; use result
    use internal
    use test_var, only: sec, accel
+
    implicit none
+
    integer n_step, num_steps_taken
    integer, intent(in) :: set, n_injected
    double precision r, m, f, df, dt, dE, delta, l_0, l_0_0
    double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2
-   double precision ran0, R_L, t_shock, v_shock
+   double precision ran0, R_L, t_shock, v_shock, get_v_2
    integer, pointer :: pid, A, Z
    double precision, pointer :: E, x(:), t, w
    double precision :: g(3), p(3), R_euler(3,3), theta_e, phi_e
    integer i, j, k
-   double precision :: theta_max_computed
+   double precision :: gamma_v, cos_theta, theta_max_computed
 
    num_steps_taken = 0
 
@@ -122,21 +124,25 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    t => event(n_in)%t
    w => event(n_in)%w
 
+   d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)    
+   if (sec == 0 .and. abs(d1/t_shock(t) - 1.01d0) .gt. 1.d-6) then    
+      call error('wrong initial condition, shock', 0)    
+   end if
+
    r = ran0()
    m = A*m_p
    f = 0.d0
-
-   ! Initiate at (0, 0, 0)
-   x(1) = 0
-   x(2) = 0
-   x(3) = 0
 
    do 
       ! Step size
       df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
       call scales_charged(m, Z, E, t, w, df, dt, dE)
       l_0 = R_L(E, t)/dble(Z)
-      l_0_0 = l_0
+
+      ! Modify stepsize for pitch angle scattering
+      call max_scattering_angle(theta_max_computed, v_shock(t), E)
+      l_0 = l_0 * (theta_max_computed/pi)**2 ! Guess work
+      l_0_0 = l_0 ! Why l_0_0
       if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
       ! Step direction 
@@ -151,15 +157,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          g(3) = cos(theta)
 
          ! scattering angles in rotated frame, where p=(1,0,0)
-
-         call max_scattering_angle(theta_max_computed, v_shock(t), E)    
-         if (num_steps_taken == 1) then                
-            write(*, *) "Theta max computed (radians): ", theta_max_computed    
-            write(*, *) "Theta max computed (degrees): ", theta_max_computed*180/pi
-            !stop
-         end if
-         !call scattering_angle(theta_e, phi_e, theta_max_computed)
-         call scattering_angle_dev(theta_e, phi_e)
+         call scattering_angle(theta_e, phi_e, theta_max_computed)
 
          ! Scattered momentum vector in rotated frame
          p(1) = cos(phi_e)*sin(theta_e)
@@ -221,31 +219,86 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          print *, "exceeded 10000 steps"
       end if
 
+
       ! Perform step(s)
       do k = 1, n_step 
-         d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2) ! Old distance
+         d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2) ! radial dist before step
+         r_sh1 = t_shock(t)                     ! shock radius before step
        
          ! Random step
-         x(1) = x(1) + l_0*cos(phi)*sin(theta)
-         x(2) = x(2) + l_0*sin(phi)*sin(theta)
-         x(3) = x(3) + l_0*cos(theta)
+         if (d1 < r_sh1) then
+            ! Particle in dowstream -> advection
+            call radially_outward(phi_v, theta_v, x(1), x(2), x(3))
+            v_2 = get_v_2(v_shock(t)) ! approaching velocity of US seen by DS
+            if (v_2 <= 0.d0) call error('v_2<=0', 0)
+            
+            ! Lorentz transformed step
+            gamma_v = 1.d0/sqrt(1.d0 - v_2**2) ! ([v_2]=1 -> v_2 = beta = v/c)
+            x(1) = x(1) + v_2*cos(phi_v)*sin(theta_v)*dt + l_0*sin(theta)*cos(phi)/gamma_v    
+            x(2) = x(2) + v_2*sin(phi_v)*sin(theta_v)*dt + l_0*sin(theta)*sin(phi)/gamma_v    
+            x(3) = x(3) + v_2*cos(theta_v)*dt + l_0*cos(theta)/gamma_v
+         else 
+            ! Particle in upstream -> 'normal' step
+            x(1) = x(1) + l_0*cos(phi)*sin(theta)
+            x(2) = x(2) + l_0*sin(phi)*sin(theta)
+            x(3) = x(3) + l_0*cos(theta)
+         end if
 
-         d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2) ! new distance
          t = t + dt
          E = E + dE
+         d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2) ! radial dist after step
+         r_sh2 = t_shock(t)                     ! shock radius after step
+
+         ! Check for shock crossing
+         if (d2 < r_sh2 .and. r_sh1 < d1) then
+            ! Crossed shock (US -> DS)
+            call radially_outward(phi_v, theta_v, x(1), x(2), x(3))
+            v_2 = get_v_2(v_shock(t)) ! US sees DS approach at velocity v_2
+            if (v_2 <= 0.d0) call error('v_2<=0', 0)    
+
+            cos_theta = &    
+               cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &    
+               sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &    
+               cos(theta)*cos(theta_v)    
+
+            gamma_v = 1.d0/sqrt(1.d0 - v_2**2)                 ! v_2 dimless (v_2 = beta = v/c)    
+            !E_old = E                                          ! Old energy    
+            E = gamma_v*E*(1 - v_2*cos_theta)                  ! New energy
+         else if (d2 > r_sh2 .and. r_sh1 > d1) then
+            ! Crossed shock (DS -> US)
+            call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! direction of v_2 and shock
+            v_2 = get_v_2(v_shock(t)) ! DS sees US approach at same velocity v_2
+            if (v_2 <= 0.d0) call error('v_2<=0', 0)
+
+            cos_theta = &
+               cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &
+               sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
+               cos(theta)*cos(theta_v)
+
+            gamma_v = 1.d0/sqrt(1.d0 - v_2**2)
+            !E_old = E
+            E = gamma_v*E*(1 + v_2*cos_theta)
+         end if
 
          dmax = 3.d0*l_0_0/v_2
          f = f + df*dt                      ! \int dt f(t)
          delta = exp(-f)                    ! exp(-\int dt f(t))
          
          ! Exit when t_max exceeded
-         if (t > t_max) then
-            print *, "t max: ", t_max
-            print *, "steps taken: ", num_steps_taken
-            call store(d2, set, n_injected, x(1), x(2), x(3))
-            n_in = n_in - 1
-            n_out = n_out + 1
-            return
+         if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta) then
+            if (t > t_max .or. d2 < r_sh2 - dmax) then
+               !print *, "t max: ", t_max
+               !print *, "steps taken: ", num_steps_taken
+               !call store(d2, set, n_injected, x(1), x(2), x(3))
+               call store(pid, E, w)
+               n_in = n_in - 1
+               n_out = n_out + 1
+               return
+            end if
+            if (r > delta) then
+               write (*, *) 'should never happen...'
+               stop
+            end if
          end if
       end do
    end do
@@ -281,20 +334,31 @@ subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
 end subroutine scales_charged
 !=============================================================================!
 !=============================================================================!
-subroutine store(df, set, n_injected, x1, x2, x3) ! df = final distance
-   use internal; use result
-   use user_variables, only: n_start
+subroutine store(pid, En, w) !, num_crossings, rel_energy_gain_sum)
+   use internal; use result, only : n_enbin, En_f, NE_esc, rel_energy_gain_total_sum
    implicit none
-   double precision, intent(in) :: df, x1, x2, x3
-   integer, intent(in) :: set, n_injected
-   integer idx
-   
-   idx = n_injected + (set-1)*n_start
-   final_distances(idx) = df
-   final_positions(1, idx) = x1
-   final_positions(2, idx) = x2
-   final_positions(3, idx) = x3
-end subroutine store
+   integer pid, i
+   double precision En, w, l
+!   integer, intent(in) :: num_crossings
+!   double precision, intent(in) :: rel_energy_gain_sum
+   double precision  :: rel_energy_gain_avg
 
+   l = log10(En)                                                ! energy bin
+   i = int((l - d_f)/dn) ! dn = 0.1d0
+
+   if (i <= 0) then
+      call error('stor_esc, E<=Emin', 11)
+      i = 1
+   end if
+   if (i > n_enbin) then
+      i = n_enbin
+   end if
+
+   En_f(pid, i) = En_f(pid, i) + w*En
+   NE_esc(i) = NE_esc(i) + 1
+!   rel_energy_gain_avg = rel_energy_gain_sum / num_crossings
+!   rel_energy_gain_total_sum = rel_energy_gain_total_sum + rel_energy_gain_sum
+!  write(*,*) 'store: ',pid,i
+end subroutine store
 !=============================================================================!
 !=============================================================================!

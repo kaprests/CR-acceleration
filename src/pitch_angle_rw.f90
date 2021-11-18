@@ -22,10 +22,10 @@ program acceleration
    end do
 
    ! Write distance data to file
-   open(20, file=trim(outdir)//'/small_angle_rw_fdist_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
+   open(20, file=trim(outdir)//'/pitch_angle_rw_fdist_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
    write(20) final_distances
    close(20)
-   open(20, file=trim(outdir)//'/small_angle_rw_pos_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
+   open(20, file=trim(outdir)//'/pitch_angle_rw_pos_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
    write(20) final_positions
    close(20)
    close (99)
@@ -95,7 +95,7 @@ end subroutine tracer
 !=============================================================================!
 !=============================================================================!
 subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
-   use user_variables, only: debug, t_max
+   use user_variables, only: debug, t_max, theta_max
    use constants; use particle_data, only: m_p
    use event_internal; use result
    use internal
@@ -136,7 +136,11 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
       df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
       call scales_charged(m, Z, E, t, w, df, dt, dE)
       l_0 = R_L(E, t)/dble(Z)
-      l_0_0 = l_0
+
+      ! Modify stepsize for pitch angle scattering
+      l_0 = l_0 * (theta_max/pi)**2 ! Guess work
+
+      l_0_0 = l_0 ! Why l_0_0
       if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
       ! Step direction 
@@ -151,14 +155,6 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          g(3) = cos(theta)
 
          ! scattering angles in rotated frame, where p=(1,0,0)
-
-         call max_scattering_angle(theta_max_computed, v_shock(t), E)    
-         if (num_steps_taken == 1) then                
-            write(*, *) "Theta max computed (radians): ", theta_max_computed    
-            write(*, *) "Theta max computed (degrees): ", theta_max_computed*180/pi
-            !stop
-         end if
-         !call scattering_angle(theta_e, phi_e, theta_max_computed)
          call scattering_angle_dev(theta_e, phi_e)
 
          ! Scattered momentum vector in rotated frame
