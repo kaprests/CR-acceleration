@@ -13,30 +13,35 @@ subroutine output(set, n_proc)
    n_tot = n_tot + n_start*n_proc
    write (*, *) 'set,n_tot', set, n_tot
 
-   open (20, file=trim(outdir)//'/spec_aneut'//filename)   ! -8
-   open (21, file=trim(outdir)//'/spec_aprot'//filename)   ! -7
-   open (22, file=trim(outdir)//'/spec_anum'//filename)    ! -5
-   open (23, file=trim(outdir)//'/spec_anue'//filename)    ! -4
-   open (24, file=trim(outdir)//'/spec_pos'//filename)     ! -1
-   open (25, file=trim(outdir)//'/spec_gam'//filename)     !  0
-   open (26, file=trim(outdir)//'/spec_ele'//filename)
-   open (27, file=trim(outdir)//'/spec_nue'//filename)
-   open (28, file=trim(outdir)//'/spec_num'//filename)
+!   open (20, file=trim(outdir)//'/spec_aneut'//filename)   ! -8
+!   open (21, file=trim(outdir)//'/spec_aprot'//filename)   ! -7
+!   open (22, file=trim(outdir)//'/spec_anum'//filename)    ! -5
+!   open (23, file=trim(outdir)//'/spec_anue'//filename)    ! -4
+!   open (24, file=trim(outdir)//'/spec_pos'//filename)     ! -1
+!   open (25, file=trim(outdir)//'/spec_gam'//filename)     !  0
+!   open (26, file=trim(outdir)//'/spec_ele'//filename)
+!   open (27, file=trim(outdir)//'/spec_nue'//filename)
+!   open (28, file=trim(outdir)//'/spec_num'//filename)
    open (29, file=trim(outdir)//'/spec_prot'//filename)
-   open (30, file=trim(outdir)//'/spec_neut'//filename)
-   open (50, file=trim(outdir)//'/spec_nu'//filename)
+!   open (30, file=trim(outdir)//'/spec_neut'//filename)
+!   open (50, file=trim(outdir)//'/spec_nu'//filename)
    open (9, file=trim(outdir)//'/esc_prot'//filename)      ! sensible unit number?
    do j = 1, n_enbin
       nu_tot = 0.d0
       l = dble(j)*dn + d_f
       E = 10.d0**l
-      do i = 1, n_stable
-         pid = stable_pid(i)
-         m = En_f_tot(pid, j)/(dble(n_tot)*log(10.d0)*dn)
-         if (m > 0.d0) write (19 + i, 23) E, m, log10(E), log10(m)
-         !if (m>0.d0) write(20+i,23) E,m,log10(E),log10(m)
-         if (abs(pid) == 4 .or. abs(pid) == 5) nu_tot = nu_tot + m
-      end do
+!      do i = 1, n_stable
+!         pid = stable_pid(i)
+!         m = En_f_tot(pid, j)/(dble(n_tot)*log(10.d0)*dn)
+!         if (m > 0.d0) write (19 + i, 23) E, m, log10(E), log10(m)
+!         !if (m>0.d0) write(20+i,23) E,m,log10(E),log10(m)
+!         if (abs(pid) == 4 .or. abs(pid) == 5) nu_tot = nu_tot + m
+!      end do
+      pid = stable_pid(10) ! proton
+      m = En_f_tot(pid, j)/(dble(n_tot)*log(10.d0)*dn)
+      if (m > 0.d0) write (19 + 10, 23) E, m, log10(E), log10(m)
+      if (abs(pid) == 4 .or. abs(pid) == 5) nu_tot = nu_tot + m
+
       if (j > 1) then
          N_ltE_esc = sum(NE_esc(1:j - 1))
       else
@@ -46,9 +51,10 @@ subroutine output(set, n_proc)
       if (n_tot - N_ltE_esc > 0) write (9, 23) E, log10(E), NE_esc(j)/(n_tot - N_ltE_esc)
       write (50, 23) E, nu_tot
    end do
-   close (20); close (21); close (22); close (23); close (24); close (25); 
-   close (26); close (27); close (28); close (29); close (30); close (50); 
-   close (9); 
+!   close (20); close (21); close (22); close (23); close (24); close (25); 
+!   close (26); close (27); close (28); close (29); close (30); close (50); 
+   close(29)
+   close(9); 
 23 format(24E16.6)
 
    En_f_tot = 0.d0

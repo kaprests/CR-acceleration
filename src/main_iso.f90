@@ -1,14 +1,19 @@
 program acceleration
-   use result; use user_variables, only: n_sets
+   use result; use user_variables, only: n_sets, filename
    implicit none
    integer myid, n_proc !,ierr,n_array
    integer set
+   character(4) :: iso_basename = '_iso'
 
 ! non-MPI values
    myid = 0
    n_proc = 1
 
    call init(myid)
+
+   ! overwrite filename
+   print *, "Overwriting filename"
+   filename = iso_basename//filename(5:)
 
    do set = 1, n_sets
 
@@ -59,7 +64,7 @@ end subroutine start_particle
 
 subroutine tracer(set, n_injected)
    use event_internal; use internal, only: n_in
-   use non_rel_acceleration
+   use acceleration
    implicit none
    integer id
    integer, pointer :: A, pid
@@ -81,7 +86,6 @@ subroutine tracer(set, n_injected)
       return
    case (7, 145:159)
       call isotropic_random_walk(set, n_injected)
-      !call small_angle_random_walk(set, n_injected)
    case default
       write (*, *) 'A,pid', A, pid
       call error('wrong particle typ in tracer', 0)

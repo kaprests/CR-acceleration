@@ -12,6 +12,7 @@ program acceleration
    n_proc = 1
 
    call init(myid)
+
    ! overwrite filename
    print *, 'Overwriting filename'
    filename = old_basename//filename(5:)
@@ -107,6 +108,7 @@ subroutine diff_accel                      ! w/wo diffusion in trapping phase
    double precision ran0, R_L, t_shock, v_shock
    integer, pointer :: pid, A, Z
    double precision, pointer :: E, x(:), t, w
+   integer :: num_steps_taken, num_cycles
 
    pid => event(n_in)%pid
    A => event(n_in)%A
@@ -125,6 +127,9 @@ subroutine diff_accel                      ! w/wo diffusion in trapping phase
    m = A*m_p
    f = 0.d0
 
+   num_steps_taken = 0
+   num_cycles = 0
+
    do
 
       df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
@@ -133,7 +138,7 @@ subroutine diff_accel                      ! w/wo diffusion in trapping phase
       l_0_0 = l_0
       if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
-! find step size and new position:
+      ! find step size and new position:
       call isotropic(phi, theta)
       if (dt >= l_0) then                       ! one random step of size l_0
          dE = dE*l_0/dt
@@ -156,6 +161,8 @@ subroutine diff_accel                      ! w/wo diffusion in trapping phase
          write (*, *) l_0_0/dt, n_step
          call error('wrong step number', 0)
       end if
+
+      num_steps_taken = num_steps_taken + 1
 
       do k = 1, n_step
 
@@ -185,8 +192,15 @@ subroutine diff_accel                      ! w/wo diffusion in trapping phase
          r_sh2 = t_shock(t)
 
          if (d2 > r_sh2 .and. r_sh1 > d1) then         ! we have crossed to the right
+         !   print *, "Cycle: US -> DS -> US"
+         !   print *, "E_old: ", E
+         !   print *, "E_new: ", E*(1.d0 + v_shock(t))
+         !   print *, "E_new/E_old: ", E*(1.d0 + v_shock(t))/E
+         !   print *, "E_new/(2*E_old): ", E*(1.d0 + v_shock(t))/(E*2)
+
             E = E*(1.d0 + v_shock(t))
             accel = 1
+            num_cycles = num_cycles + 1
          end if
 
          v_2 = 0.75d0*v_shock(t)
@@ -199,6 +213,9 @@ subroutine diff_accel                      ! w/wo diffusion in trapping phase
             if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                !              write(*,*) 'tired',n_in,n_out
                call store(pid, E, w)
+               print *, "Num steps taken: ", num_steps_taken
+               print *, "Num cycles: ", num_cycles
+               print *, "Num crossings (ca.): ", num_cycles*2
                n_in = n_in - 1
                n_out = n_out + 1
                return

@@ -168,7 +168,7 @@ subroutine init_general(myid)
    print *, "=========================="
 
 ! Allocate dimension of array storing unbinned/raw energies
-   allocate(exit_energies(n_sets, n_start))
+   allocate(exit_energies(n_sets*n_start))
 
 ! initialisation for random number (NumRec):
    iseed = 15321 + 2*(1 + iseed_shift)*(myid + 1)

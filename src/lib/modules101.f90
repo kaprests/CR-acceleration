@@ -171,7 +171,8 @@ module result
       En_f_tot(-pid_max:pid_max, n_enbin), &
    ! Protons only
       NE_esc(n_enbin) = 0 ! # protons escaped at each energy(bin)
-   double precision, allocatable :: exit_energies(:, :) ! # unbinned exit energies
+
+   double precision, allocatable :: exit_energies(:) ! # unbinned exit energies
    double precision :: rel_energy_gain_total_sum
 
    ! For shockless random walks

@@ -1,13 +1,13 @@
-module non_rel_acceleration
+module acceleration
    implicit none
    private
 
-   public isotropic_random_walk
+   public isotropic_random_walk, pitch_angle_accel
 contains
 
 
-   subroutine isotropic_random_walk(set, n_injected)
-      ! Isotropic random walk
+   subroutine pitch_angle_accel(set, n_injected)
+      ! Pitch angle scattering shock acceleration
       use user_variables, only: debug, t_max
       use constants;
       use particle_data, only: m_p
@@ -29,8 +29,11 @@ contains
       double precision :: d0, r_sh0
 
       ! ############
-      integer :: num_crossings
+      integer :: num_crossings, num_steps_taken
       double precision :: rel_energy_gain, E_old, rel_energy_gain_sum
+      double precision :: theta_max
+      double precision :: g(3), p(3), R_euler(3,3), theta_e, phi_e
+      integer :: i, j
 
       pid => event(n_in)%pid
       A => event(n_in)%A
@@ -51,26 +54,60 @@ contains
 
       rel_energy_gain_sum = 0
       num_crossings = 0
+      num_steps_taken = 0
 
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!! Simulate DSA until exit !!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do
-         !!! Step size, step number etc. !!!
-
+         ! Step size
          df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
          call scales_charged(m, Z, E, t, w, df, dt, dE)
          l_0 = R_L(E, t)/dble(Z)
          l_0_0 = l_0
+         
+         ! Adjust step size for pitch angle scattering
+         call max_scattering_angle(theta_max, v_shock(t), E)
+         l_0 = l_0 * (theta_max/pi)**2 ! Guess work
+         l_0_0 = l_0
          if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
-         ! Find step direction
-         r_sh0 = t_shock(t)                              ! shock position
+         ! Step direction
+         r_sh0 = t_shock(t)                              ! shock position WHY?
          d0 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! particle radial position
-         ! Non relativistic -> isotropic random walk
-         call isotropic(phi, theta)
+         if (num_steps_taken == 0) then
+            ! First step isotropic
+            call isotropic(phi, theta)
+         else
+            ! Following steps small angle
+            ! g: initial momentum vector
+            g(1) = cos(phi)*sin(theta)
+            g(2) = sin(phi)*sin(theta)
+            g(3) = cos(theta)
 
-         ! find step size and new position:
+            ! Random scattering angles within scattering cone in rotated frame
+            call scattering_angle(theta_e, phi_e, theta_max)
+
+            ! Scattered momentum vector in rotated frame
+            p(1) = cos(phi_e)*sin(theta_e)
+            p(2) = sin(phi_e)*sin(theta_e)
+            p(3) = cos(theta_e)
+
+            ! Rotate p back to lab frame and update momentum vector
+            call euler_RyRz(-theta, -phi, R_euler)
+            g = 0.d0
+            do i = 1, 3, 1
+               do j = 1, 3, 1
+                  g(i) = g(i) + R_euler(i, j)*p(j)
+               end do
+            end do
+
+            ! New angles
+            theta = atan2(sqrt(g(1)**2+g(2)**2), g(3))
+            phi = atan(g(2)/g(1))
+            if (g(1)<0.d0.and.g(2)>0) phi = phi+pi    
+            if (g(1)<0.d0.and.g(2)<0) phi = phi+pi        
+            if (g(1)>0.d0.and.g(2)<0) phi = phi+two_pi
+         end if
+
+         ! Number of steps
          if (dt >= l_0) then                     ! one random step of size l_0
             dE = dE*l_0/dt
             dt = l_0
@@ -93,12 +130,8 @@ contains
             call error('wrong step number', 0)
          end if
 
-         !!! perform random step(s) !!!
+         ! Perform step(s)
          do k = 1, n_step
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!
-            !!! Diffusion/advection !!!
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!
-
             ! distances before step
             r_sh1 = t_shock(t)                              ! old shock position
             d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! old distance/particle radial position
@@ -130,9 +163,209 @@ contains
             E = E + dE
             r_sh2 = t_shock(t)                                  ! new shock dist
 
-            !!!!!!!!!!!!!!!!!!!!!!
-            !!! Shock crossing !!!
-            !!!!!!!!!!!!!!!!!!!!!!
+            ! Check for shock crossing
+            if (d2 < r_sh2 .and. r_sh1 < d1) then ! Crossed shock (US->DS)
+               call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! angle of v_2 at pos x
+               v_2 = get_v_2(v_shock(t)) ! US sees DS approach at velocity v_2
+               if (v_2 <= 0.d0) call error('v_2<=0', 0)
+
+               cos_theta = &
+                  cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &
+                  sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
+                  cos(theta)*cos(theta_v)
+
+               gamma_v = 1.d0/sqrt(1.d0 - v_2**2)                 ! v_2 dimless (v_2 = beta = v/c)
+               E_old = E                                          ! Old energy
+               E = gamma_v*E*(1 - v_2*cos_theta)                  ! New energy
+               rel_energy_gain = (E - E_old)/E_old                ! rel energy gain
+               rel_energy_gain_sum = rel_energy_gain_sum + rel_energy_gain
+               accel = 1
+               num_crossings = num_crossings + 1
+
+              ! print *, "US -> DS"
+              ! print *, "E_old: ", E_old
+              ! print *, "E_new: ", E
+              ! print *, "E_new/E_old: ", E/E_old
+            else if (d2 > r_sh2 .and. r_sh1 > d1) then ! Cossed shock (DS -> US)
+               call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! direction of v_2 and shock
+               v_2 = get_v_2(v_shock(t)) ! DS sees US approach at same velocity v_2
+               if (v_2 <= 0.d0) call error('v_2<=0', 0)
+
+               cos_theta = &
+                  cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &
+                  sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
+                  cos(theta)*cos(theta_v)
+
+               gamma_v = 1.d0/sqrt(1.d0 - v_2**2)
+               E_old = E
+               E = gamma_v*E*(1 + v_2*cos_theta)
+               rel_energy_gain = (E - E_old)/E_old
+               rel_energy_gain_sum = rel_energy_gain_sum + rel_energy_gain
+               accel = 1
+               num_crossings = num_crossings + 1
+
+              ! print *, "US -> DS"
+              ! print *, "E_old: ", E_old
+              ! print *, "E_new: ", E
+              ! print *, "E_new/E_old: ", E/E_old
+            end if
+
+            v_2 = get_v_2(v_shock(t))
+            dmax = 3.d0*l_0_0/v_2
+            f = f + df*dt                      ! \int dt f(t)
+            delta = exp(-f)                    ! exp(-\int dt f(t))
+
+            ! exit, if a) too late, b) too far down-stream, or c) scattering:
+            if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta) then
+               if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
+                  ! write(*,*) 'tired',n_in,n_out
+                  r_sh0 = t_shock(t)
+                  d0 = sqrt(x(1)**2+x(2)**2+x(3)**2)
+                  if (t > t_max .and. d0 < r_sh0) then
+                     print *, "Time exit - particle in downstream - num_cross: ", num_crossings
+                  else if (t > t_max .and. d0 > r_sh0) then
+                     print *, "Time exit - particle in upstream - num_cross: ", num_crossings
+                  end if
+                  call store(pid, E, w, num_crossings, rel_energy_gain_sum)
+                  call store_raw(E, set, n_injected)
+                  print *, "Num shock crossings: ", num_crossings
+                  print *, "Num steps taken: ", num_steps_taken
+                  n_in = n_in - 1
+                  n_out = n_out + 1
+                  return
+               end if
+               if (r > delta) then                              ! decay or scattering
+                  write (*, *) 'should never happen...'
+                  stop
+               end if
+            end if
+
+         end do
+      end do
+   end subroutine pitch_angle_accel
+
+
+   subroutine isotropic_random_walk(set, n_injected)
+      ! Isotropic random walk shock acceleration
+      use user_variables, only: debug, t_max
+      use constants;
+      use particle_data, only: m_p
+      use event_internal
+      use result
+      use internal
+      use test_var, only: sec, accel
+
+      implicit none
+
+      integer, intent(in) :: set, n_injected
+      integer k, n_step
+      double precision r, m, f, df, dt, dE, delta, l_0, l_0_0
+      double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2
+      double precision ran0, R_L, t_shock, v_shock, get_v_2
+      integer, pointer :: pid, A, Z
+      double precision, pointer :: E, x(:), t, w
+      double precision :: gamma_v, cos_theta
+      double precision :: d0, r_sh0
+
+      ! ############
+      integer :: num_crossings, num_steps_taken
+      double precision :: rel_energy_gain, E_old, rel_energy_gain_sum
+
+      pid => event(n_in)%pid
+      A => event(n_in)%A
+      Z => event(n_in)%Z
+      E => event(n_in)%E
+      x => event(n_in)%x
+      t => event(n_in)%t
+      w => event(n_in)%w
+
+      d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
+      if (sec == 0 .and. abs(d1/t_shock(t) - 1.01d0) .gt. 1.d-6) then
+         call error('wrong initial condition, shock', 0)
+      end if
+
+      r = ran0()
+      m = A*m_p
+      f = 0.d0
+
+      rel_energy_gain_sum = 0
+      num_crossings = 0
+      num_steps_taken = 0
+
+      do
+         ! Find step size
+         df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
+         call scales_charged(m, Z, E, t, w, df, dt, dE)
+         l_0 = R_L(E, t)/dble(Z)
+         l_0_0 = l_0
+         if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
+
+         ! Find step direction
+         r_sh0 = t_shock(t)                              ! shock position
+         d0 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! particle radial position
+         ! Non relativistic -> isotropic random walk
+         call isotropic(phi, theta)
+
+         ! Number of steps
+         if (dt >= l_0) then                     ! one random step of size l_0
+            dE = dE*l_0/dt
+            dt = l_0
+            n_step = 1
+         else                                    ! n steps l0 in same direction
+            l_0 = dt
+            if (l_0_0/dt < 1.d3) then
+               n_step = int(l_0_0/dt + 0.5d0)
+            else                                 ! fast decays lead to overflow
+               n_step = 1000                     ! this should be enough
+            end if
+            if (debug > 0) write (*, *) 'E, step number', E, n_step
+         end if
+         if (n_step < 1) then
+            write (*, *) l_0_0, l_0
+            write (*, *) dt, df
+            write (*, *) A, Z
+            write (*, *) E
+            write (*, *) l_0_0/dt, n_step
+            call error('wrong step number', 0)
+         end if
+
+         ! Increment steps taken
+         num_steps_taken = num_steps_taken + 1
+
+         ! perform random step(s)
+         do k = 1, n_step
+            ! distances before step
+            r_sh1 = t_shock(t)                              ! old shock position
+            d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! old distance/particle radial position
+
+            ! Perform random step
+            if (d1 < r_sh1) then ! Particle in downstream
+               ! find direction of v_2 from position x (radially outward):
+               call radially_outward(phi_v,theta_v, x(1), x(2), x(3))
+
+               ! v_2: velocity of downstream as seen in US
+               v_2 = get_v_2(v_shock(t))
+               if (v_2 <= 0.d0) call error('v_2<=0', 0)
+
+               ! Lorentz transformed random step (advection)
+               gamma_v = 1.d0/sqrt(1.d0 - v_2**2)                 ! v_2 dimless (v_2 = beta = v/c)
+               x(1) = x(1) + v_2*cos(phi_v)*sin(theta_v)*dt + l_0*sin(theta)*cos(phi)/gamma_v
+               x(2) = x(2) + v_2*sin(phi_v)*sin(theta_v)*dt + l_0*sin(theta)*sin(phi)/gamma_v
+               x(3) = x(3) + v_2*cos(theta_v)*dt + l_0*cos(theta)/gamma_v
+            else ! Particle in upstream
+               ! random step (isotropic in current medium rest frame)
+               x(1) = x(1) + l_0*cos(phi)*sin(theta)
+               x(2) = x(2) + l_0*sin(phi)*sin(theta)
+               x(3) = x(3) + l_0*cos(theta)
+            end if
+
+            ! distances after step
+            d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! new particle distance
+            t = t + dt
+            E = E + dE
+            r_sh2 = t_shock(t)                                  ! new shock dist
+
+            ! Check for shock crossing
             if (d2 < r_sh2 .and. r_sh1 < d1) then ! Crossed shock (US->DS)
                call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! angle of v_2 at pos x
                v_2 = get_v_2(v_shock(t)) ! US sees DS approach at velocity v_2
@@ -187,6 +420,8 @@ contains
                   end if
                   call store(pid, E, w, num_crossings, rel_energy_gain_sum)
                   call store_raw(E, set, n_injected)
+                  print *, "Num shock crossings: ", num_crossings
+                  print *, "Num steps taken: ", num_steps_taken
                   n_in = n_in - 1
                   n_out = n_out + 1
                   return
@@ -256,42 +491,18 @@ contains
    end subroutine store
 
 
-   subroutine store_raw(En, set_num, particle_num)
+   subroutine store_raw(En, set_num, n_injected)
       ! Stores particles energies upon exit
       ! Raw, unbinned energies
-      use result
+      use result, only: exit_energies
+      use user_variables, only: n_start
       implicit none
       double precision, intent(in) :: En
-      integer, intent(in) :: set_num, particle_num
-      exit_energies(set_num, particle_num) = En
+      integer, intent(in) :: set_num, n_injected
+      integer :: idx
+      idx = n_injected + (set_num-1) * n_start
+      exit_energies(idx) = En
    end subroutine store_raw
 
 
-   subroutine anisotropic_upstream(phi, theta, x1, x2, x3)
-      ! Angles of anisotropized upstream particles
-      ! Limited, random deflection centered around the shock normal
-      use constants, only : pi, two_pi
-      use user_variables, only: gamma_sh
-      implicit none
-      double precision, intent(in) :: x1, x2, x3
-      double precision, intent(inout) :: phi, theta
-      double precision :: max_deflection, theta_def, phi_def
-      double precision :: ran0
-      max_deflection = 2/gamma_sh
-      call radially_outward(phi, theta, x1, x2, x3)
-      theta_def = -max_deflection + 2*max_deflection*ran0()
-      phi_def = -max_deflection + 2*max_deflection*ran0()
-      theta = theta + theta_def
-      phi = phi + phi_def
-      if (theta < 0) then
-         theta = -theta
-         phi = phi + pi
-      else if (theta > pi) then
-         theta = two_pi - theta
-         phi = phi + pi
-      endif
-      phi = modulo(phi, two_pi)
-   end subroutine anisotropic_upstream
-
-
-end module non_rel_acceleration
+end module acceleration
