@@ -91,16 +91,15 @@ end subroutine isotropic
 subroutine scattering_angle_dev(theta, phi)
    ! Random small angle within a cone centered around z-axis
    use constants, only: pi, two_pi
-   use user_variables, only: theta_max ! Maximal scattering angle 
+   use user_variables, only: theta_max ! Maximal scattering angle
    implicit none
    double precision, intent(out) :: phi, theta
    double precision :: ran0
 
    ! Random angle within the max scattering cone
-   theta = theta_max * ran0() ! Theta within max
-   phi = two_pi * ran0() ! Azimuthal angle phi isotropic
+   theta = theta_max*ran0() ! Theta within max
+   phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle_dev
-
 
 subroutine scattering_angle(theta, phi, theta_max)
    ! Random small angle within a cone centered around z-axis
@@ -111,10 +110,9 @@ subroutine scattering_angle(theta, phi, theta_max)
    double precision :: ran0
 
    ! Random angle within the max scattering cone
-   theta = theta_max * ran0() ! Theta within max
-   phi = two_pi * ran0() ! Azimuthal angle phi isotropic
+   theta = theta_max*ran0() ! Theta within max
+   phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle
-
 
 subroutine max_scattering_angle(theta_max, v_shock, E_particle)
    ! Computes the loss cone angle, and sets max_pitch scattering angle
@@ -127,17 +125,16 @@ subroutine max_scattering_angle(theta_max, v_shock, E_particle)
 
    ! Compute loss cone opening, theta_cone
    ! Set max scattering, theta_max, to 100% of loss cone angle
-   cos_theta_cone = v_shock*m_p/sqrt(E_particle**2 -m_p**2)
+   cos_theta_cone = v_shock*m_p/sqrt(E_particle**2 - m_p**2)
    if (abs(cos_theta_cone) > 1) call error("cosine exceeds 1, max_scattering_angle", 0)
    theta_cone = acos(cos_theta_cone)
-   theta_max = 1.0 * theta_cone
+   theta_max = 1.0*theta_cone
 end subroutine max_scattering_angle
-
 
 subroutine euler_RyRz(theta, phi, R)
    implicit none
    double precision, intent(in) :: theta, phi
-   double precision, intent(inout) :: R(3,3)
+   double precision, intent(inout) :: R(3, 3)
    double precision :: ct, cp, st, sp
 
    ct = cos(theta)
@@ -146,60 +143,66 @@ subroutine euler_RyRz(theta, phi, R)
    sp = sin(phi)
 
    ! R(column, row)
-   R(1,1) = ct*cp
-   R(1,2) = sp
-   R(1,3) = -st*cp
+   R(1, 1) = ct*cp
+   R(1, 2) = sp
+   R(1, 3) = -st*cp
 
-   R(2,1) = -ct*sp
-   R(2,2) = cp
-   R(2,3) = st*sp
+   R(2, 1) = -ct*sp
+   R(2, 2) = cp
+   R(2, 3) = st*sp
 
-   R(3,1) = st
-   R(3,2) = 0.d0
-   R(3,3) = ct
+   R(3, 1) = st
+   R(3, 2) = 0.d0
+   R(3, 3) = ct
 end subroutine euler_RyRz
-
 
 subroutine radially_outward(phi_rad, theta_rad, x1, x2, x3)
    ! Finds the angles corresponding to radially out at point x, i.e. shock normal
-   use constants, only : pi, two_pi
+   use constants, only: pi, two_pi
    implicit none
    double precision, intent(in) :: x1, x2, x3
    double precision, intent(inout) :: phi_rad, theta_rad
    theta_rad = atan2(sqrt(x1**2 + x2**2), x3)
    phi_rad = atan(x2/x1)
+   if (x1 == 0) then
+      if (x2 > 0) then
+         phi_rad = pi/4
+      else if (x2 < 0) then
+         phi_rad = 3*pi/4
+      else
+         phi_rad = pi
+      end if
+   end if
    if (x1 < 0.d0 .and. x2 > 0) phi_rad = phi_rad + pi
    if (x1 < 0.d0 .and. x2 < 0) phi_rad = phi_rad + pi
    if (x1 > 0.d0 .and. x2 < 0) phi_rad = phi_rad + two_pi
 end subroutine radially_outward
 
-
-double precision function get_v_2(v_shock) result(v)  
+double precision function get_v_2(v_shock) result(v)
    use user_variables, only: gamma_sh
    implicit none
    double precision, intent(in) :: v_shock
    if (v_shock <= 0.1 .and. 0 < v_shock) then
       ! Non relativistic regime
-      v = 0.75d0 * v_shock
+      v = 0.75d0*v_shock
    else if (0.9 <= v_shock .and. v_shock < 1) then
       ! (Ultra) relativistic regime
       v = 1.d0 - 1.d0/(gamma_sh**2)
    else if (0.1 < v_shock .and. v_shock < 0.9) then
       ! In between regimes
-      v = 0.75d0 * v_shock
+      v = 0.75d0*v_shock
       call error("v_shock in between regimes 0.1 < v_shock < 0.9", 1)
    else
       call error("v_shock outside of allowed range [0, 1]", 0)
    end if
 end function get_v_2
 
-
 subroutine matrix_vec_mult(M, vec)
    implicit none
    double precision, intent(in) :: M
    double precision, intent(inout) :: vec
    integer :: i, j
-   
+
    i = 0
    do i = 1, 3, 1
    do j = 1, 3, 1

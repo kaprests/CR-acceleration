@@ -5,7 +5,7 @@ from math import pi
 
 DATA_DIR = './Data/'
 t_max = 150
-theta_pi_frac = 0.4
+theta_pi_frac = 0.3
 theta = theta_pi_frac*pi
 
 if __name__ == "__main__":

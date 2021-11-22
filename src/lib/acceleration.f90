@@ -5,11 +5,10 @@ module acceleration
    public isotropic_random_walk, pitch_angle_accel
 contains
 
-
    subroutine pitch_angle_accel(set, n_injected)
       ! Pitch angle scattering shock acceleration
       use user_variables, only: debug, t_max
-      use constants;
+      use constants; 
       use particle_data, only: m_p
       use event_internal
       use result
@@ -32,7 +31,7 @@ contains
       integer :: num_crossings, num_steps_taken
       double precision :: rel_energy_gain, E_old, rel_energy_gain_sum
       double precision :: theta_max
-      double precision :: g(3), p(3), R_euler(3,3), theta_e, phi_e
+      double precision :: g(3), p(3), R_euler(3, 3), theta_e, phi_e
       integer :: i, j
 
       pid => event(n_in)%pid
@@ -62,10 +61,10 @@ contains
          call scales_charged(m, Z, E, t, w, df, dt, dE)
          l_0 = R_L(E, t)/dble(Z)
          l_0_0 = l_0
-         
+
          ! Adjust step size for pitch angle scattering
          call max_scattering_angle(theta_max, v_shock(t), E)
-         l_0 = l_0 * (theta_max/pi)**2 ! Guess work
+         l_0 = l_0*(theta_max/pi)**2 ! Guess work
          l_0_0 = l_0
          if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
@@ -75,6 +74,9 @@ contains
          if (num_steps_taken == 0) then
             ! First step isotropic
             call isotropic(phi, theta)
+
+            ! First step in radial direction
+            !call radially_outward(phi, theta, x(1), x(2), x(3))
          else
             ! Following steps small angle
             ! g: initial momentum vector
@@ -100,11 +102,11 @@ contains
             end do
 
             ! New angles
-            theta = atan2(sqrt(g(1)**2+g(2)**2), g(3))
+            theta = atan2(sqrt(g(1)**2 + g(2)**2), g(3))
             phi = atan(g(2)/g(1))
-            if (g(1)<0.d0.and.g(2)>0) phi = phi+pi    
-            if (g(1)<0.d0.and.g(2)<0) phi = phi+pi        
-            if (g(1)>0.d0.and.g(2)<0) phi = phi+two_pi
+            if (g(1) < 0.d0 .and. g(2) > 0) phi = phi + pi
+            if (g(1) < 0.d0 .and. g(2) < 0) phi = phi + pi
+            if (g(1) > 0.d0 .and. g(2) < 0) phi = phi + two_pi
          end if
 
          ! Number of steps
@@ -130,6 +132,9 @@ contains
             call error('wrong step number', 0)
          end if
 
+         ! Increment number of steps taken
+         num_steps_taken = num_steps_taken + 1
+
          ! Perform step(s)
          do k = 1, n_step
             ! distances before step
@@ -139,7 +144,7 @@ contains
             ! Perform random step
             if (d1 < r_sh1) then ! Particle in downstream
                ! find direction of v_2 from position x (radially outward):
-               call radially_outward(phi_v,theta_v, x(1), x(2), x(3))
+               call radially_outward(phi_v, theta_v, x(1), x(2), x(3))
 
                ! v_2: velocity of downstream as seen in US
                v_2 = get_v_2(v_shock(t))
@@ -182,10 +187,10 @@ contains
                accel = 1
                num_crossings = num_crossings + 1
 
-              ! print *, "US -> DS"
-              ! print *, "E_old: ", E_old
-              ! print *, "E_new: ", E
-              ! print *, "E_new/E_old: ", E/E_old
+               ! print *, "US -> DS"
+               ! print *, "E_old: ", E_old
+               ! print *, "E_new: ", E
+               ! print *, "E_new/E_old: ", E/E_old
             else if (d2 > r_sh2 .and. r_sh1 > d1) then ! Cossed shock (DS -> US)
                call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! direction of v_2 and shock
                v_2 = get_v_2(v_shock(t)) ! DS sees US approach at same velocity v_2
@@ -204,10 +209,10 @@ contains
                accel = 1
                num_crossings = num_crossings + 1
 
-              ! print *, "US -> DS"
-              ! print *, "E_old: ", E_old
-              ! print *, "E_new: ", E
-              ! print *, "E_new/E_old: ", E/E_old
+               ! print *, "US -> DS"
+               ! print *, "E_old: ", E_old
+               ! print *, "E_new: ", E
+               ! print *, "E_new/E_old: ", E/E_old
             end if
 
             v_2 = get_v_2(v_shock(t))
@@ -220,7 +225,7 @@ contains
                if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                   ! write(*,*) 'tired',n_in,n_out
                   r_sh0 = t_shock(t)
-                  d0 = sqrt(x(1)**2+x(2)**2+x(3)**2)
+                  d0 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
                   if (t > t_max .and. d0 < r_sh0) then
                      print *, "Time exit - particle in downstream - num_cross: ", num_crossings
                   else if (t > t_max .and. d0 > r_sh0) then
@@ -244,11 +249,10 @@ contains
       end do
    end subroutine pitch_angle_accel
 
-
    subroutine isotropic_random_walk(set, n_injected)
       ! Isotropic random walk shock acceleration
       use user_variables, only: debug, t_max
-      use constants;
+      use constants; 
       use particle_data, only: m_p
       use event_internal
       use result
@@ -341,7 +345,7 @@ contains
             ! Perform random step
             if (d1 < r_sh1) then ! Particle in downstream
                ! find direction of v_2 from position x (radially outward):
-               call radially_outward(phi_v,theta_v, x(1), x(2), x(3))
+               call radially_outward(phi_v, theta_v, x(1), x(2), x(3))
 
                ! v_2: velocity of downstream as seen in US
                v_2 = get_v_2(v_shock(t))
@@ -407,12 +411,12 @@ contains
             f = f + df*dt                      ! \int dt f(t)
             delta = exp(-f)                    ! exp(-\int dt f(t))
 
-   ! exit, if a) too late, b) too far down-stream, or c) scattering:
+            ! exit, if a) too late, b) too far down-stream, or c) scattering:
             if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta) then
                if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                   !              write(*,*) 'tired',n_in,n_out
                   r_sh0 = t_shock(t)
-                  d0 = sqrt(x(1)**2+x(2)**2+x(3)**2)
+                  d0 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
                   if (t > t_max .and. d0 < r_sh0) then
                      print *, "Time exit - particle in downstream - num_cross: ", num_crossings
                   else if (t > t_max .and. d0 > r_sh0) then
@@ -436,7 +440,6 @@ contains
       end do
    end subroutine isotropic_random_walk
 
-
    subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
       use user_variables, only: t_max
       use internal
@@ -459,12 +462,11 @@ contains
       dE = -dE_loss_syn
 
       if (abs(dE)/En > 1.d-2) call error('dE too large in scale', 1)
-   ! no sync. photo-production
+      ! no sync. photo-production
    end subroutine scales_charged
 
-
    subroutine store(pid, En, w, num_crossings, rel_energy_gain_sum)
-      use internal; use result, only : n_enbin, En_f, NE_esc, rel_energy_gain_total_sum
+      use internal; use result, only: n_enbin, En_f, NE_esc, rel_energy_gain_total_sum
       implicit none
       integer pid, i
       double precision En, w, l
@@ -485,11 +487,10 @@ contains
 
       En_f(pid, i) = En_f(pid, i) + w*En
       NE_esc(i) = NE_esc(i) + 1
-      rel_energy_gain_avg = rel_energy_gain_sum / num_crossings
+      rel_energy_gain_avg = rel_energy_gain_sum/num_crossings
       rel_energy_gain_total_sum = rel_energy_gain_total_sum + rel_energy_gain_sum
-   !  write(*,*) 'store: ',pid,i
+      !  write(*,*) 'store: ',pid,i
    end subroutine store
-
 
    subroutine store_raw(En, set_num, n_injected)
       ! Stores particles energies upon exit
@@ -500,9 +501,8 @@ contains
       double precision, intent(in) :: En
       integer, intent(in) :: set_num, n_injected
       integer :: idx
-      idx = n_injected + (set_num-1) * n_start
+      idx = n_injected + (set_num - 1)*n_start
       exit_energies(idx) = En
    end subroutine store_raw
-
 
 end module acceleration

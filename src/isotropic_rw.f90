@@ -22,12 +22,12 @@ program acceleration
    end do
 
    ! Write distance data to file
-   open(20, file=trim(outdir)//'/isotropic_rw_fdist_tmax'//trim(t_max_str), form='unformatted')
-   write(20) final_distances
-   close(20)
-   open(20, file=trim(outdir)//'/isotropic_rw_pos_tmax'//trim(t_max_str), form='unformatted')
-   write(20) final_positions
-   close(20)
+   open (20, file=trim(outdir)//'/isotropic_rw_fdist_tmax'//trim(t_max_str), form='unformatted')
+   write (20) final_distances
+   close (20)
+   open (20, file=trim(outdir)//'/isotropic_rw_pos_tmax'//trim(t_max_str), form='unformatted')
+   write (20) final_positions
+   close (20)
    close (99)
 
 end program acceleration
@@ -84,7 +84,7 @@ subroutine tracer(set, n_injected)
       n_in = n_in - 1
       return
    case (7, 145:159)
-      print *, "Starting particle # ", n_injected + (set-1) * n_start
+      print *, "Starting particle # ", n_injected + (set - 1)*n_start
       call random_walk(set, n_injected)
    case default
       write (*, *) 'A,pid', A, pid
@@ -128,7 +128,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    x(2) = 0
    x(3) = 0
 
-   do 
+   do
       ! Step size
       df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
       call scales_charged(m, Z, E, t, w, df, dt, dE)
@@ -145,13 +145,13 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          dE = dE*l_0/dt
          dt = l_0
          n_step = 1
-      else                                    
+      else
          ! n steps l0 in same direction
          print *, "more steps"
          l_0 = dt
          if (l_0_0/dt < 1.d3) then
             n_step = int(l_0_0/dt + 0.5d0)
-         else                                 
+         else
             ! fast decays lead to overflow
             n_step = 1000 ! this should be enough
          end if
@@ -170,9 +170,9 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
       num_steps_taken = num_steps_taken + 1
 
       ! Perform step(s)
-      do k = 1, n_step 
+      do k = 1, n_step
          d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2) ! Old distance
-       
+
          ! Random step
          x(1) = x(1) + l_0*cos(phi)*sin(theta)
          x(2) = x(2) + l_0*sin(phi)*sin(theta)
@@ -185,7 +185,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          dmax = 3.d0*l_0_0/v_2
          f = f + df*dt                      ! \int dt f(t)
          delta = exp(-f)                    ! exp(-\int dt f(t))
-         
+
          ! Exit when t_max exceeded
          if (t > t_max) then
             print *, "t max: ", t_max
@@ -215,7 +215,7 @@ subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
    else
       tau_eff = huge(0.d0)
    end if
-   
+
    !!!  tausyn = tau_syn(m,En,t)/dble(Z**2)                           ! synchrotron
    tausyn = huge(0.d0)
    dt = 9.d-3*min(tau_eff, tausyn)
@@ -236,8 +236,8 @@ subroutine store(df, set, n_injected, x1, x2, x3) ! df = final distance
    double precision, intent(in) :: df, x1, x2, x3
    integer, intent(in) :: set, n_injected
    integer idx
-   
-   idx = n_injected + (set-1)*n_start
+
+   idx = n_injected + (set - 1)*n_start
    final_distances(idx) = df
    final_positions(1, idx) = x1
    final_positions(2, idx) = x2

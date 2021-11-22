@@ -33,7 +33,7 @@ module user_variables
 
    ! For shockless random walks
    integer :: num_steps_tot = 10000
-   character(10) :: num_steps_tot_str 
+   character(10) :: num_steps_tot_str
    double precision :: theta_max_pi_frac = 1    ! fraction of pi
    double precision :: theta_max
    character(10) :: theta_max_str
@@ -169,7 +169,7 @@ module result
       E2N_i(2, n_tbin_in), &
       En_f(-pid_max:pid_max, n_enbin), &
       En_f_tot(-pid_max:pid_max, n_enbin), &
-   ! Protons only
+      ! Protons only
       NE_esc(n_enbin) = 0 ! # protons escaped at each energy(bin)
 
    double precision, allocatable :: exit_energies(:) ! # unbinned exit energies

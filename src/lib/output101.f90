@@ -51,10 +51,10 @@ subroutine output(set, n_proc)
       if (n_tot - N_ltE_esc > 0) write (9, 23) E, log10(E), NE_esc(j)/(n_tot - N_ltE_esc)
       write (50, 23) E, nu_tot
    end do
-!   close (20); close (21); close (22); close (23); close (24); close (25); 
-!   close (26); close (27); close (28); close (29); close (30); close (50); 
-   close(29)
-   close(9); 
+!   close (20); close (21); close (22); close (23); close (24); close (25);
+!   close (26); close (27); close (28); close (29); close (30); close (50);
+   close (29)
+   close (9); 
 23 format(24E16.6)
 
    En_f_tot = 0.d0
@@ -65,11 +65,11 @@ end subroutine output
 !============================================================================!
 subroutine output_raw
    use user_variables, only: filename, outdir_raw
-   use result, only : exit_energies
+   use result, only: exit_energies
    implicit none
-   open(10, file = trim(outdir_raw)//'/exit_energies'//filename//'.dat', form='unformatted') 
-   write(10) exit_energies
-   close(10)
+   open (10, file=trim(outdir_raw)//'/exit_energies'//filename//'.dat', form='unformatted')
+   write (10) exit_energies
+   close (10)
 end subroutine output_raw
 !============================================================================!
 !============================================================================!
@@ -77,12 +77,12 @@ subroutine banner(n_proc, i)
    use user_variables
    use SNR_data
    use internal
-   use result, only : rel_energy_gain_total_sum
+   use result, only: rel_energy_gain_total_sum
    implicit none
    integer n_proc, i
    double precision :: rel_energy_gain_total_average
-   
-   rel_energy_gain_total_average = rel_energy_gain_total_sum / (n_sets * n_start)
+
+   rel_energy_gain_total_average = rel_energy_gain_total_sum/(n_sets*n_start)
 
    write (*, *)
    write (*, *) ' files saved as ', filename

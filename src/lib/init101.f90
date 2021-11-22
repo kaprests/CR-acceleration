@@ -25,25 +25,25 @@ subroutine parse_cmd_arguments
    character(20) :: arg
    integer :: arg_int
    character(20), dimension(12), parameter :: flags = &
-                                             [ &
-                                             ! Integer:
-                                             '--nsets     ', &  ! j=1
-                                             '--nstart    ', &  ! j=2
-                                             '--debug     ', &  ! j=3
-                                             '--restart   ', &  ! j=4
-                                             '--iseedshift', &  ! j=5
-                                             '--injmod    ', &  ! j=6
-                                             ! Float (double precision):
-                                             '--vshock    ', &  ! j=7
-                                             '--gamma     ', &  ! j=8
-                                             ! Character
-                                             '--fname     ', &  ! j=9
-                                             ! Integer (shockless random walks)
-                                             '--nsteps    ', &  ! j=10
-                                             ! Float (shockless random walks)
-                                             '--max-pi-fr ', &  ! j=11
-                                             '--t-max     '  &  ! j=12
-                                             ]
+                                              [ &
+                                              ! Integer:
+                                              '--nsets     ', &  ! j=1
+                                              '--nstart    ', &  ! j=2
+                                              '--debug     ', &  ! j=3
+                                              '--restart   ', &  ! j=4
+                                              '--iseedshift', &  ! j=5
+                                              '--injmod    ', &  ! j=6
+                                              ! Float (double precision):
+                                              '--vshock    ', &  ! j=7
+                                              '--gamma     ', &  ! j=8
+                                              ! Character
+                                              '--fname     ', &  ! j=9
+                                              ! Integer (shockless random walks)
+                                              '--nsteps    ', &  ! j=10
+                                              ! Float (shockless random walks)
+                                              '--max-pi-fr ', &  ! j=11
+                                              '--t-max     ' &  ! j=12
+                                              ]
 
    n_args = command_argument_count()
    n_flags = 12
@@ -118,9 +118,9 @@ subroutine init_general(myid)
    double precision v_EDST, v_shock
    character(10) :: n_start_str, n_sets_str, v_shock_str, gamma_str
 
-   allocate(final_distances(n_start*n_sets))
-   allocate(drift_distances(100, n_start*n_sets))
-   allocate(final_positions(3, n_start*n_sets))
+   allocate (final_distances(n_start*n_sets))
+   allocate (drift_distances(100, n_start*n_sets))
+   allocate (final_positions(3, n_start*n_sets))
 
 ! Parse command line arguments, and apply given settings/config
 ! Default values in are code overridden by values in file (future)
@@ -168,7 +168,7 @@ subroutine init_general(myid)
    print *, "=========================="
 
 ! Allocate dimension of array storing unbinned/raw energies
-   allocate(exit_energies(n_sets*n_start))
+   allocate (exit_energies(n_sets*n_start))
 
 ! initialisation for random number (NumRec):
    iseed = 15321 + 2*(1 + iseed_shift)*(myid + 1)
@@ -255,7 +255,7 @@ subroutine inject !(i)
       t = 1.d2            ! t_inj_init
       x(1) = 0.d0
       x(2) = 0.d0
-      x(3) = t_shock(t) * 1.01
+      x(3) = t_shock(t)*1.01
    case (1, 2, 4)
       do
          r = ran0()
