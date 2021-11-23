@@ -62,43 +62,38 @@ subroutine parse_cmd_arguments
       print *, trim(flag)//' '//trim(arg)
       do j = 1, n_flags, 1
          if (flag == trim(flags(j))) then
-            if (j == 6) then
+            ! integer args
+            select case (j)
+            case (1)
+               read (arg, *) n_sets
+            case (2)
+               read (arg, *) n_start
+            case (3)
+               read (arg, *) debug
+            case (4)
+               read (arg, *) restart
+            case (5)
+               read (arg, *) iseed_shift
+            case (6)
                read (arg, *) inj_model
-            elseif (j == 7) then
-               ! vshock - float arg
+            case (7)
                read (arg, *) shock_velocity
                gamma_set = .false.
-            elseif (j == 8) then
-               ! gamma - float arg
+            case (8)
                read (arg, *) gamma_sh
                !shock_velocity = sqrt(1 - 1/(gamma_sh**2))
                shock_velocity = 1 - 1/(2*gamma_sh**2)
                gamma_set = .true.
-            elseif (j == 9) then
-               ! fname - string arg
+            case (9)
                basename = arg
-            else
-               ! integer args
-               select case (j)
-               case (1)
-                  read (arg, *) n_sets
-               case (2)
-                  read (arg, *) n_start
-               case (3)
-                  read (arg, *) debug
-               case (4)
-                  read (arg, *) restart
-               case (5)
-                  read (arg, *) iseed_shift
-               case (10)
-                  read (arg, *) num_steps_tot
-               case (11)
-                  read (arg, *) theta_max_pi_frac
-                  theta_max = pi*theta_max_pi_frac
-               case (12)
-                  read (arg, *) t_max
-               end select
-            end if
+            case (10)
+               read (arg, *) num_steps_tot
+            case (11)
+               read (arg, *) theta_max_pi_frac
+               theta_max = pi*theta_max_pi_frac
+            case (12)
+               read (arg, *) t_max
+            end select
             exit
          elseif (j == n_flags) then
             call error('Argument error, invalid flag: '//flag, 0)
@@ -170,7 +165,7 @@ subroutine init_general(myid)
    print *, "theta max: ", pi*theta_max_pi_frac
    print *, "=========================="
 
-! initialisation for random number (NumRec):
+   ! initialisation for random number (NumRec):
    iseed = 15321 + 2*(1 + iseed_shift)*(myid + 1)
 
    n_in = 0                         ! # of particles on stack
@@ -180,11 +175,11 @@ subroutine init_general(myid)
    d_em = log10(E_min_em) - 0.1d0
 
    if (myid == 0) then
-!   call test_int
+      !   call test_int
       open (unit=99, file=trim(outdir)//'/error'//filename)
       write (*, *) 'iseed = ', iseed
    end if
-! transition time between ED and ST phases (yr) (McKee)  ! init SNR_data variables
+   ! transition time between ED and ST phases (yr) (McKee)  ! init SNR_data variables
    t_ch = 423.d0/sqrt(E_snr/1.d51)*(M_ej/M_sun)**(5.d0/6.d0)/n_ISM**(1.d0/3.d0) ! yr
    R_ch = 3.07d0*(M_ej/M_sun)**(1.d0/3.d0)/n_ISM**(1.d0/3.d0)! pc
    v_ch = R_ch/t_ch
@@ -193,9 +188,9 @@ subroutine init_general(myid)
    R_EDST = 0.727d0*R_ch ! pc
    v_EDST = sqrt(2.d0*E_snr/M_ej)
 
-! start and end=transition ST-PDS, Truelove/McKee for zeta_m = 1.
+   ! start and end=transition ST-PDS, Truelove/McKee for zeta_m = 1.
    t_inj_fin = 1.33d4*(E_snr/1d51)**(3.d0/14.d0)/n_ISM**(4.d0/7.d0)
-!  t_inj_fin = t_max
+   !  t_inj_fin = t_max
 
    if (myid == 0 .and. inj_model > 0) then
       write (*, *)
