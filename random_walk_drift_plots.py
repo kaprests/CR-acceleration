@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation
 
 DATA_DIR = './Data/'
 t_max = 101
-theta_pi_frac = 0.1
+theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
 
 if __name__ == "__main__":
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     file = FortranFile(DATA_DIR+f'pitch_angle_rw_trajectories_tmax{t_max:.3f}_theta{theta:.3f}', 'r')
     data_sa_trajectories = file.read_reals()
     print(np.size(data_sa_trajectories))
-    data_sa_trajectories = np.reshape(data_sa_trajectories, (3, 10000, 1000))
+    data_sa_trajectories = np.reshape(data_sa_trajectories, (4, 10000, 1000))
 
     # Average drift histogram
     plt.hist(data_iso_dist)

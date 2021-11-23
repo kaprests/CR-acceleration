@@ -30,6 +30,7 @@ module user_variables
    character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
    character(10) :: outdir_raw = './RawData'
+   integer :: num_steps_log = 10000
 
    ! For shockless random walks
    integer :: num_steps_tot = 10000

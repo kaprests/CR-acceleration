@@ -119,6 +119,7 @@ subroutine init_general(myid)
    allocate (exit_energies(n_sets*n_start))
    allocate (num_crossings_total(n_sets*n_start))
    allocate (num_du_crossings(n_sets*n_start))
+   allocate(trajectories(n_start*n_sets, num_steps_log,4))
 
    ! Parse command line arguments, and apply given settings/config
    ! Default values in are code overridden by values in file (future)

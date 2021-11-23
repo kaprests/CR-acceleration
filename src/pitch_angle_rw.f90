@@ -11,10 +11,6 @@ program acceleration
    n_proc = 1
 
    call init(myid)
-
-   num_steps_log = 10000
-   allocate(trajectories(n_start*n_sets, num_steps_log, 3))
-   print *, "size trajectories: ",size(trajectories)
    
    do set = 1, n_sets
 
@@ -199,6 +195,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          trajectories(idx, num_steps_taken+1, 1) = x(1)
          trajectories(idx, num_steps_taken+1, 2) = x(2)
          trajectories(idx, num_steps_taken+1, 3) = x(3)
+         trajectories(idx, num_steps_taken+1, 4) = t
       end if
       ! Step direction 
       if (num_steps_taken == 0) then
