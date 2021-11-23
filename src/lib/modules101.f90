@@ -174,11 +174,14 @@ module result
 
    double precision, allocatable :: exit_energies(:) ! # unbinned exit energies
    double precision :: rel_energy_gain_total_sum
+   double precision, allocatable :: num_crossings_total(:) ! # number of shock crossings
+   double precision, allocatable :: num_du_crossings(:) ! (n_du)
 
    ! For shockless random walks
    double precision, allocatable :: final_distances(:)
    double precision, allocatable :: drift_distances(:, :)
    double precision, allocatable :: final_positions(:, :)
+   double precision, allocatable :: trajectories(:, :, :)
 end module result
 !==============================================================================!
 !==============================================================================!

@@ -9,9 +9,8 @@ if __name__ == "__main__":
     print(sys.argv)
 
     DATA_DIR = './Data/'
-    t_max = 150
+    t_max = 101
     theta_pi_fracs = np.array([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1])
-    theta_pi_fracs = np.array([1.0, 0.9, 0.8, 0.7, 0.6])
     theta_arr = np.array([pi*f for f in theta_pi_fracs])
     basename_iso = 'isotropic_rw'
     basename_sa = 'small_angle_rw'
@@ -26,9 +25,9 @@ if __name__ == "__main__":
         data_iso_dist = file.read_reals()
         iso_dist_avg[idx] = np.average(data_iso_dist)
 
-#        file = FortranFile(f'{DATA_DIR}{basename_sa}_fdist_tmax{t_max:.3f}_theta{theta:.3f}')
-#        data_sa_dist = file.read_reals()
-#        sa_dist_avg[idx] = np.average(data_sa_dist)
+        file = FortranFile(f'{DATA_DIR}{basename_sa}_fdist_tmax{t_max:.3f}_theta{theta:.3f}')
+        data_sa_dist = file.read_reals()
+        sa_dist_avg[idx] = np.average(data_sa_dist)
 
         file = FortranFile(f'{DATA_DIR}{basename_pa}_fdist_tmax{t_max:.3f}_theta{theta:.3f}')
         data_pa_dist = file.read_reals()
@@ -38,7 +37,7 @@ if __name__ == "__main__":
 
 #    plt.plot(theta_arr, rel_avg_drift, label="rel drift, sa/iso")
     plt.plot(theta_arr, iso_dist_avg, label="isotropic")
-#    plt.plot(theta_arr, sa_dist_avg, label="pitch angle, isotropic stepsizes")
+    plt.plot(theta_arr, sa_dist_avg, label="pitch angle, isotropic stepsizes")
     plt.plot(theta_arr, pa_dist_avg, label="pitch angle, adjusted stepsizes")
 #    plt.plot(theta_arr, sa_dist_avg*theta_pi_fracs, label="test")
 #    plt.plot(theta_arr, [1/(50*theta) for theta in theta_arr], label="K* 1/theta")
@@ -48,7 +47,7 @@ if __name__ == "__main__":
     plt.show()
 
     plt.plot(theta_pi_fracs, iso_dist_avg, label="isotropic")
-#    plt.plot(theta_pi_fracs, sa_dist_avg, label="pitch angle, isotropic stepsizes")
+    plt.plot(theta_pi_fracs, sa_dist_avg, label="pitch angle, isotropic stepsizes")
     plt.plot(theta_pi_fracs, pa_dist_avg, label="pitch angle, adjusted stepsizes")
 #    plt.plot(theta_pi_fracs, [1/(50*theta) for theta in theta_arr], label="K* 1/theta")
     plt.xlabel('theta_max/pi')

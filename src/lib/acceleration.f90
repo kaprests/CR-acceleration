@@ -232,7 +232,7 @@ contains
                      print *, "Time exit - particle in upstream - num_cross: ", num_crossings
                   end if
                   call store(pid, E, w, num_crossings, rel_energy_gain_sum)
-                  call store_raw(E, set, n_injected)
+                  call store_raw(E, set, n_injected, num_crossings)
                   print *, "Num shock crossings: ", num_crossings
                   print *, "Num steps taken: ", num_steps_taken
                   n_in = n_in - 1
@@ -423,7 +423,7 @@ contains
                      print *, "Time exit - particle in upstream - num_cross: ", num_crossings
                   end if
                   call store(pid, E, w, num_crossings, rel_energy_gain_sum)
-                  call store_raw(E, set, n_injected)
+                  call store_raw(E, set, n_injected, num_crossings)
                   print *, "Num shock crossings: ", num_crossings
                   print *, "Num steps taken: ", num_steps_taken
                   n_in = n_in - 1
@@ -487,22 +487,24 @@ contains
 
       En_f(pid, i) = En_f(pid, i) + w*En
       NE_esc(i) = NE_esc(i) + 1
+
       rel_energy_gain_avg = rel_energy_gain_sum/num_crossings
       rel_energy_gain_total_sum = rel_energy_gain_total_sum + rel_energy_gain_sum
       !  write(*,*) 'store: ',pid,i
    end subroutine store
 
-   subroutine store_raw(En, set_num, n_injected)
+   subroutine store_raw(En, set_num, n_injected, num_crossings)
       ! Stores particles energies upon exit
       ! Raw, unbinned energies
-      use result, only: exit_energies
+      use result, only: exit_energies, num_crossings_total
       use user_variables, only: n_start
       implicit none
       double precision, intent(in) :: En
-      integer, intent(in) :: set_num, n_injected
+      integer, intent(in) :: set_num, n_injected, num_crossings
       integer :: idx
       idx = n_injected + (set_num - 1)*n_start
       exit_energies(idx) = En
+      num_crossings_total(idx) = num_crossings
    end subroutine store_raw
 
 end module acceleration

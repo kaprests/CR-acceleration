@@ -44,7 +44,7 @@ small_angle_rw: $(LIB_FILES) $(SRC_DIR)/small_angle_rw.f90
 	$(FC) -J $(MOD_DIR) $(DFLAGS) $(LIB_FILES) $(SRC_DIR)/small_angle_rw.f90 -o $(BIN_DIR)/$@
 
 pitch_angle_rw: $(LIB_FILES) $(SRC_DIR)/pitch_angle_rw.f90
-	$(FC) -J $(MOD_DIR) $(DFLAGS) $(LIB_FILES) $(SRC_DIR)/pitch_angle_rw.f90 -o $(BIN_DIR)/$@
+	$(FC) -J $(MOD_DIR) $(PFLAGS) $(LIB_FILES) $(SRC_DIR)/pitch_angle_rw.f90 -o $(BIN_DIR)/$@
 
 ###################################
 # Just generation of pitch angles #

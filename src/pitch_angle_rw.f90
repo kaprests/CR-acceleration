@@ -4,7 +4,7 @@ program acceleration
    use result; use user_variables, only: n_sets, outdir, theta_max_str, t_max_str
    implicit none
    integer myid, n_proc
-   integer set
+   integer set, num_steps_log
 
 ! non-MPI values
    myid = 0
@@ -12,6 +12,10 @@ program acceleration
 
    call init(myid)
 
+   num_steps_log = 10000
+   allocate(trajectories(n_start*n_sets, num_steps_log, 3))
+   print *, "size trajectories: ",size(trajectories)
+   
    do set = 1, n_sets
 
       call start_particle(set, myid, n_proc)
@@ -25,8 +29,19 @@ program acceleration
    open(20, file=trim(outdir)//'/pitch_angle_rw_fdist_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
    write(20) final_distances
    close(20)
+
    open(20, file=trim(outdir)//'/pitch_angle_rw_pos_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
    write(20) final_positions
+   close(20)
+
+   print *, "Writing trajectories"
+   print *, "size: ", size(trajectories)
+   print *, trajectories(1, 90, 1)
+   print *, trajectories(2, 900, 1)
+   print *, trajectories(3, 90, 1)
+   print *, trajectories(100, 9000, 1)
+   open(20, file=trim(outdir)//'/pitch_angle_rw_trajectories_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
+   write(20) trajectories
    close(20)
    close (99)
 
@@ -111,8 +126,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    double precision :: g(3), p(3), R_euler(3,3), theta_e, phi_e
    integer i, j, k
    double precision :: theta_max_computed
-
-   num_steps_taken = 0
+   integer :: num_steps_total, idx
 
    pid => event(n_in)%pid
    A => event(n_in)%A
@@ -131,18 +145,61 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    x(2) = 0
    x(3) = 0
 
+   ! Step size
+   df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
+   call scales_charged(m, Z, E, t, w, df, dt, dE)
+   l_0 = R_L(E, t)/dble(Z)
+
+   ! Modify stepsize for pitch angle scattering
+   l_0 = l_0 * (theta_max/pi)**2 ! Guess work
+
+   l_0_0 = l_0 ! Why l_0_0
+   if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
+
+   ! Number of steps
+   if (dt >= l_0) then
+      ! one random step of size l_0
+      dE = dE*l_0/dt
+      dt = l_0
+      n_step = 1
+   else                                    
+      ! n steps l0 in same direction
+      print *, "more steps"
+      l_0 = dt
+      if (l_0_0/dt < 1.d3) then
+         n_step = int(l_0_0/dt + 0.5d0)
+      else                                 
+         ! fast decays lead to overflow
+         n_step = 1000 ! this should be enough
+      end if
+      if (debug > 0) write (*, *) 'E, step number', E, n_step
+   end if
+   if (n_step < 1) then
+      write (*, *) l_0_0, l_0
+      write (*, *) dt, df
+      write (*, *) A, Z
+      write (*, *) E
+      write (*, *) l_0_0/dt, n_step
+      call error('wrong step number', 0)
+   end if
+
+   num_steps_total = t_max/dt
+   num_steps_taken = 0
+
    do 
-      ! Step size
-      df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
-      call scales_charged(m, Z, E, t, w, df, dt, dE)
-      l_0 = R_L(E, t)/dble(Z)
-
-      ! Modify stepsize for pitch angle scattering
-      l_0 = l_0 * (theta_max/pi)**2 ! Guess work
-
-      l_0_0 = l_0 ! Why l_0_0
-      if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
-
+      ! log position
+      if (num_steps_taken+1 <= size(trajectories, 2)) then
+         idx = n_injected + (set-1)*n_start
+         !print *, '####################'
+         !print *, size(trajectories, 3)
+         !print *, 'idx:', idx
+         !print *, 'nsteps: ', num_steps_taken
+         !print *, x(1), x(2), x(3)
+         !print *, '####################'
+         trajectories(idx, num_steps_taken+1, 1) = x(1)
+         trajectories(idx, num_steps_taken+1, 2) = x(2)
+         trajectories(idx, num_steps_taken+1, 3) = x(3)
+      end if
       ! Step direction 
       if (num_steps_taken == 0) then
          ! First step isotropic
@@ -177,33 +234,6 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          if (g(1)<0.d0.and.g(2)>0) phi = phi+pi
          if (g(1)<0.d0.and.g(2)<0) phi = phi+pi    
          if (g(1)>0.d0.and.g(2)<0) phi = phi+two_pi
-      end if
-
-      ! Number of steps
-      if (dt >= l_0) then
-         ! one random step of size l_0
-         dE = dE*l_0/dt
-         dt = l_0
-         n_step = 1
-      else                                    
-         ! n steps l0 in same direction
-         print *, "more steps"
-         l_0 = dt
-         if (l_0_0/dt < 1.d3) then
-            n_step = int(l_0_0/dt + 0.5d0)
-         else                                 
-            ! fast decays lead to overflow
-            n_step = 1000 ! this should be enough
-         end if
-         if (debug > 0) write (*, *) 'E, step number', E, n_step
-      end if
-      if (n_step < 1) then
-         write (*, *) l_0_0, l_0
-         write (*, *) dt, df
-         write (*, *) A, Z
-         write (*, *) E
-         write (*, *) l_0_0/dt, n_step
-         call error('wrong step number', 0)
       end if
 
       ! Increment step count

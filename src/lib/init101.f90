@@ -121,14 +121,17 @@ subroutine init_general(myid)
    allocate (final_distances(n_start*n_sets))
    allocate (drift_distances(100, n_start*n_sets))
    allocate (final_positions(3, n_start*n_sets))
+   allocate (exit_energies(n_sets*n_start))
+   allocate (num_crossings_total(n_sets*n_start))
+   allocate (num_du_crossings(n_sets*n_start))
 
-! Parse command line arguments, and apply given settings/config
-! Default values in are code overridden by values in file (future)
-! Values set in file are overridden by command line arguments
+   ! Parse command line arguments, and apply given settings/config
+   ! Default values in are code overridden by values in file (future)
+   ! Values set in file are overridden by command line arguments
    ! TODO: read parameters from file
    call parse_cmd_arguments ! Command line arguments
 
-! Adds configuration metadata to filename
+   ! Adds configuration metadata to filename
    write (n_sets_str, '(I10)') n_sets
    write (n_start_str, '(I10)') n_start
    n_sets_str = adjustl(n_sets_str)
@@ -166,9 +169,6 @@ subroutine init_general(myid)
    print *, "t_max: ", t_max
    print *, "theta max: ", pi*theta_max_pi_frac
    print *, "=========================="
-
-! Allocate dimension of array storing unbinned/raw energies
-   allocate (exit_energies(n_sets*n_start))
 
 ! initialisation for random number (NumRec):
    iseed = 15321 + 2*(1 + iseed_shift)*(myid + 1)

@@ -51,6 +51,7 @@ subroutine output(set, n_proc)
       if (n_tot - N_ltE_esc > 0) write (9, 23) E, log10(E), NE_esc(j)/(n_tot - N_ltE_esc)
       write (50, 23) E, nu_tot
    end do
+
 !   close (20); close (21); close (22); close (23); close (24); close (25);
 !   close (26); close (27); close (28); close (29); close (30); close (50);
    close (29)
@@ -59,17 +60,22 @@ subroutine output(set, n_proc)
 
    En_f_tot = 0.d0
 
-   call output_raw
+   open (9, file=trim(outdir)//'/num_crossings'//filename, form='unformatted')
+   write (9) num_crossings_total
+   close (9)
+   ! call output_raw
 end subroutine output
 !============================================================================!
 !============================================================================!
 subroutine output_raw
    use user_variables, only: filename, outdir_raw
-   use result, only: exit_energies
+   use result, only: exit_energies, num_crossings_total
    implicit none
-   open (10, file=trim(outdir_raw)//'/exit_energies'//filename//'.dat', form='unformatted')
-   write (10) exit_energies
-   close (10)
+   print *, "RAW OUTPUT"
+
+   !open (10, file=trim(outdir_raw)//'/exit_energies'//filename//'.dat', form='unformatted')
+   !write (10) exit_energies
+   !close (10)
 end subroutine output_raw
 !============================================================================!
 !============================================================================!
