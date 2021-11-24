@@ -32,7 +32,7 @@ contains
       double precision :: rel_energy_gain, E_old, rel_energy_gain_sum
       double precision :: theta_max
       double precision :: g(3), p(3), R_euler(3, 3), theta_e, phi_e
-      integer :: i, j
+      integer :: i, j, idx
 
       pid => event(n_in)%pid
       A => event(n_in)%A
@@ -134,6 +134,15 @@ contains
 
          ! Increment number of steps taken
          num_steps_taken = num_steps_taken + 1
+
+         ! Log position
+         if (num_steps_taken+1 <= size(trajectories, 2)) then
+            idx = n_injected + (set-1)*n_start
+            trajectories(idx, num_steps_taken+1, 1) = x(1)
+            trajectories(idx, num_steps_taken+1, 2) = x(2)
+            trajectories(idx, num_steps_taken+1, 3) = x(3)
+            trajectories(idx, num_steps_taken+1, 4) = t
+         end if
 
          ! Perform step(s)
          do k = 1, n_step

@@ -63,6 +63,10 @@ subroutine output(set, n_proc)
    open (9, file=trim(outdir)//'/num_crossings'//filename, form='unformatted')
    write (9) num_crossings_total
    close (9)
+
+   open (9, file=trim(outdir)//'/trajectories'//filename, form='unformatted')
+   write (9) trajectories
+   close (9)
    ! call output_raw
 end subroutine output
 !============================================================================!

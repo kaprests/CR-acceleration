@@ -60,6 +60,7 @@ end subroutine start_particle
 subroutine tracer(set, n_injected)
    use event_internal; use internal, only: n_in
    use acceleration
+   use user_variables, only: isotropic
    implicit none
    integer id
    integer, pointer :: A, pid
@@ -80,7 +81,11 @@ subroutine tracer(set, n_injected)
       n_in = n_in - 1
       return
    case (7, 145:159)
-      call pitch_angle_accel(set, n_injected)
+      if (isotropic) then
+         call isotropic_random_walk(set, n_injected)
+      else
+         call pitch_angle_accel(set, n_injected)
+      end if
    case default
       write (*, *) 'A,pid', A, pid
       call error('wrong particle typ in tracer', 0)

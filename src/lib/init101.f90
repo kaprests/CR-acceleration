@@ -24,7 +24,7 @@ subroutine parse_cmd_arguments
    character(20) :: flag
    character(20) :: arg
    integer :: arg_int
-   character(20), dimension(12), parameter :: flags = &
+   character(20), dimension(13), parameter :: flags = &
                                               [ &
                                               ! Integer:
                                               '--nsets     ', &  ! j=1
@@ -42,11 +42,12 @@ subroutine parse_cmd_arguments
                                               '--nsteps    ', &  ! j=10
                                               ! Float (shockless random walks)
                                               '--max-pi-fr ', &  ! j=11
-                                              '--t-max     ' &  ! j=12
+                                              '--t-max     ', &  ! j=12
+                                              '--iso       '  &  ! j=13
                                               ]
 
    n_args = command_argument_count()
-   n_flags = 12
+   n_flags = size(flags)
    if (modulo(n_args, 2) .ne. 0) then
       ! Sort of crude error handling
       call error('Argument error, odd number of provided arguments and flags', 0)
@@ -81,8 +82,8 @@ subroutine parse_cmd_arguments
                gamma_set = .false.
             case (8)
                read (arg, *) gamma_sh
-               !shock_velocity = sqrt(1 - 1/(gamma_sh**2))
-               shock_velocity = 1 - 1/(2*gamma_sh**2)
+               shock_velocity = sqrt(1 - 1/(gamma_sh**2))
+               !shock_velocity = 1 - 1/(2*gamma_sh**2)
                gamma_set = .true.
             case (9)
                basename = arg
@@ -93,6 +94,14 @@ subroutine parse_cmd_arguments
                theta_max = pi*theta_max_pi_frac
             case (12)
                read (arg, *) t_max
+            case (13)
+               if (arg == "true") then
+                  isotropic = .true.
+               else if (arg == "false") then
+                  isotropic = .false.
+               else
+                  write (*, *) "Unrecognized argument for the --iso flag. Using default (false)."
+               end if
             end select
             exit
          elseif (j == n_flags) then
@@ -132,6 +141,9 @@ subroutine init_general(myid)
    write (n_start_str, '(I10)') n_start
    n_sets_str = adjustl(n_sets_str)
    n_start_str = adjustl(n_start_str)
+   if (isotropic) then
+      basename = '_iso'
+   end if
    filename = trim(basename)
    if (inj_model == 0) then
       ! constant shock velocity

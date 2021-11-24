@@ -26,13 +26,14 @@ module user_variables
    double precision :: gamma_sh                 ! gamma of constant velocity shock
    logical :: gamma_set = .false.                  ! True if gamma was set instead of vshock
 
-   character(4) ::  basename = '_mod'           ! name in output
+   character(4) ::  basename = '_pas'           ! name in output
    character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
    character(10) :: outdir_raw = './RawData'
    integer :: num_steps_log = 10000
+   logical :: isotropic = .false.               ! Use isotropic rw if true
 
-   ! For shockless random walks
+   ! For shockless random walks only
    integer :: num_steps_tot = 10000
    character(10) :: num_steps_tot_str
    double precision :: theta_max_pi_frac = 1    ! fraction of pi
@@ -177,12 +178,12 @@ module result
    double precision :: rel_energy_gain_total_sum
    double precision, allocatable :: num_crossings_total(:) ! # number of shock crossings
    double precision, allocatable :: num_du_crossings(:) ! (n_du)
+   double precision, allocatable :: trajectories(:, :, :)
 
-   ! For shockless random walks
+   ! For shockless random walks only
    double precision, allocatable :: final_distances(:)
    double precision, allocatable :: drift_distances(:, :)
    double precision, allocatable :: final_positions(:, :)
-   double precision, allocatable :: trajectories(:, :, :)
 end module result
 !==============================================================================!
 !==============================================================================!
