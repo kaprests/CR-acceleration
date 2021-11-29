@@ -225,24 +225,47 @@ if __name__ == "__main__":
     ## animation ##
     ###############
 
-    #fig = plt.figure()
-    #ax = fig.add_subplot(projection='3d')
-    #ax.set_xlabel('x')
-    #ax.set_ylabel('y')
-    #ax.set_zlabel('z')
-    #pos0 = data_sa_trajectories[:, 0, :]
-    #x = pos0[0]
-    #y = pos0[1]
-    #z = pos0[2]
-    #scat = ax.scatter(x, y, z, marker='o')
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
 
-    #def animate(i):
-    #    pos = data_sa_trajectories[:, i, :]
-    #    x = pos[0]
-    #    y = pos[1]
-    #    z = pos[2]
-    #    scat._offsets3d = (x, y, z)
-    #    #ax.scatter(x, y, z, marker='o')
+    num_steps = 10000
+    x_arr = np.zeros((num_steps, nsets*nstart))
+    y_arr = np.zeros((num_steps, nsets*nstart))
+    z_arr = np.zeros((num_steps, nsets*nstart))
 
-    #anim = FuncAnimation(fig, animate, frames=10000, interval=20, blit=True)
-    #plt.show()
+    for i in range(nsets):
+        set_pa = traj_pa.read_reals()
+        set_pa = np.reshape(set_pa, (num_steps, nstart, 4))
+
+        for j in range(num_steps):
+            xj = set_pa[j, :, 0]
+            yj = set_pa[j, :, 1]
+            zj = set_pa[j, :, 2]
+            n = len(xj)
+            x_arr[j, i*n:(i+1)*n] = xj
+            y_arr[j, i*n:(i+1)*n] = yj
+            z_arr[j, i*n:(i+1)*n] = zj
+
+    x = x_arr[0, :]
+    y = y_arr[0, :]
+    z = z_arr[0, :]
+    scat = ax.scatter(x, y, z, marker='o')
+
+    x_arr = x_arr[1:, :]
+    y_arr = y_arr[1:, :]
+    z_arr = z_arr[1:, :]
+
+
+    def animate(i):
+        # Called every time step
+        xi = x_arr[i, :]
+        yi = y_arr[i, :]
+        zi = z_arr[i, :]
+        scat._offsets3d = (xi, yi, zi)
+
+
+    anim = FuncAnimation(fig, animate, frames=10000, interval=20, blit=True)
+    plt.show()

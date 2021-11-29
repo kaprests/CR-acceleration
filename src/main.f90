@@ -13,6 +13,9 @@ program acceleration
    open(20, &
       file=trim(outdir)//'/trajectories'//'_stepexp'//trim(stepsize_exp_str)//filename, &
       form='unformatted')
+   open(21, &
+      file=trim(outdir)//'/cross_angles'//'_stepexp'//trim(stepsize_exp_str)//filename, &
+      form='unformatted')
 
    do set = 1, n_sets
 
@@ -25,9 +28,11 @@ program acceleration
       if (myid == 0) call output(set, n_proc)
 
       write(20) trajectories
+      write(21) crossing_flight_angles
    end do
 
    close(20)
+   close(21)
    !call output_finish
 
    close (99)

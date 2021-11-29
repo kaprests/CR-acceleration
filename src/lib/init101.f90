@@ -129,6 +129,7 @@ subroutine init_general(myid)
    allocate (num_crossings_total(n_sets*n_start))
 
    allocate (trajectories(4, n_start, num_steps_log))
+   allocate (crossing_flight_angles(2, n_start, num_cross_log))
 
    ! For shockless random walks only
    allocate (final_positions(3, n_start))

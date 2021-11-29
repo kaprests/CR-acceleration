@@ -198,11 +198,12 @@ contains
                rel_energy_gain_sum = rel_energy_gain_sum + rel_energy_gain
                accel = 1
                num_crossings = num_crossings + 1
-
-               ! print *, "US -> DS"
-               ! print *, "E_old: ", E_old
-               ! print *, "E_new: ", E
-               ! print *, "E_new/E_old: ", E/E_old
+               
+               ! log angles at crossing
+               if (num_crossings <= size(crossing_flight_angles, 3)) then
+                  crossing_flight_angles(1, n_injected, num_crossings) = theta
+                  crossing_flight_angles(2, n_injected, num_crossings) = phi
+               end if
             else if (d2 > r_sh2 .and. r_sh1 > d1) then ! Cossed shock (DS -> US)
                call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! direction of v_2 and shock
                v_2 = get_v_2(v_shock(t)) ! DS sees US approach at same velocity v_2
@@ -221,10 +222,10 @@ contains
                accel = 1
                num_crossings = num_crossings + 1
 
-               ! print *, "US -> DS"
-               ! print *, "E_old: ", E_old
-               ! print *, "E_new: ", E
-               ! print *, "E_new/E_old: ", E/E_old
+               if (num_crossings <= size(crossing_flight_angles, 3)) then
+                  crossing_flight_angles(1, n_injected, num_crossings) = theta
+                  crossing_flight_angles(2, n_injected, num_crossings) = phi
+               end if
             end if
 
             v_2 = get_v_2(v_shock(t))
