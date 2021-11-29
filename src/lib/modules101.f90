@@ -181,7 +181,7 @@ module result
    double precision, allocatable :: exit_energies(:) ! # unbinned exit energies
    double precision, allocatable :: num_crossings_total(:) ! # number of shock crossings
    double precision, allocatable :: trajectories(:, :, :)
-   double precision, allocatable :: crossing_flight_angles(:, :, :)
+   double precision, allocatable :: crossing_flight_angles(:, :)
 
 
    ! For shockless random walks only

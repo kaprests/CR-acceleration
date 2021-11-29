@@ -200,9 +200,8 @@ contains
                num_crossings = num_crossings + 1
                
                ! log angles at crossing
-               if (num_crossings <= size(crossing_flight_angles, 3)) then
-                  crossing_flight_angles(1, n_injected, num_crossings) = theta
-                  crossing_flight_angles(2, n_injected, num_crossings) = phi
+               if (num_crossings <= size(crossing_flight_angles, 2)) then
+                  crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
                end if
             else if (d2 > r_sh2 .and. r_sh1 > d1) then ! Cossed shock (DS -> US)
                call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! direction of v_2 and shock
@@ -222,9 +221,8 @@ contains
                accel = 1
                num_crossings = num_crossings + 1
 
-               if (num_crossings <= size(crossing_flight_angles, 3)) then
-                  crossing_flight_angles(1, n_injected, num_crossings) = theta
-                  crossing_flight_angles(2, n_injected, num_crossings) = phi
+               if (num_crossings <= size(crossing_flight_angles, 2)) then
+                  crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
                end if
             end if
 
