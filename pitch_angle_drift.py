@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation
 import sys
 
 DATA_DIR = './Data/'
-t_max = 101
+t_max = 110
 theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
 nsets = 10
