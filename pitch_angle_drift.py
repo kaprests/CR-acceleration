@@ -120,14 +120,20 @@ if __name__ == "__main__":
         zp = papos.T[2]
         final_drift_pa = np.append(final_drift_pa, xp**2 + yp**2 + zp**2)
         
-        ax.scatter(xi, yi, zi, color='green', marker='^')
-        ax.scatter(xp, yp, zp, color='orange', marker='o')
+        if i == 0:
+            ax.scatter(xi, yi, zi, color='green', marker='^', label='isotropic')
+            ax.scatter(xp, yp, zp, color='orange', marker='o', label='pitch angle')
+        else:
+            ax.scatter(xi, yi, zi, color='green', marker='^')
+            ax.scatter(xp, yp, zp, color='orange', marker='o')
     avg_drift_iso = np.average(np.sqrt(final_drift_iso))
     avg_drift_pa = np.average(np.sqrt(final_drift_pa))
 
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_zlabel('z')
+    ax.legend()
+    ax.set_title("Final positions")
     plt.show()
 
     #####################################
@@ -137,6 +143,7 @@ if __name__ == "__main__":
     plt.hist(final_drift_iso, label='isotropic')
     plt.hist(final_drift_pa, fill=False, label='pitch angle')
     plt.legend()
+    plt.title("drift distance distribution")
     plt.show()
 
     # Print final average distances
@@ -208,8 +215,10 @@ if __name__ == "__main__":
     for i in range(num_samples):
         avg_drifts_sampled_pa[i] = np.average(np.sqrt(drifts_sampled_pa[i, :]))
 
-    plt.plot(t_sample_iso, avg_drifts_sampled_iso)
-    plt.plot(t_sample_pa, avg_drifts_sampled_pa)
+    plt.plot(t_sample_iso, avg_drifts_sampled_iso, label='isotropic')
+    plt.plot(t_sample_pa, avg_drifts_sampled_pa, label='pitch angle')
+    plt.title("Average drift distance vs time")
+    plt.legend()
     plt.show()
 
     ###############
