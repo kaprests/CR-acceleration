@@ -6,6 +6,7 @@ from matplotlib.animation import FuncAnimation
 import sys
 
 DATA_DIR = './Data/'
+OUT_DIR = './figs/'
 t_max = 110
 theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
@@ -134,6 +135,7 @@ if __name__ == "__main__":
     ax.set_zlabel('z')
     ax.legend()
     ax.set_title("Final positions")
+    plt.savefig(f"{OUT_DIR}final_positions_theta-fr{theta_pi_frac:.3f}_tmax{t_max}.pdf")
     plt.show()
 
     #####################################
@@ -144,6 +146,7 @@ if __name__ == "__main__":
     plt.hist(final_drift_pa, fill=False, label='pitch angle')
     plt.legend()
     plt.title("drift distance distribution")
+    plt.savefig(f"{OUT_DIR}final_drift_distribution_theta-fr{theta_pi_frac:.3f}_tmax{t_max}.pdf")
     plt.show()
 
     # Print final average distances
@@ -219,6 +222,7 @@ if __name__ == "__main__":
     plt.plot(t_sample_pa, avg_drifts_sampled_pa, label='pitch angle')
     plt.title("Average drift distance vs time")
     plt.legend()
+    plt.savefig(f"{OUT_DIR}avg_drift_vs_time_theta-fr{theta_pi_frac:.3f}_tmax{t_max}.pdf")
     plt.show()
 
     ###############

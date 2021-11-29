@@ -1,4 +1,4 @@
- module acceleration
+module acceleration
    implicit none
    private
 
@@ -30,7 +30,7 @@ contains
       ! ############
       integer :: num_crossings, num_steps_taken
       double precision :: rel_energy_gain, E_old, rel_energy_gain_sum
-      double precision :: theta_max
+      double precision :: theta_max, theta_max0
       double precision :: g(3), p(3), R_euler(3, 3), theta_e, phi_e
       integer :: i, j, idx
 
@@ -68,6 +68,9 @@ contains
 
          ! Adjust step size for pitch angle scattering
          call max_scattering_angle(theta_max, v_shock(t), E)
+         if (num_steps_taken == 0) then
+            theta_max0 = theta_max
+         end if
          l_0 = l_0*(theta_max/pi)**stepsize_exp
          l_0_0 = l_0
          if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
@@ -244,8 +247,11 @@ contains
                   end if
                   call store(pid, E, w, num_crossings, rel_energy_gain_sum)
                   !call store_raw(E, set, n_injected, num_crossings)
+                  print *, "#############################"
                   print *, "Num shock crossings: ", num_crossings
                   print *, "Num steps taken: ", num_steps_taken
+                  print *, "Initial theta max: ", theta_max0
+                  print *, "Final theta max: ", theta_max
                   n_in = n_in - 1
                   n_out = n_out + 1
                   return
