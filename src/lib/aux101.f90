@@ -197,16 +197,16 @@ double precision function get_v_2(v_shock) result(v)
    end if
 end function get_v_2
 
-subroutine matrix_vec_mult(M, vec)
-   implicit none
-   double precision, intent(in) :: M
-   double precision, intent(inout) :: vec
-   integer :: i, j
-
-   i = 0
-   do i = 1, 3, 1
-   do j = 1, 3, 1
-      ! Look up or work it out
-   end do
-   end do
-end subroutine matrix_vec_mult
+!subroutine matrix_vec_mult(M, vec)
+!   implicit none
+!   double precision, intent(in) :: M
+!   double precision, intent(inout) :: vec
+!   integer :: i, j
+!
+!   i = 0
+!   do i = 1, 3, 1
+!   do j = 1, 3, 1
+!      ! Look up or work it out
+!   end do
+!   end do
+!end subroutine matrix_vec_mult

@@ -1,7 +1,7 @@
 !============================================================================!
 !============================================================================!
 subroutine init(myid)
-   use user_variables, only: restart
+   use user_variables
    implicit none
    integer myid
 
@@ -23,8 +23,7 @@ subroutine parse_cmd_arguments
    integer :: j, n_flags
    character(20) :: flag
    character(20) :: arg
-   integer :: arg_int
-   character(20), dimension(13), parameter :: flags = &
+   character(20), dimension(14), parameter :: flags = &
                                               [ &
                                               ! Integer:
                                               '--nsets     ', &  ! j=1
@@ -43,7 +42,8 @@ subroutine parse_cmd_arguments
                                               ! Float (shockless random walks)
                                               '--max-pi-fr ', &  ! j=11
                                               '--t-max     ', &  ! j=12
-                                              '--iso       '  &  ! j=13
+                                              '--iso       ', &  ! j=13
+                                              '--stepexp   '  &  ! j=14
                                               ]
 
    n_args = command_argument_count()
@@ -102,6 +102,8 @@ subroutine parse_cmd_arguments
                else
                   write (*, *) "Unrecognized argument for the --iso flag. Using default (false)."
                end if
+            case (14)
+               read (arg, *) stepsize_exp
             end select
             exit
          elseif (j == n_flags) then
@@ -122,13 +124,14 @@ subroutine init_general(myid)
    double precision v_EDST, v_shock
    character(10) :: n_start_str, n_sets_str, v_shock_str, gamma_str
 
-   allocate (final_distances(n_start*n_sets))
-   allocate (drift_distances(100, n_start*n_sets))
-   allocate (final_positions(3, n_start*n_sets))
+   ! Not finalized
    allocate (exit_energies(n_sets*n_start))
    allocate (num_crossings_total(n_sets*n_start))
-   allocate (num_du_crossings(n_sets*n_start))
-   allocate(trajectories(n_start*n_sets, num_steps_log,4))
+
+   allocate (trajectories(4, n_start, num_steps_log))
+
+   ! For shockless random walks only
+   allocate (final_positions(3, n_start))
 
    ! Parse command line arguments, and apply given settings/config
    ! Default values in are code overridden by values in file (future)
@@ -156,6 +159,10 @@ subroutine init_general(myid)
          write (v_shock_str, '(f10.3)') v_shock(0)
          filename = filename//'_vshock'//trim(adjustl(v_shock_str))
       end if
+   else if (inj_model == 1) then
+      filename = filename//'_injmod1'
+   else if (inj_model == 2) then
+      filename = filename//'_injmod2'
    end if
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
    print *, "filename metadata: ", filename
@@ -172,10 +179,13 @@ subroutine init_general(myid)
    theta_max_str = adjustl(theta_max_str)
    write (t_max_str, '(f10.3)') t_max
    t_max_str = adjustl(t_max_str)
+   write (stepsize_exp_str, '(f10.3)') stepsize_exp
+   stepsize_exp_str = adjustl(stepsize_exp_str)
    print *, "=========================="
    print *, "For shockless random walk:"
    print *, "t_max: ", t_max
    print *, "theta max: ", pi*theta_max_pi_frac
+   print *, "stepsize exp: ", stepsize_exp
    print *, "=========================="
 
    ! initialisation for random number (NumRec):

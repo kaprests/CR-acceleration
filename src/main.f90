@@ -1,25 +1,34 @@
 program acceleration
-   use result; use user_variables, only: n_sets
+   use result; use user_variables, only: n_sets, filename, outdir, stepsize_exp_str
    implicit none
    integer myid, n_proc !,ierr,n_array
    integer set
 
-! non-MPI values
+   ! non-MPI values
    myid = 0
    n_proc = 1
 
    call init(myid)
 
+   open(20, &
+      file=trim(outdir)//'/trajectories'//'_stepexp'//trim(stepsize_exp_str)//filename, &
+      form='unformatted')
+
    do set = 1, n_sets
 
       call start_particle(set, myid, n_proc)
 
-! non-MPI values
+      ! non-MPI values
       En_f_tot = En_f
       En_f_tot = En_f
 
       if (myid == 0) call output(set, n_proc)
+
+      write(20) trajectories
    end do
+
+   close(20)
+   !call output_finish
 
    close (99)
 
@@ -27,7 +36,7 @@ end program acceleration
 
 
 subroutine start_particle(set, myid, n_proc)
-   use user_variables, only: n_start, debug
+   use user_variables, only: n_start!, debug
    use internal, only: n_in
    use test_var, only: n_injected, sec
    implicit none
@@ -42,11 +51,11 @@ subroutine start_particle(set, myid, n_proc)
          call inject !(n_injected)
          n_in = 1
          sec = 0
-!        write(*,*)
-!        write(*,*) 'primary',n_injected,n_start
+         ! write(*,*)
+         ! write(*,*) 'primary',n_injected,n_start
       else
          sec = 1
-!        write(*,*) 'secondary'
+         ! write(*,*) 'secondary'
       end if
       call tracer(set, n_injected)
       if (myid == 0 .and. mod(n_injected*100, n_start) == 0 .and. sec == 0) &
@@ -76,7 +85,7 @@ subroutine tracer(set, n_injected)
    end if
 
    select case (id)
-!  case (102:108)                                        ! discard low A nuclei
+   ! case (102:108)                                      ! discard low A nuclei
    case (102:144)                                        ! discard low A nuclei
       n_in = n_in - 1
       return

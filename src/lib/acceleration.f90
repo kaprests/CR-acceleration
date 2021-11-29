@@ -1,4 +1,4 @@
-module acceleration
+ module acceleration
    implicit none
    private
 
@@ -7,7 +7,7 @@ contains
 
    subroutine pitch_angle_accel(set, n_injected)
       ! Pitch angle scattering shock acceleration
-      use user_variables, only: debug, t_max
+      use user_variables, only: debug, t_max, num_steps_log, stepsize_exp
       use constants; 
       use particle_data, only: m_p
       use event_internal
@@ -64,7 +64,7 @@ contains
 
          ! Adjust step size for pitch angle scattering
          call max_scattering_angle(theta_max, v_shock(t), E)
-         l_0 = l_0*(theta_max/pi)**2 ! Guess work
+         l_0 = l_0*(theta_max/pi)**stepsize_exp
          l_0_0 = l_0
          if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
@@ -136,12 +136,11 @@ contains
          num_steps_taken = num_steps_taken + 1
 
          ! Log position
-         if (num_steps_taken+1 <= size(trajectories, 2)) then
-            idx = n_injected + (set-1)*n_start
-            trajectories(idx, num_steps_taken+1, 1) = x(1)
-            trajectories(idx, num_steps_taken+1, 2) = x(2)
-            trajectories(idx, num_steps_taken+1, 3) = x(3)
-            trajectories(idx, num_steps_taken+1, 4) = t
+         if (num_steps_taken+1 <= size(trajectories, 3)) then
+            trajectories(1, n_injected, num_steps_taken+1) = x(1)
+            trajectories(2, n_injected, num_steps_taken+1) = x(2)
+            trajectories(3, n_injected, num_steps_taken+1) = x(3)
+            trajectories(4, n_injected, num_steps_taken+1) = t
          end if
 
          ! Perform step(s)
@@ -241,7 +240,7 @@ contains
                      print *, "Time exit - particle in upstream - num_cross: ", num_crossings
                   end if
                   call store(pid, E, w, num_crossings, rel_energy_gain_sum)
-                  call store_raw(E, set, n_injected, num_crossings)
+                  !call store_raw(E, set, n_injected, num_crossings)
                   print *, "Num shock crossings: ", num_crossings
                   print *, "Num steps taken: ", num_steps_taken
                   n_in = n_in - 1
@@ -450,7 +449,7 @@ contains
    end subroutine isotropic_random_walk
 
    subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
-      use user_variables, only: t_max
+      !use user_variables, only: t_max
       use internal
       implicit none
       integer Z
@@ -511,9 +510,9 @@ contains
       double precision, intent(in) :: En
       integer, intent(in) :: set_num, n_injected, num_crossings
       integer :: idx
-      idx = n_injected + (set_num - 1)*n_start
-      exit_energies(idx) = En
-      num_crossings_total(idx) = num_crossings
+      !idx = n_injected + (set_num - 1)*n_start
+      !exit_energies(idx) = En
+      !num_crossings_total(idx) = num_crossings
    end subroutine store_raw
 
 end module acceleration

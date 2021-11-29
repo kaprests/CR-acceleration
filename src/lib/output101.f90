@@ -5,7 +5,7 @@
 subroutine output(set, n_proc)
    use result; use SNR_data; use internal; use user_variables
    implicit none
-   integer set, n_proc, i, j, pid
+   integer set, n_proc, j, pid
    double precision l, E, m, nu_tot, N_ltE_esc
 
    call banner(n_proc, set)
@@ -25,7 +25,7 @@ subroutine output(set, n_proc)
    open (29, file=trim(outdir)//'/spec_prot'//filename)
 !   open (30, file=trim(outdir)//'/spec_neut'//filename)
 !   open (50, file=trim(outdir)//'/spec_nu'//filename)
-   open (9, file=trim(outdir)//'/esc_prot'//filename)      ! sensible unit number?
+   open (60, file=trim(outdir)//'/esc_prot'//filename)      ! sensible unit number?
    do j = 1, n_enbin
       nu_tot = 0.d0
       l = dble(j)*dn + d_f
@@ -55,32 +55,37 @@ subroutine output(set, n_proc)
 !   close (20); close (21); close (22); close (23); close (24); close (25);
 !   close (26); close (27); close (28); close (29); close (30); close (50);
    close (29)
-   close (9); 
+   close (60); 
 23 format(24E16.6)
 
    En_f_tot = 0.d0
-
-   open (9, file=trim(outdir)//'/num_crossings'//filename, form='unformatted')
-   write (9) num_crossings_total
-   close (9)
-
-   open (9, file=trim(outdir)//'/trajectories'//filename, form='unformatted')
-   write (9) trajectories
-   close (9)
-   ! call output_raw
 end subroutine output
 !============================================================================!
 !============================================================================!
-subroutine output_raw
-   use user_variables, only: filename, outdir_raw
-   use result, only: exit_energies, num_crossings_total
+subroutine output_finish
+   use user_variables, only: filename, outdir
+   use result
    implicit none
-   print *, "RAW OUTPUT"
+ !  open (9, file=trim(outdir)//'/num_crossings'//filename, form='unformatted')
+ !  write (9) num_crossings_total
+ !  close (9)
+
+ !  open (9, file=trim(outdir)//'/trajectories'//filename, form='unformatted')
+ !  write (9) trajectories
+ !  close (9)
+
+   !deallocate(drift_distances)
+   !deallocate(final_positions)
+
+   !deallocate(exit_energies)
+   !deallocate(num_crossings_total)
+   !deallocate(trajectories)
+   !deallocate(sample_positions)
 
    !open (10, file=trim(outdir_raw)//'/exit_energies'//filename//'.dat', form='unformatted')
    !write (10) exit_energies
    !close (10)
-end subroutine output_raw
+end subroutine output_finish
 !============================================================================!
 !============================================================================!
 subroutine banner(n_proc, i)

@@ -1,51 +1,50 @@
-!=============================================================================!
-!=============================================================================!
-program acceleration
-   use result; use user_variables, only: n_sets, outdir, theta_max_str, t_max_str
+program pitch_angle
+   use result; use user_variables, only: n_sets, outdir, theta_max_str, t_max_str, stepsize_exp, stepsize_exp_str
    implicit none
-   integer myid, n_proc
-   integer set, num_steps_log
+   integer myid, n_proc, set
 
-! non-MPI values
+   ! non-MPI values
    myid = 0
    n_proc = 1
 
    call init(myid)
    
+   open(20, &
+      file=trim(outdir)//'/pitch_angle_rw_pos_tmax'//trim(t_max_str)//'_theta'//&
+      trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str),form='unformatted')
+   open(21, &
+      file=trim(outdir)//'/pitch_angle_rw_trajectories_tmax'//&
+      trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str), &
+      form='unformatted')
+   open(22, &
+      file=trim(outdir)//'/pitch_angle_rw_samplepos_tmax'//&
+      trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str), &
+      form='unformatted')
+
    do set = 1, n_sets
 
       call start_particle(set, myid, n_proc)
 
-! non-MPI values
+      ! non-MPI values
       En_f_tot = En_f
       En_f_tot = En_f
+
+      write(20) final_positions
+      write(21) trajectories
+      write(22) sample_positions
    end do
 
-   ! Write distance data to file
-   open(20, file=trim(outdir)//'/pitch_angle_rw_fdist_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
-   write(20) final_distances
    close(20)
+   close(21)
+   close(22)
 
-   open(20, file=trim(outdir)//'/pitch_angle_rw_pos_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
-   write(20) final_positions
-   close(20)
-
-   print *, "Writing trajectories"
-   print *, "size: ", size(trajectories)
-   print *, trajectories(1, 90, 1)
-   print *, trajectories(2, 900, 1)
-   print *, trajectories(3, 90, 1)
-   print *, trajectories(100, 9000, 1)
-   open(20, file=trim(outdir)//'/pitch_angle_rw_trajectories_tmax'//trim(t_max_str)//'_theta'//theta_max_str, form='unformatted')
-   write(20) trajectories
-   close(20)
    close (99)
 
-end program acceleration
-!=============================================================================!
-!=============================================================================!
+end program pitch_angle
+
+
 subroutine start_particle(set, myid, n_proc)
-   use user_variables, only: n_start, debug
+   use user_variables, only: n_start!, debug
    use internal, only: n_in
    use test_var, only: n_injected, sec
    implicit none
@@ -70,11 +69,11 @@ subroutine start_particle(set, myid, n_proc)
    end do
 
 end subroutine start_particle
-!=============================================================================!
-!=============================================================================!
+
+
 subroutine tracer(set, n_injected)
    use event_internal; use internal, only: n_in
-   use user_variables, only: n_sets, n_start
+   use user_variables, only: n_start
    implicit none
    integer, intent(in) :: set, n_injected
    integer id
@@ -103,26 +102,25 @@ subroutine tracer(set, n_injected)
    end select
 
 end subroutine tracer
-!=============================================================================!
-!=============================================================================!
+
+
 subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
-   use user_variables, only: debug, t_max, theta_max
+   use user_variables, only: debug, t_max, theta_max, num_steps_log, stepsize_exp
    use constants; use particle_data, only: m_p
    use event_internal; use result
    use internal
-   use test_var, only: sec, accel
    implicit none
    integer n_step, num_steps_taken
    integer, intent(in) :: set, n_injected
    double precision r, m, f, df, dt, dE, delta, l_0, l_0_0
-   double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2
-   double precision ran0, R_L, t_shock, v_shock
+   double precision phi, theta, d1, d2, dmax, v_2
+   double precision ran0, R_L
    integer, pointer :: pid, A, Z
    double precision, pointer :: E, x(:), t, w
    double precision :: g(3), p(3), R_euler(3,3), theta_e, phi_e
    integer i, j, k
-   double precision :: theta_max_computed
-   integer :: num_steps_total, idx
+   double precision :: t0
+   integer :: num_steps_total, idx, sample_count, sample_int, num_samples
 
    pid => event(n_in)%pid
    A => event(n_in)%A
@@ -147,7 +145,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    l_0 = R_L(E, t)/dble(Z)
 
    ! Modify stepsize for pitch angle scattering
-   l_0 = l_0 * (theta_max/pi)**2 ! Guess work
+   l_0 = l_0 * (theta_max/pi)**stepsize_exp ! Guess work
 
    l_0_0 = l_0 ! Why l_0_0
    if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
@@ -179,24 +177,38 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
       call error('wrong step number', 0)
    end if
 
-   num_steps_total = t_max/dt
+   t0 = t
+   num_steps_total = abs((t0-t_max))/dt+1
+   sample_int = floor(real(num_steps_total/num_steps_log)) + 1 ! sample interval
+   num_samples = floor(real(num_steps_total/sample_int))
+   sample_count = 0
    num_steps_taken = 0
+   if (.not. allocated(sample_positions)) allocate(sample_positions(4, n_start, num_samples))
 
    do 
       ! log position
-      if (num_steps_taken+1 <= size(trajectories, 2)) then
-         idx = n_injected + (set-1)*n_start
-         !print *, '####################'
-         !print *, size(trajectories, 3)
-         !print *, 'idx:', idx
-         !print *, 'nsteps: ', num_steps_taken
-         !print *, x(1), x(2), x(3)
-         !print *, '####################'
-         trajectories(idx, num_steps_taken+1, 1) = x(1)
-         trajectories(idx, num_steps_taken+1, 2) = x(2)
-         trajectories(idx, num_steps_taken+1, 3) = x(3)
-         trajectories(idx, num_steps_taken+1, 4) = t
+      if (num_steps_taken+1 <= size(trajectories, 3)) then
+         trajectories(1, n_injected, num_steps_taken+1) = x(1)
+         trajectories(2, n_injected, num_steps_taken+1) = x(2)
+         trajectories(3, n_injected, num_steps_taken+1) = x(3)
+         trajectories(4, n_injected, num_steps_taken+1) = t
       end if
+
+      ! sample positions
+      if (modulo(num_steps_taken+1,sample_int)==0) then
+         if (sample_count > num_samples) then
+            call error('Sample count to big!', 1)
+         end if
+         if (sample_count == num_samples) then
+            print *, "Sample filled!"
+         end if
+         sample_count = sample_count + 1
+         sample_positions(1, n_injected, sample_count) = x(1)
+         sample_positions(2, n_injected, sample_count) = x(2)
+         sample_positions(3, n_injected, sample_count) = x(3)
+         sample_positions(4, n_injected, sample_count) = t
+      end if
+
       ! Step direction 
       if (num_steps_taken == 0) then
          ! First step isotropic
@@ -236,14 +248,6 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
       ! Increment step count
       num_steps_taken = num_steps_taken + 1
 
-      if (num_steps_taken == 1000) then
-         print *, "exceeded 1000 steps"
-      end if
-
-      if (num_steps_taken == 10000) then
-         print *, "exceeded 10000 steps"
-      end if
-
       ! Perform step(s)
       do k = 1, n_step 
          d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2) ! Old distance
@@ -263,9 +267,16 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          
          ! Exit when t_max exceeded
          if (t > t_max) then
-            print *, "t max: ", t_max
-            print *, "steps taken: ", num_steps_taken
-            call store(d2, set, n_injected, x(1), x(2), x(3))
+            idx = n_injected + (set-1)*n_start
+            if (idx == n_start*n_sets) then
+               print *, "t max: ", t_max
+               print *, "steps taken: ", num_steps_taken
+               print *, "num_steps_total: ", num_steps_total
+               print *, "num_steps_log: ", num_steps_log
+               print *, "sample_count: ", sample_count
+               print *, "num_samples: ", num_samples
+            end if
+            call store(n_injected, x(1), x(2), x(3))
             n_in = n_in - 1
             n_out = n_out + 1
             return
@@ -274,10 +285,9 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    end do
 
 end subroutine random_walk
-!=============================================================================!
-!=============================================================================!
+
+
 subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
-   use user_variables, only: t_max
    use internal
    implicit none
    integer Z
@@ -302,22 +312,16 @@ subroutine scales_charged(m, Z, En, t, w, df, dt, dE)
 
    ! no sync. photo-production
 end subroutine scales_charged
-!=============================================================================!
-!=============================================================================!
-subroutine store(df, set, n_injected, x1, x2, x3) ! df = final distance
-   use internal; use result
-   use user_variables, only: n_start
-   implicit none
-   double precision, intent(in) :: df, x1, x2, x3
-   integer, intent(in) :: set, n_injected
-   integer idx
-   
-   idx = n_injected + (set-1)*n_start
-   final_distances(idx) = df
-   final_positions(1, idx) = x1
-   final_positions(2, idx) = x2
-   final_positions(3, idx) = x3
-end subroutine store
 
-!=============================================================================!
-!=============================================================================!
+
+subroutine store(n_injected, x1, x2, x3)
+   use result, only: final_positions
+   implicit none
+   double precision, intent(in) :: x1, x2, x3
+   integer, intent(in) :: n_injected
+
+   final_positions(1, n_injected) = x1
+   final_positions(2, n_injected) = x2
+   final_positions(3, n_injected) = x3
+
+end subroutine store

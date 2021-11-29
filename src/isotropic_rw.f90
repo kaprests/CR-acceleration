@@ -22,9 +22,6 @@ program acceleration
    end do
 
    ! Write distance data to file
-   open (20, file=trim(outdir)//'/isotropic_rw_fdist_tmax'//trim(t_max_str), form='unformatted')
-   write (20) final_distances
-   close (20)
    open (20, file=trim(outdir)//'/isotropic_rw_pos_tmax'//trim(t_max_str), form='unformatted')
    write (20) final_positions
    close (20)
@@ -32,6 +29,11 @@ program acceleration
    write (20) trajectories
    close (20)
    close (99)
+
+   open(20, file=trim(outdir)//'/isotropic_rw_samplepos_tmax'//trim(t_max_str), form='unformatted')
+   write(20) sample_positions
+   close(20)
+
 
 end program acceleration
 !=============================================================================!
@@ -98,21 +100,19 @@ end subroutine tracer
 !=============================================================================!
 !=============================================================================!
 subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
-   use user_variables, only: debug, t_max
+   use user_variables, only: debug, t_max, num_steps_log
    use constants; use particle_data, only: m_p
    use event_internal; use result
    use internal
    use test_var, only: sec, accel
    implicit none
-   integer k, n_step, num_steps_taken, idx
+   integer k, n_step, num_steps_taken, idx, sample_count, sample_int, num_steps_total, num_samples
    integer, intent(in) :: set, n_injected
-   double precision r, m, f, df, dt, dE, delta, l_0, l_0_0
+   double precision r, m, f, df, dt, dE, delta, l_0, l_0_0, t0
    double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2
    double precision ran0, R_L, t_shock, v_shock
    integer, pointer :: pid, A, Z
    double precision, pointer :: E, x(:), t, w
-
-   num_steps_taken = 0
 
    pid => event(n_in)%pid
    A => event(n_in)%A
@@ -131,51 +131,77 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    x(2) = 0
    x(3) = 0
 
+   ! Step size
+   df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
+   call scales_charged(m, Z, E, t, w, df, dt, dE)
+   l_0 = R_L(E, t)/dble(Z)
+   l_0_0 = l_0
+   if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
+
+   ! Number of steps
+   if (dt >= l_0) then
+      ! one random step of size l_0
+      dE = dE*l_0/dt
+      dt = l_0
+      n_step = 1
+   else
+      ! n steps l0 in same direction
+      print *, "more steps"
+      l_0 = dt
+      if (l_0_0/dt < 1.d3) then
+         n_step = int(l_0_0/dt + 0.5d0)
+      else
+         ! fast decays lead to overflow
+         n_step = 1000 ! this should be enough
+      end if
+      if (debug > 0) write (*, *) 'E, step number', E, n_step
+   end if
+   if (n_step < 1) then
+      write (*, *) l_0_0, l_0
+      write (*, *) dt, df
+      write (*, *) A, Z
+      write (*, *) E
+      write (*, *) l_0_0/dt, n_step
+      call error('wrong step number', 0)
+   end if
+
+   t0 = t
+   num_steps_total = abs((t0-t_max))/dt+1
+   sample_int = floor(real(num_steps_total/num_steps_log)) + 1 ! sample interval
+   num_samples = floor(real(num_steps_total/sample_int))
+   sample_count = 0
+   num_steps_taken = 0
+   idx = n_injected + (set-1)*n_start
+
+   if (idx==1) then
+      allocate(sample_positions(n_sets*n_start, num_samples, 4))
+   end if
+
    do
       ! Log position
       if (num_steps_taken+1 <= size(trajectories, 2)) then
-         idx = n_injected + (set-1)*n_start
          trajectories(idx, num_steps_taken+1, 1) = x(1)    
          trajectories(idx, num_steps_taken+1, 2) = x(2)    
          trajectories(idx, num_steps_taken+1, 3) = x(3)    
          trajectories(idx, num_steps_taken+1, 4) = t
       endif
-      ! Step size
-      df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
-      call scales_charged(m, Z, E, t, w, df, dt, dE)
-      l_0 = R_L(E, t)/dble(Z)
-      l_0_0 = l_0
-      if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
+
+      if (modulo(num_steps_taken+1,sample_int)==0) then
+         sample_count = sample_count + 1
+         !print *, '####################'
+         !print *, size(trajectories, 3)
+         !print *, 'idx:', idx
+         !print *, 'nsteps: ', num_steps_taken
+         !print *, x(1), x(2), x(3)
+         !print *, '####################'
+         sample_positions(idx, sample_count, 1) = x(1)
+         sample_positions(idx, sample_count, 2) = x(2)
+         sample_positions(idx, sample_count, 3) = x(3)
+         sample_positions(idx, sample_count, 4) = t
+      end if
 
       ! Step direction (isotropic)
       call isotropic(phi, theta)
-
-      ! Number of steps
-      if (dt >= l_0) then
-         ! one random step of size l_0
-         dE = dE*l_0/dt
-         dt = l_0
-         n_step = 1
-      else
-         ! n steps l0 in same direction
-         print *, "more steps"
-         l_0 = dt
-         if (l_0_0/dt < 1.d3) then
-            n_step = int(l_0_0/dt + 0.5d0)
-         else
-            ! fast decays lead to overflow
-            n_step = 1000 ! this should be enough
-         end if
-         if (debug > 0) write (*, *) 'E, step number', E, n_step
-      end if
-      if (n_step < 1) then
-         write (*, *) l_0_0, l_0
-         write (*, *) dt, df
-         write (*, *) A, Z
-         write (*, *) E
-         write (*, *) l_0_0/dt, n_step
-         call error('wrong step number', 0)
-      end if
 
       ! Increment step count
       num_steps_taken = num_steps_taken + 1
@@ -201,6 +227,14 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
          if (t > t_max) then
             print *, "t max: ", t_max
             print *, "steps taken: ", num_steps_taken
+            idx = n_injected + (set-1)*n_start
+            if (idx == n_start*n_sets) then
+               print *, "t max: ", t_max
+               print *, "steps taken: ", num_steps_taken
+               print *, "num_steps_total: ", num_steps_total
+               print *, "num_steps_log: ", num_steps_log
+               print *, "sample_count: ", sample_count
+            end if
             call store(d2, set, n_injected, x(1), x(2), x(3))
             n_in = n_in - 1
             n_out = n_out + 1
@@ -249,7 +283,6 @@ subroutine store(df, set, n_injected, x1, x2, x3) ! df = final distance
    integer idx
 
    idx = n_injected + (set - 1)*n_start
-   final_distances(idx) = df
    final_positions(1, idx) = x1
    final_positions(2, idx) = x2
    final_positions(3, idx) = x3

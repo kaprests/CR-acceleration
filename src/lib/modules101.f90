@@ -30,17 +30,19 @@ module user_variables
    character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
    character(10) :: outdir_raw = './RawData'
-   integer :: num_steps_log = 10000
+   integer :: num_steps_log = 10000             ! Must reduce for large particle count
    logical :: isotropic = .false.               ! Use isotropic rw if true
 
    ! For shockless random walks only
    integer :: num_steps_tot = 10000
    character(10) :: num_steps_tot_str
-   double precision :: theta_max_pi_frac = 1    ! fraction of pi
+   double precision :: theta_max_pi_frac = 1.0  ! fraction of pi
    double precision :: theta_max
    character(10) :: theta_max_str
    double precision :: t_max = -1 ! -1 temp value, means not set (will default to t_max_str)
    character(10) :: t_max_str
+   double precision :: stepsize_exp = 2.1
+   character(10) :: stepsize_exp_str
 end module user_variables
 !==============================================================================!
 !==============================================================================!
@@ -173,17 +175,16 @@ module result
       En_f_tot(-pid_max:pid_max, n_enbin), &
       ! Protons only
       NE_esc(n_enbin) = 0 ! # protons escaped at each energy(bin)
+   double precision :: rel_energy_gain_total_sum
 
    double precision, allocatable :: exit_energies(:) ! # unbinned exit energies
-   double precision :: rel_energy_gain_total_sum
    double precision, allocatable :: num_crossings_total(:) ! # number of shock crossings
-   double precision, allocatable :: num_du_crossings(:) ! (n_du)
    double precision, allocatable :: trajectories(:, :, :)
 
+
    ! For shockless random walks only
-   double precision, allocatable :: final_distances(:)
-   double precision, allocatable :: drift_distances(:, :)
    double precision, allocatable :: final_positions(:, :)
+   double precision, allocatable :: sample_positions(:, :, :) ! Allocated in random walk/pitch angle routine
 end module result
 !==============================================================================!
 !==============================================================================!

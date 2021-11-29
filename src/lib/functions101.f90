@@ -36,7 +36,7 @@ end function R_p
 double precision function R_L(En, t) ! yr
    use SNR_data
    implicit none
-   double precision En, t, B     ! eV, yr
+   double precision En, B, t     ! eV, yr
 
    B = B0_turb                 ! constant in time
 
@@ -191,7 +191,7 @@ double precision function tau_syn(m, E, t)     ! pc
    use particle_data
    use SNR_data
    implicit none
-   double precision m, E, t, p_perp, B, chi, Psynch
+   double precision m, E, p_perp, B, chi, Psynch, t
    double precision, parameter :: B_cr = 4.14d13     !crit. B/Gauss, electrons
 
    p_perp = E**2 - m**2      ! we assume that p_perp = p

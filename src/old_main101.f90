@@ -96,7 +96,7 @@ end subroutine tracer
 !=============================================================================!
 !=============================================================================!
 subroutine diff_accel                      ! w/wo diffusion in trapping phase
-   use user_variables, only: debug, t_max
+   use user_variables, only: debug, t_max, inj_model
    use constants; use particle_data, only: m_p
    use event_internal; use result
    use internal
@@ -119,7 +119,9 @@ subroutine diff_accel                      ! w/wo diffusion in trapping phase
    w => event(n_in)%w
 
    d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
-   if (sec == 0 .and. abs(d1/t_shock(t) - 1.01d0) .gt. 1.d-6) then
+   if (sec == 0 .and. abs(d1/t_shock(t) - 1.01d0) .gt. 1.d-6 .and. inj_model == 0) then
+      call error('wrong initial condition, shock', 0)
+   else if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model <= 2) then
       call error('wrong initial condition, shock', 0)
    end if
 
