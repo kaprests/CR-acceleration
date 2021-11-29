@@ -1,6 +1,6 @@
-./Data/*
-!./Data/Readme.md
-./Modules/*
-!./Modules/Readme.md
-./bin/*
-!./bin/README.md
+/Data/*
+!/Data/Readme.md
+/Modules/*
+!/Modules/Readme.md
+/bin/*
+!/bin/README.md
