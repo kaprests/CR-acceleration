@@ -45,9 +45,9 @@ contains
       d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
       if (sec == 0 .and. abs(d1/t_shock(t) - 1.01d0) .gt. 1.d-6 .and. inj_model == 0) then
          call error('wrong initial condition, shock', 0)
-      else if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model ==1) then
+      else if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model == 1) then
          call error('wrong initial condition, shock', 0)
-      else if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model ==2) then
+      else if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model == 2) then
          call error('wrong initial condition, shock', 0)
       end if
 
@@ -143,11 +143,11 @@ contains
          num_steps_taken = num_steps_taken + 1
 
          ! Log position
-         if (num_steps_taken+1 <= size(trajectories, 3)) then
-            trajectories(1, n_injected, num_steps_taken+1) = x(1)
-            trajectories(2, n_injected, num_steps_taken+1) = x(2)
-            trajectories(3, n_injected, num_steps_taken+1) = x(3)
-            trajectories(4, n_injected, num_steps_taken+1) = t
+         if (num_steps_taken + 1 <= size(trajectories, 3)) then
+            trajectories(1, n_injected, num_steps_taken + 1) = x(1)
+            trajectories(2, n_injected, num_steps_taken + 1) = x(2)
+            trajectories(3, n_injected, num_steps_taken + 1) = x(3)
+            trajectories(4, n_injected, num_steps_taken + 1) = t
          end if
 
          ! Perform step(s)
@@ -201,7 +201,7 @@ contains
                rel_energy_gain_sum = rel_energy_gain_sum + rel_energy_gain
                accel = 1
                num_crossings = num_crossings + 1
-               
+
                ! log angles at crossing
                if (num_crossings <= size(crossing_flight_angles, 2)) then
                   crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
@@ -303,9 +303,9 @@ contains
       d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
       if (sec == 0 .and. abs(d1/t_shock(t) - 1.01d0) .gt. 1.d-6 .and. inj_model == 0) then
          call error('wrong initial condition, shock', 0)
-      else if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model ==1) then
+      else if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model == 1) then
          call error('wrong initial condition, shock', 0)
-      else if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model ==2) then
+      else if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model == 2) then
          call error('wrong initial condition, shock', 0)
       end if
 

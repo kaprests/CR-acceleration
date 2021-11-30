@@ -66,13 +66,13 @@ subroutine output_finish
    use user_variables, only: filename, outdir
    use result
    implicit none
- !  open (9, file=trim(outdir)//'/num_crossings'//filename, form='unformatted')
- !  write (9) num_crossings_total
- !  close (9)
+   !  open (9, file=trim(outdir)//'/num_crossings'//filename, form='unformatted')
+   !  write (9) num_crossings_total
+   !  close (9)
 
- !  open (9, file=trim(outdir)//'/trajectories'//filename, form='unformatted')
- !  write (9) trajectories
- !  close (9)
+   !  open (9, file=trim(outdir)//'/trajectories'//filename, form='unformatted')
+   !  write (9) trajectories
+   !  close (9)
 
    !deallocate(drift_distances)
    !deallocate(final_positions)

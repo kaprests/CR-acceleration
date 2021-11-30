@@ -43,7 +43,7 @@ subroutine parse_cmd_arguments
                                               '--max-pi-fr ', &  ! j=11
                                               '--t-max     ', &  ! j=12
                                               '--iso       ', &  ! j=13
-                                              '--stepexp   '  &  ! j=14
+                                              '--stepexp   ' &  ! j=14
                                               ]
 
    n_args = command_argument_count()

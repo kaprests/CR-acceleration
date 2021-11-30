@@ -183,7 +183,6 @@ module result
    double precision, allocatable :: trajectories(:, :, :)
    double precision, allocatable :: crossing_flight_angles(:, :)
 
-
    ! For shockless random walks only
    double precision, allocatable :: final_positions(:, :)
    double precision, allocatable :: sample_positions(:, :, :) ! Allocated in random walk/pitch angle routine
