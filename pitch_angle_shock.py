@@ -10,7 +10,9 @@ OUT_DIR = './figs/'
 nsets = 100
 nstart = 100
 stepexp = 2.1
-injmod = 1
+injmod = 2
+rw_model = 'iso'
+#rw_model = 'pas'
 
 #flags = ['--theta-pi-fr', '--tmax', '--stepexp']
 #
@@ -55,8 +57,8 @@ if __name__ == "__main__":
     ##########
 
     # first 10000 events (position and time)
-    traj_pa = FortranFile(DATA_DIR+f'trajectories_stepexp{stepexp:.3f}_pas_injmod{injmod}_nsets{nsets}_nstart{nstart}', 'r')
-
+    traj = FortranFile(DATA_DIR+f'trajectories_stepexp{stepexp:.3f}_{rw_model}_injmod{injmod}_nsets{nsets}_nstart{nstart}', 'r')
+    
     ###############
     ## animation ##
     ###############
@@ -73,13 +75,13 @@ if __name__ == "__main__":
     z_arr = np.zeros((num_steps, nsets*nstart))
 
     for i in range(nsets):
-        set_pa = traj_pa.read_reals()
-        set_pa = np.reshape(set_pa, (num_steps, nstart, 4))
+        dset = traj.read_reals()
+        dset = np.reshape(dset, (num_steps, nstart, 4))
 
         for j in range(num_steps):
-            xj = set_pa[j, :, 0]
-            yj = set_pa[j, :, 1]
-            zj = set_pa[j, :, 2]
+            xj = dset[j, :, 0]
+            yj = dset[j, :, 1]
+            zj = dset[j, :, 2]
             n = len(xj)
             x_arr[j, i*n:(i+1)*n] = xj
             y_arr[j, i*n:(i+1)*n] = yj
@@ -93,8 +95,8 @@ if __name__ == "__main__":
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
         ax.scatter(x, y, z)
-        ax.set_title(f'{i+1}/30')
-        plt.savefig(f"pa_shock_pos{i}.pdf")
+        ax.set_title(f'{i+1}/30 -- rw_model: {rw_model}')
+        plt.savefig(f"{OUT_DIR}{rw_model}_with_shock_positions{i}.pdf")
         plt.show()
 
         x_arr = x_arr[1:, :]

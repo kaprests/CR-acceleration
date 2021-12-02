@@ -92,6 +92,7 @@ subroutine parse_cmd_arguments
             case (11)
                read (arg, *) theta_max_pi_frac
                theta_max = pi*theta_max_pi_frac
+               theta_max_set = .true.
             case (12)
                read (arg, *) t_max
             case (13)
@@ -165,6 +166,11 @@ subroutine init_general(myid)
    else if (inj_model == 2) then
       filename = filename//'_injmod2'
    end if
+   if (theta_max_set) then
+      write (theta_max_str, '(f10.3)') pi*theta_max_pi_frac
+      theta_max_str = adjustl(theta_max_str)
+      filename = filename//'_theta-max'//trim(theta_max_str)
+   end if
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
    print *, "filename metadata: ", filename
 
@@ -176,8 +182,6 @@ subroutine init_general(myid)
    ! For shockless random walk
    write (num_steps_tot_str, '(I10)') num_steps_tot
    num_steps_tot_str = adjustl(num_steps_tot_str)
-   write (theta_max_str, '(f10.3)') pi*theta_max_pi_frac
-   theta_max_str = adjustl(theta_max_str)
    write (t_max_str, '(f10.3)') t_max
    t_max_str = adjustl(t_max_str)
    write (stepsize_exp_str, '(f10.3)') stepsize_exp

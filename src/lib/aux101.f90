@@ -114,21 +114,27 @@ subroutine scattering_angle(theta, phi, theta_max)
    phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle
 
-subroutine max_scattering_angle(theta_max, v_shock, E_particle)
+subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
    ! Computes the loss cone angle, and sets max_pitch scattering angle
    ! to some fraction of cone angle.
    use particle_data, only: m_p
+   use user_variables, only: theta_max, theta_max_set
    implicit none
-   double precision, intent(out) :: theta_max
+   double precision, intent(out) :: theta_max_computed
    double precision, intent(in) :: v_shock, E_particle
    double precision :: cos_theta_cone, theta_cone
 
-   ! Compute loss cone opening, theta_cone
-   ! Set max scattering, theta_max, to 100% of loss cone angle
-   cos_theta_cone = v_shock*m_p/sqrt(E_particle**2 - m_p**2)
-   if (abs(cos_theta_cone) > 1) call error("cosine exceeds 1, max_scattering_angle", 0)
-   theta_cone = acos(cos_theta_cone)
-   theta_max = 1.0*theta_cone
+   if (theta_max_set) then
+      ! Use user provided theta max
+      theta_max_computed = theta_max
+   else
+      ! Compute loss cone opening, theta_cone
+      ! Set max scattering, theta_max, to 100% of loss cone angle
+      cos_theta_cone = v_shock*m_p/sqrt(E_particle**2 - m_p**2)
+      if (abs(cos_theta_cone) > 1) call error("cosine exceeds 1, max_scattering_angle", 0)
+      theta_cone = acos(cos_theta_cone)
+      theta_max_computed = 1.0*theta_cone
+   end if
 end subroutine max_scattering_angle
 
 subroutine euler_RyRz(theta, phi, R)

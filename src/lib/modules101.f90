@@ -40,6 +40,7 @@ module user_variables
    double precision :: theta_max_pi_frac = 1.0  ! fraction of pi
    double precision :: theta_max
    character(10) :: theta_max_str
+   logical :: theta_max_set = .false.
    double precision :: t_max = -1 ! -1 temp value, means not set (will default to t_max_str)
    character(10) :: t_max_str
    double precision :: stepsize_exp = 2.1

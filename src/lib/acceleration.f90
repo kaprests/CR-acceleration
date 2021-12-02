@@ -357,6 +357,14 @@ contains
          ! Increment steps taken
          num_steps_taken = num_steps_taken + 1
 
+         ! Log position
+         if (num_steps_taken + 1 <= size(trajectories, 3)) then
+            trajectories(1, n_injected, num_steps_taken + 1) = x(1)
+            trajectories(2, n_injected, num_steps_taken + 1) = x(2)
+            trajectories(3, n_injected, num_steps_taken + 1) = x(3)
+            trajectories(4, n_injected, num_steps_taken + 1) = t
+         end if
+
          ! perform random step(s)
          do k = 1, n_step
             ! distances before step

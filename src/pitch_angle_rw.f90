@@ -1,7 +1,10 @@
 program pitch_angle
    use result; use user_variables, only: n_sets, outdir, theta_max_str, t_max_str, stepsize_exp, stepsize_exp_str
+   use internal, only: E_inj
    implicit none
    integer myid, n_proc, set
+
+   E_inj = 1.0d11
 
    ! non-MPI values
    myid = 0
