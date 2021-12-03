@@ -48,8 +48,8 @@ subroutine output(set, n_proc)
          N_ltE_esc = 0
       end if
       ! E, log10(E), p_esc(estimate)
-      if (n_tot - N_ltE_esc > 0) write (9, 23) E, log10(E), NE_esc(j)/(n_tot - N_ltE_esc)
-      write (50, 23) E, nu_tot
+      if (n_tot - N_ltE_esc > 0) write (60, 23) E, log10(E), NE_esc(j)/(n_tot - N_ltE_esc)
+      !write (50, 23) E, nu_tot
    end do
 
 !   close (20); close (21); close (22); close (23); close (24); close (25);
@@ -62,30 +62,30 @@ subroutine output(set, n_proc)
 end subroutine output
 !============================================================================!
 !============================================================================!
-subroutine output_finish
-   use user_variables, only: filename, outdir
-   use result
-   implicit none
-   !  open (9, file=trim(outdir)//'/num_crossings'//filename, form='unformatted')
-   !  write (9) num_crossings_total
-   !  close (9)
-
-   !  open (9, file=trim(outdir)//'/trajectories'//filename, form='unformatted')
-   !  write (9) trajectories
-   !  close (9)
-
-   !deallocate(drift_distances)
-   !deallocate(final_positions)
-
-   !deallocate(exit_energies)
-   !deallocate(num_crossings_total)
-   !deallocate(trajectories)
-   !deallocate(sample_positions)
-
-   !open (10, file=trim(outdir_raw)//'/exit_energies'//filename//'.dat', form='unformatted')
-   !write (10) exit_energies
-   !close (10)
-end subroutine output_finish
+!subroutine output_finish
+!   use user_variables, only: filename, outdir
+!   use result
+!   implicit none
+!     open (9, file=trim(outdir)//'/num_crossings'//filename, form='unformatted')
+!     write (9) num_crossings_total
+!     close (9)
+!
+!     open (9, file=trim(outdir)//'/trajectories'//filename, form='unformatted')
+!     write (9) trajectories
+!     close (9)
+!
+!   deallocate(drift_distances)
+!   deallocate(final_positions)
+!
+!   deallocate(exit_energies)
+!   deallocate(num_crossings_total)
+!   deallocate(trajectories)
+!   deallocate(sample_positions)
+!
+!   open (10, file=trim(outdir_raw)//'/exit_energies'//filename//'.dat', form='unformatted')
+!   write (10) exit_energies
+!   close (10)
+!end subroutine output_finish
 !============================================================================!
 !============================================================================!
 subroutine banner(n_proc, i)

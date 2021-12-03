@@ -94,10 +94,11 @@ subroutine scattering_angle_dev(theta, phi)
    use user_variables, only: theta_max ! Maximal scattering angle
    implicit none
    double precision, intent(out) :: phi, theta
-   double precision :: ran0
+   double precision :: ran0, z
 
    ! Random angle within the max scattering cone
-   theta = theta_max*ran0() ! Theta within max
+   z = cos(theta_max) + (1 - cos(theta_max)) * ran0()
+   theta = acos(z) ! Theta within max
    phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle_dev
 
@@ -107,10 +108,11 @@ subroutine scattering_angle(theta, phi, theta_max)
    implicit none
    double precision, intent(inout) :: phi, theta
    double precision, intent(in) :: theta_max
-   double precision :: ran0
+   double precision :: ran0, z
 
    ! Random angle within the max scattering cone
-   theta = theta_max*ran0() ! Theta within max
+   z = cos(theta_max) + (1 - cos(theta_max)) * ran0()
+   theta = acos(z) ! Theta within max
    phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle
 
