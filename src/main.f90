@@ -1,41 +1,170 @@
 program acceleration
+   use mpi
    use result; use user_variables, only: n_sets, filename, outdir, stepsize_exp_str
    implicit none
-   integer myid, n_proc !,ierr,n_array
+   integer myid, n_proc, ierr, n_array
    integer set
+   integer traj_filehandle, traj_array_count, traj_array_bsize, traj_disp
+   integer crossang_filehandle, crossang_array_count, crossang_array_bsize, crossang_disp
 
    ! non-MPI values
-   myid = 0
-   n_proc = 1
+   !myid = 0
+   !n_proc = 1
 
+   ! MPI setup
+   call MPI_INIT(ierr)  ! Initiate/create 
+   call MPI_COMM_RANK(MPI_COMM_WORLD, myid, ierr) ! Get proc id
+   call MPI_COMM_SIZE(MPI_COMM_WORLD, n_proc, ierr) ! Get communicator size (# procs)
+
+   ! Simulation setup
    call init(myid)
 
-   open(20, &
-      file=trim(outdir)//'/trajectories'//'_stepexp'//trim(stepsize_exp_str)//filename, &
-      form='unformatted')
-   open(21, &
-      file=trim(outdir)//'/cross_angles'//'_stepexp'//trim(stepsize_exp_str)//filename, &
-      form='unformatted')
+   ! Non-MPI data files
+   !open(20, &
+   !   file=trim(outdir)//'/trajectories'//'_stepexp'//trim(stepsize_exp_str)//filename, &
+   !   form='unformatted')
+   !open(21, &
+   !   file=trim(outdir)//'/cross_angles'//'_stepexp'//trim(stepsize_exp_str)//filename, &
+   !   form='unformatted')
+
+   ! MPI data file -- trajectories
+   call MPI_FILE_OPEN(&
+      MPI_COMM_WORLD, &
+      trim(outdir)//'/trajectories'//'_stepexp'//trim(stepsize_exp_str)//filename, &
+      MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
+      MPI_INFO_NULL, &
+      traj_filehandle, &
+      ierr &
+   )
+
+   if (ierr > 0) then
+      call MPI_FILE_DELETE(&
+         trim(outdir)//'/trajectories'//'_stepexp'//trim(stepsize_exp_str)//filename, &
+         MPI_INFO_NULL, &
+         ierr &
+      )
+
+      call MPI_FILE_OPEN(&
+         MPI_COMM_WORLD, &
+         trim(outdir)//'/trajectories'//'_stepexp'//trim(stepsize_exp_str)//filename, &
+         MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
+         MPI_INFO_NULL, &
+         traj_filehandle, &
+         ierr &
+      )
+   end if
+
+   ! MPI data file -- crossing flight angles
+   call MPI_FILE_OPEN(&
+      MPI_COMM_WORLD, &
+      trim(outdir)//'/cross_angles'//'_stepexp'//trim(stepsize_exp_str)//filename, &
+      MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
+      MPI_INFO_NULL, &
+      crossang_filehandle, &
+      ierr &
+   )
+
+   if (ierr > 0) then
+      call MPI_FILE_DELETE(&
+         trim(outdir)//'/cross_angles'//'_stepexp'//trim(stepsize_exp_str)//filename, &
+         MPI_INFO_NULL, &
+         ierr &
+      )
+
+      call MPI_FILE_OPEN(&
+         MPI_COMM_WORLD, &
+         trim(outdir)//'/cross_angles'//'_stepexp'//trim(stepsize_exp_str)//filename, &
+         MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
+         MPI_INFO_NULL, &
+         crossang_filehandle, &
+         ierr &
+      )
+   end if
 
    do set = 1, n_sets
 
       call start_particle(set, myid, n_proc)
 
       ! non-MPI values
-      En_f_tot = En_f
-      En_f_tot = En_f
+      !En_f_tot = En_f
+
+      n_array = (2*pid_max+1)*n_enbin
+
+      call MPI_REDUCE(&
+         En_f, &
+         En_f_tot, &
+         n_array, &
+         MPI_DOUBLE_PRECISION, &
+         MPI_SUM, &
+         0, &
+         MPI_COMM_WORLD, &
+         ierr &
+      )
 
       if (myid == 0) call output(set, n_proc)
 
-      write(20) trajectories
-      write(21) crossing_flight_angles
+      ! Non-MPI write
+      !write(20) trajectories
+      !write(21) crossing_flight_angles
+
+      ! Write trajectory data
+      traj_array_bsize = sizeof(trajectories)
+      traj_disp = traj_array_bsize * myid
+      traj_array_count = size(trajectories)
+
+      call MPI_FILE_SET_VIEW(&
+         traj_filehandle, &
+         traj_disp, &
+         MPI_INTEGER, &
+         MPI_INTEGER, &
+         'native', &
+         MPI_INFO_NULL, &
+         ierr &
+      )
+      call MPI_FILE_WRITE(&
+         traj_filehandle, &
+         trajectories, &
+         traj_array_count, &
+         MPI_DOUBLE_PRECISION, &
+         MPI_STATUS_IGNORE, &
+         ierr &
+      )
+
+      ! Write cross angle data
+      crossang_array_bsize = sizeof(crossing_flight_angles)
+      crossang_disp = traj_array_bsize * myid
+      crossang_array_count = size(crossing_flight_angles)
+
+      call MPI_FILE_SET_VIEW(&
+         crossang_filehandle, &
+         crossang_disp, &
+         MPI_INTEGER, &
+         MPI_INTEGER, &
+         'native', &
+         MPI_INFO_NULL, &
+         ierr &
+      )
+      call MPI_FILE_WRITE(&
+         crossang_filehandle, &
+         crossing_flight_angles, &
+         crossang_array_count, &
+         MPI_DOUBLE_PRECISION, &
+         MPI_STATUS_IGNORE, &
+         ierr &
+      )
+
    end do
 
-   close(20)
-   close(21)
+   !close(20)
+   !close(21)
    !call output_finish
 
+   call MPI_FILE_CLOSE(traj_filehandle, ierr)
+   call MPI_FILE_CLOSE(crossang_filehandle, ierr)
+
    close (99)
+
+   call MPI_FINALIZE(ierr)
 
 end program acceleration
 
