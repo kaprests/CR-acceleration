@@ -110,7 +110,7 @@ program acceleration
 
       ! Write trajectory data
       traj_array_bsize = sizeof(trajectories)
-      traj_disp = traj_array_bsize * set * myid
+      traj_disp = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)
       traj_array_count = size(trajectories)
 
       call MPI_FILE_SET_VIEW(&
@@ -133,7 +133,7 @@ program acceleration
 
       ! Write cross angle data
       crossang_array_bsize = sizeof(crossing_flight_angles)
-      crossang_disp = traj_array_bsize * myid
+      crossang_disp = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)
       crossang_array_count = size(crossing_flight_angles)
 
       call MPI_FILE_SET_VIEW(&
