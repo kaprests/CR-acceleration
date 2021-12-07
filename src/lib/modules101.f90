@@ -34,6 +34,9 @@ module user_variables
    integer :: num_cross_log = 100               ! Must reduce for large particle count
    logical :: isotropic = .false.               ! Use isotropic rw if true
 
+   ! Strings
+   character(10) :: n_start_str, n_sets_str, v_shock_str, gamma_str, n_proc_str
+
    ! For shockless random walks only
    integer :: num_steps_tot = 10000
    character(10) :: num_steps_tot_str
