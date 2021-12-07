@@ -174,7 +174,7 @@ subroutine init_general(myid, n_proc)
       filename = filename//'_theta-max'//trim(theta_max_str)
    end if
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
-   filename = filename//'n_proc'//trim(n_proc_str)
+   filename = filename//'_n_proc'//trim(n_proc_str)
    print *, "filename metadata: ", filename
 
    ! If no t_max given by user, set default exit time t_max_snr from SNR_data
