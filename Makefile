@@ -1,4 +1,4 @@
-FC = gfortran
+FC = mpifort
 DFLAGS = -Wall -C -g -fbacktrace #-ffpe-trap=zero,invalid,overflow,underflow
 PFLAGS = -O -w
 

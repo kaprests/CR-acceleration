@@ -1,15 +1,20 @@
 !=============================================================================!
 !=============================================================================!
 program acceleration
+   use mpi
    use result; use user_variables, only: n_sets, filename
    implicit none
-   integer myid, n_proc !,ierr,n_array
+   integer myid, n_proc, ierr, n_array
    integer set
    character(4) :: old_basename = '_old'
 
-! non-MPI values
-   myid = 0
-   n_proc = 1
+   ! non-MPI values
+   !myid = 0
+   !n_proc = 1
+
+   call MPI_INIT(ierr)
+   call MPI_COMM_RANK(MPI_COMM_WORLD, myid, ierr)
+   call MPI_COMM_SIZE(MPI_COMM_WORLD, n_proc, ierr)
 
    call init(myid)
 
@@ -22,15 +27,28 @@ program acceleration
 
       call start_particle(set, myid, n_proc)
 
-! non-MPI values
-      En_f_tot = En_f
-      En_f_tot = En_f
+      ! non-MPI values
+      !En_f_tot = En_f
+
+      n_array = (2*pid_max+1) * n_enbin
+
+      call MPI_REDUCE(&
+         En_f, &
+         En_f_tot, &
+         n_array, &
+         MPI_DOUBLE_PRECISION, &
+         MPI_SUM, &
+         0, &
+         MPI_COMM_WORLD, &
+         ierr &
+      )
 
       if (myid == 0) call output(set, n_proc)
    end do
 
    close (99)
 
+   call MPI_FINALIZE(ierr)
 end program acceleration
 !=============================================================================!
 !=============================================================================!
