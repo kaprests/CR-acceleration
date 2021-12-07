@@ -110,7 +110,7 @@ program acceleration
 
       ! Write trajectory data
       traj_array_bsize = sizeof(trajectories)
-      traj_disp = traj_array_bsize * myid
+      traj_disp = traj_array_bsize * set * myid
       traj_array_count = size(trajectories)
 
       call MPI_FILE_SET_VIEW(&
