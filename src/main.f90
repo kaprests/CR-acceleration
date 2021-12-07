@@ -4,8 +4,9 @@ program acceleration
    implicit none
    integer myid, n_proc, ierr, n_array
    integer set
-   integer traj_filehandle, traj_array_count, traj_array_bsize, traj_disp
-   integer crossang_filehandle, crossang_array_count, crossang_array_bsize, crossang_disp
+   integer traj_filehandle, traj_array_count, traj_array_bsize
+   integer crossang_filehandle, crossang_array_count, crossang_array_bsize
+   integer(kind=MPI_OFFSET_KIND) :: traj_disp, crossang_disp
 
    ! non-MPI values
    !myid = 0
