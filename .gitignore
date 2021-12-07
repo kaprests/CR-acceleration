@@ -4,3 +4,4 @@
 !/Modules/Readme.md
 /bin/*
 !/bin/README.md
+/figs/*.pdf
