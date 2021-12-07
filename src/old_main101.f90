@@ -16,7 +16,7 @@ program acceleration
    call MPI_COMM_RANK(MPI_COMM_WORLD, myid, ierr)
    call MPI_COMM_SIZE(MPI_COMM_WORLD, n_proc, ierr)
 
-   call init(myid)
+   call init(myid, n_proc)
 
    ! overwrite filename
    print *, 'Overwriting filename'

@@ -8,25 +8,13 @@ program acceleration
    integer crossang_filehandle, crossang_array_count, crossang_array_bsize
    integer(kind=MPI_OFFSET_KIND) :: traj_disp, crossang_disp
 
-   ! non-MPI values
-   !myid = 0
-   !n_proc = 1
-
    ! MPI setup
    call MPI_INIT(ierr)  ! Initiate/create 
    call MPI_COMM_RANK(MPI_COMM_WORLD, myid, ierr) ! Get proc id
    call MPI_COMM_SIZE(MPI_COMM_WORLD, n_proc, ierr) ! Get communicator size (# procs)
 
    ! Simulation setup
-   call init(myid)
-
-   ! Non-MPI data files
-   !open(20, &
-   !   file=trim(outdir)//'/trajectories'//'_stepexp'//trim(stepsize_exp_str)//filename, &
-   !   form='unformatted')
-   !open(21, &
-   !   file=trim(outdir)//'/cross_angles'//'_stepexp'//trim(stepsize_exp_str)//filename, &
-   !   form='unformatted')
+   call init(myid, n_proc)
 
    ! MPI data file -- trajectories
    call MPI_FILE_OPEN(&
@@ -86,9 +74,6 @@ program acceleration
 
       call start_particle(set, myid, n_proc)
 
-      ! non-MPI values
-      !En_f_tot = En_f
-
       n_array = (2*pid_max+1)*n_enbin
 
       call MPI_REDUCE(&
@@ -103,10 +88,6 @@ program acceleration
       )
 
       if (myid == 0) call output(set, n_proc)
-
-      ! Non-MPI write
-      !write(20) trajectories
-      !write(21) crossing_flight_angles
 
       ! Write trajectory data
       traj_array_bsize = sizeof(trajectories)
@@ -156,8 +137,6 @@ program acceleration
 
    end do
 
-   !close(20)
-   !close(21)
    !call output_finish
 
    call MPI_FILE_CLOSE(traj_filehandle, ierr)

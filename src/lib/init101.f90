@@ -1,11 +1,11 @@
 !============================================================================!
 !============================================================================!
-subroutine init(myid)
+subroutine init(myid, n_proc)
    use user_variables
    implicit none
-   integer myid
+   integer, intent(in) :: myid, n_proc
 
-   call init_general(myid)
+   call init_general(myid, n_proc)
    call init_inject_spec
 
 ! if (myid==0.and.restart>0) call read_old_results
@@ -115,15 +115,15 @@ subroutine parse_cmd_arguments
 end subroutine parse_cmd_arguments
 !============================================================================!
 !============================================================================!
-subroutine init_general(myid)
+subroutine init_general(myid, n_proc)
    use internal
    use user_variables
    use SNR_data
    use result
    implicit none
-   integer myid
+   integer, intent(in) :: myid, n_proc
    double precision v_EDST, v_shock
-   character(10) :: n_start_str, n_sets_str, v_shock_str, gamma_str
+   !character(10) :: n_start_str, n_sets_str, , v_shock_str, gamma_str
 
    ! Not finalized
    allocate (exit_energies(n_sets*n_start))
@@ -144,8 +144,10 @@ subroutine init_general(myid)
    ! Adds configuration metadata to filename
    write (n_sets_str, '(I10)') n_sets
    write (n_start_str, '(I10)') n_start
+   write (n_proc_str, '(I10)') n_proc
    n_sets_str = adjustl(n_sets_str)
    n_start_str = adjustl(n_start_str)
+   n_proc_str = adjustl(n_proc_str)
    if (isotropic) then
       basename = '_iso'
    end if
@@ -172,6 +174,7 @@ subroutine init_general(myid)
       filename = filename//'_theta-max'//trim(theta_max_str)
    end if
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
+   filename = filename//'n_proc'//trim(n_proc_str)
    print *, "filename metadata: ", filename
 
    ! If no t_max given by user, set default exit time t_max_snr from SNR_data
