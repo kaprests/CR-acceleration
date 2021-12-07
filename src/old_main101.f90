@@ -121,8 +121,10 @@ subroutine diff_accel                      ! w/wo diffusion in trapping phase
    d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
    if (sec == 0 .and. abs(d1/t_shock(t) - 1.01d0) .gt. 1.d-6 .and. inj_model == 0) then
       call error('wrong initial condition, shock', 0)
-   else if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model <= 2) then
-      call error('wrong initial condition, shock', 0)
+   else if(inj_model > 0) then
+      if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6 .and. inj_model <= 2) then
+         call error('wrong initial condition, shock', 0)
+      end if
    end if
 
    r = ran0()
