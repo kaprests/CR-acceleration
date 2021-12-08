@@ -61,7 +61,7 @@ program pitch_angle
    ! MPI data file -- Trajectories
    call MPI_FILE_OPEN(&
       MPI_COMM_WORLD, &
-      trim(outdir)//'/pitch_angle_rw_trajectories_tmax'//&
+      trim(outdir)//'/pas_rw_trajectories_tmax'//&
       trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
       '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
       MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
@@ -71,7 +71,7 @@ program pitch_angle
    )
    if (ierr > 0) then
       call MPI_FILE_DELETE(&
-         trim(outdir)//'/pitch_angle_rw_trajectories_tmax'//&
+         trim(outdir)//'/pas_rw_trajectories_tmax'//&
          trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
          '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
          MPI_INFO_NULL, &
@@ -79,7 +79,7 @@ program pitch_angle
       )
       call MPI_FILE_OPEN(&
          MPI_COMM_WORLD, &
-         trim(outdir)//'/pitch_angle_rw_trajectories_tmax'//&
+         trim(outdir)//'/pas_rw_trajectories_tmax'//&
          trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
          '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
          MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
@@ -92,7 +92,7 @@ program pitch_angle
    ! MPI dat file -- sampled positions
    call MPI_FILE_OPEN(&
       MPI_COMM_WORLD, &
-      trim(outdir)//'/pitch_angle_rw_samplepos_tmax'//&
+      trim(outdir)//'/pas_rw_samplepos_tmax'//&
       trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
       '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
       MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
@@ -102,7 +102,7 @@ program pitch_angle
    )
    if (ierr > 0) then
       call MPI_FILE_DELETE(&
-         trim(outdir)//'/pitch_angle_rw_samplepos_tmax'//&
+         trim(outdir)//'/pas_rw_samplepos_tmax'//&
          trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
          '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
          MPI_INFO_NULL, &
@@ -110,7 +110,7 @@ program pitch_angle
       )
       call MPI_FILE_OPEN(&
          MPI_COMM_WORLD, &
-         trim(outdir)//'/pitch_angle_rw_samplepos_tmax'//&
+         trim(outdir)//'/pas_rw_samplepos_tmax'//&
          trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
          '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
          MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
@@ -172,9 +172,10 @@ program pitch_angle
       samplepos_array_bsize = sizeof(sample_positions)    
       samplepos_disp = myid * n_sets * samplepos_array_bsize + samplepos_array_bsize * (set - 1)    
       samplepos_array_count = size(sample_positions)    
+
       call MPI_FILE_SET_VIEW(&    
-         fpos_filehandle, &    
-         fpos_disp, &    
+         samplepos_filehandle, &    
+         samplepos_disp, &    
          MPI_INTEGER, &    
          MPI_INTEGER, &    
          'native', &    
@@ -182,9 +183,9 @@ program pitch_angle
          ierr &    
       )    
       call MPI_FILE_WRITE(&    
-         fpos_filehandle, &    
-         final_positions, &    
-         fpos_array_count, &    
+         samplepos_filehandle, &    
+         sample_positions, &    
+         samplepos_array_count, &    
          MPI_DOUBLE_PRECISION, &    
          MPI_STATUS_IGNORE, &    
          ierr &    
@@ -287,6 +288,9 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    x => event(n_in)%x
    t => event(n_in)%t
    w => event(n_in)%w
+
+   ! Trying different energy
+   E = E * 1.5
 
    r = ran0()
    m = A*m_p
