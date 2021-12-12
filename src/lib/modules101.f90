@@ -30,7 +30,7 @@ module user_variables
    character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
    character(10) :: outdir_raw = './RawData'
-   integer :: num_steps_log = 10000             ! Must reduce for large particle count
+   integer :: num_steps_log = 100               ! Must reduce for large particle count
    integer :: num_cross_log = 100               ! Must reduce for large particle count
    logical :: isotropic = .false.               ! Use isotropic rw if true
 
