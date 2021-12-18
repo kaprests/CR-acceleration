@@ -149,7 +149,7 @@ module internal
    integer iseed, n_in, n_out
 
    double precision, parameter :: & ! all energies in eV
-      E_inj = 1.1d10, & ! initial energy
+      E_inj = 1.0d10, & ! initial energy
       E_min = 1d10, & ! minimal energy for bining
       E_min_em = 1.d8                            ! minimal em energy to be stored
 

@@ -6,7 +6,7 @@ program acceleration
    integer set
    integer traj_filehandle, traj_array_count, traj_array_bsize
    integer crossang_filehandle, crossang_array_count, crossang_array_bsize
-   integer(kind=MPI_OFFSET_KIND) :: traj_disp, crossang_disp
+   integer(kind=MPI_OFFSET_KIND) :: traj_offset, crossang_offset
 
    ! MPI setup
    call MPI_INIT(ierr)  ! Initiate/create 
@@ -91,20 +91,12 @@ program acceleration
 
       ! Write trajectory data
       traj_array_bsize = sizeof(trajectories)
-      traj_disp = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)
+      traj_offset = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)
       traj_array_count = size(trajectories)
 
-      call MPI_FILE_SET_VIEW(&
+      call MPI_FILE_WRITE_AT(&
          traj_filehandle, &
-         traj_disp, &
-         MPI_INTEGER, &
-         MPI_INTEGER, &
-         'native', &
-         MPI_INFO_NULL, &
-         ierr &
-      )
-      call MPI_FILE_WRITE(&
-         traj_filehandle, &
+         traj_offset, &
          trajectories, &
          traj_array_count, &
          MPI_DOUBLE_PRECISION, &
@@ -114,20 +106,12 @@ program acceleration
 
       ! Write cross angle data
       crossang_array_bsize = sizeof(crossing_flight_angles)
-      crossang_disp = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)
+      crossang_offset = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)
       crossang_array_count = size(crossing_flight_angles)
 
-      call MPI_FILE_SET_VIEW(&
+      call MPI_FILE_WRITE_AT(&
          crossang_filehandle, &
-         crossang_disp, &
-         MPI_INTEGER, &
-         MPI_INTEGER, &
-         'native', &
-         MPI_INFO_NULL, &
-         ierr &
-      )
-      call MPI_FILE_WRITE(&
-         crossang_filehandle, &
+         crossang_offset, &
          crossing_flight_angles, &
          crossang_array_count, &
          MPI_DOUBLE_PRECISION, &
@@ -138,7 +122,6 @@ program acceleration
    end do
 
    !call output_finish
-
    call MPI_FILE_CLOSE(traj_filehandle, ierr)
    call MPI_FILE_CLOSE(crossang_filehandle, ierr)
 

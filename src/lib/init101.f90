@@ -125,16 +125,6 @@ subroutine init_general(myid, n_proc)
    double precision v_EDST, v_shock
    !character(10) :: n_start_str, n_sets_str, , v_shock_str, gamma_str
 
-   ! Not finalized
-   allocate (exit_energies(n_sets*n_start))
-   allocate (num_crossings_total(n_sets*n_start))
-
-   allocate (trajectories(4, n_start, num_steps_log))
-   allocate (crossing_flight_angles(n_start, num_cross_log))
-
-   ! For shockless random walks only
-   allocate (final_positions(3, n_start))
-
    ! Parse command line arguments, and apply given settings/config
    ! Default values in are code overridden by values in file (future)
    ! Values set in file are overridden by command line arguments
@@ -195,6 +185,24 @@ subroutine init_general(myid, n_proc)
    print *, "theta max: ", pi*theta_max_pi_frac
    print *, "stepsize exp: ", stepsize_exp
    print *, "=========================="
+
+   ! Allocate dynamic arrays
+   ! Not finalized
+   allocate (exit_energies(n_sets*n_start))
+   allocate (num_crossings_total(n_sets*n_start))
+
+   allocate (trajectories(4, n_start, num_steps_log))
+   allocate (crossing_flight_angles(n_start, num_cross_log))
+
+   ! For shockless random walks only
+   allocate (final_positions(3, n_start))
+   print *, "!!!!!!!!!"
+   print *, "final_positions allocated"
+   print *, "size final_positions(bytes): ", sizeof(final_positions)
+   print *, "count final_positions(bytes): ", size(final_positions)
+   print *, "n_start * 3: ", n_start * 3
+   print *, "n_start : ", n_start
+   print *, "!!!!!!!!!"
 
    ! initialisation for random number (NumRec):
    iseed = 15321 + 2*(1 + iseed_shift)*(myid + 1)

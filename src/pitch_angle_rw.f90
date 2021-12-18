@@ -15,7 +15,7 @@ program pitch_angle
    implicit none
    integer myid, n_proc, ierr, set
    integer fpos_filehandle, traj_filehandle, samplepos_filehandle
-   integer(kind=MPI_OFFSET_KIND) :: fpos_disp, traj_disp, samplepos_disp
+   integer(kind=MPI_OFFSET_KIND) :: fpos_offset, traj_offset, samplepos_offset
    integer fpos_array_count, traj_array_count, samplepos_array_count
    integer fpos_array_bsize, traj_array_bsize, samplepos_array_bsize
 
@@ -125,70 +125,55 @@ program pitch_angle
       call start_particle(set, myid, n_proc)
 
       ! Write final_positions
-      fpos_array_bsize = sizeof(final_positions)    
-      fpos_disp = myid * n_sets * fpos_array_bsize + fpos_array_bsize * (set - 1)    
-      fpos_array_count = size(final_positions)    
-      call MPI_FILE_SET_VIEW(&    
-         fpos_filehandle, &    
-         fpos_disp, &    
-         MPI_INTEGER, &    
-         MPI_INTEGER, &    
-         'native', &    
-         MPI_INFO_NULL, &    
-         ierr &    
-      )    
-      call MPI_FILE_WRITE(&    
-         fpos_filehandle, &    
-         final_positions, &    
-         fpos_array_count, &    
-         MPI_DOUBLE_PRECISION, &    
-         MPI_STATUS_IGNORE, &    
-         ierr &    
+      fpos_array_bsize = sizeof(final_positions)
+      fpos_offset = myid * n_sets * fpos_array_bsize + fpos_array_bsize * (set - 1)
+      fpos_array_count = size(final_positions)
+
+      !print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      !print *, "Offset (bytes): ", myid * n_sets * fpos_array_bsize + fpos_array_bsize * (set - 1)
+      !print *, "buffer count: ", fpos_array_count
+      !print *, "nstart*3: ", n_start * 3
+      !print *, "buffer size(bytes): ", fpos_array_bsize
+      !print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+      call MPI_FILE_WRITE_AT(&
+         fpos_filehandle, &
+         fpos_offset, &
+         final_positions, &
+         fpos_array_count, &
+         MPI_DOUBLE_PRECISION, &
+         MPI_STATUS_IGNORE, &
+         ierr &
       )
 
       ! Write trajectories
       traj_array_bsize = sizeof(trajectories)    
-      traj_disp = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)    
+      traj_offset = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)    
       traj_array_count = size(trajectories)    
-      call MPI_FILE_SET_VIEW(&    
-         traj_filehandle, &    
-         traj_disp, &    
-         MPI_INTEGER, &    
-         MPI_INTEGER, &    
-         'native', &    
-         MPI_INFO_NULL, &    
-         ierr &    
-      )    
-      call MPI_FILE_WRITE(&    
-         traj_filehandle, &    
-         trajectories, &    
-         traj_array_count, &    
-         MPI_DOUBLE_PRECISION, &    
-         MPI_STATUS_IGNORE, &    
-         ierr &    
+
+      call MPI_FILE_WRITE_AT(&
+         traj_filehandle, &
+         traj_offset, &
+         trajectories, &
+         traj_array_count, &
+         MPI_DOUBLE_PRECISION, &
+         MPI_STATUS_IGNORE, &
+         ierr &
       )
 
       ! Write sample_positions
       samplepos_array_bsize = sizeof(sample_positions)    
-      samplepos_disp = myid * n_sets * samplepos_array_bsize + samplepos_array_bsize * (set - 1)    
+      samplepos_offset = myid * n_sets * samplepos_array_bsize + samplepos_array_bsize * (set - 1)    
       samplepos_array_count = size(sample_positions)    
 
-      call MPI_FILE_SET_VIEW(&    
-         samplepos_filehandle, &    
-         samplepos_disp, &    
-         MPI_INTEGER, &    
-         MPI_INTEGER, &    
-         'native', &    
-         MPI_INFO_NULL, &    
-         ierr &    
-      )    
-      call MPI_FILE_WRITE(&    
-         samplepos_filehandle, &    
-         sample_positions, &    
-         samplepos_array_count, &    
-         MPI_DOUBLE_PRECISION, &    
-         MPI_STATUS_IGNORE, &    
-         ierr &    
+      call MPI_FILE_WRITE_AT(&
+         samplepos_filehandle, &
+         samplepos_offset, &
+         sample_positions, &
+         samplepos_array_count, &
+         MPI_DOUBLE_PRECISION, &
+         MPI_STATUS_IGNORE, &
+         ierr &
       )
    end do
 

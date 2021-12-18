@@ -5,12 +5,12 @@ import sys
 
 DATA_DIR = './Data/'
 OUT_DIR = './figs/'
-t_max = 110
-theta_pi_frac = 0.5
+t_max = 101
+theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
-nsets = 10
-nstart = 100
-nproc = 2
+nsets = 102
+nstart = 102
+nproc = 1
 stepexp = 2.1
 
 flags = ['--theta-pi-fr', '--tmax', '--stepexp']
