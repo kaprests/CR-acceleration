@@ -13,6 +13,7 @@ theta = theta_pi_frac*pi
 nsets = 10
 nstart = 100
 stepexp = 2.1
+bins=30
 
 flags = ['--theta-pi-fr', '--tmax', '--stepexp']
 
@@ -103,7 +104,7 @@ if __name__ == "__main__":
 
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    ax.set_title("Final positions")
+    ax.set_title("Final particle positions")
 
     final_drift_iso = []
     final_drift_pa = []
@@ -122,31 +123,30 @@ if __name__ == "__main__":
         final_drift_pa = np.append(final_drift_pa, xp**2 + yp**2 + zp**2)
         
         if i == 0:
-            ax.scatter(xi, yi, zi, color='green', marker='^', label='isotropic')
-            ax.scatter(xp, yp, zp, color='orange', marker='o', label='pitch angle')
+            ax.scatter(xi, yi, zi, marker='o', label='isotropic')
+#            ax.scatter(xp, yp, zp, color='orange', marker='o', label='pitch angle')
         else:
-            ax.scatter(xi, yi, zi, color='green', marker='^')
-            ax.scatter(xp, yp, zp, color='orange', marker='o')
+            ax.scatter(xi, yi, zi, marker='o')
+#            ax.scatter(xp, yp, zp, color='orange', marker='o')
     avg_drift_iso = np.average(np.sqrt(final_drift_iso))
     avg_drift_pa = np.average(np.sqrt(final_drift_pa))
 
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_zlabel('z')
-    ax.legend()
-    ax.set_title("Final positions")
-    plt.savefig(f"{OUT_DIR}final_positions_theta-fr{theta_pi_frac:.3f}_tmax{t_max}.pdf")
+#    ax.legend()
+    plt.savefig(f"{OUT_DIR}PRODfinal_positions_theta-fr{theta_pi_frac:.3f}_tmax{t_max}.pdf")
     plt.show()
 
     #####################################
     ## Plot - Final drift distribution ##
     #####################################
 
-    plt.hist(final_drift_iso, label='isotropic')
-    plt.hist(final_drift_pa, fill=False, label='pitch angle')
+    plt.hist(final_drift_iso, label='isotropic', histtype=u'step', bins=bins)
+#    plt.hist(final_drift_pa, fill=False, label='pitch angle')
     plt.legend()
-    plt.title("drift distance distribution")
-    plt.savefig(f"{OUT_DIR}final_drift_distribution_theta-fr{theta_pi_frac:.3f}_tmax{t_max}.pdf")
+    plt.title("Drift distance distribution")
+    plt.savefig(f"{OUT_DIR}PRODfinal_drift_distribution_theta-fr{theta_pi_frac:.3f}_tmax{t_max}.pdf")
     plt.show()
 
     # Print final average distances
@@ -218,11 +218,16 @@ if __name__ == "__main__":
     for i in range(num_samples):
         avg_drifts_sampled_pa[i] = np.average(np.sqrt(drifts_sampled_pa[i, :]))
 
-    plt.plot(t_sample_iso, avg_drifts_sampled_iso, label='isotropic')
-    plt.plot(t_sample_pa, avg_drifts_sampled_pa, label='pitch angle')
+    plt.plot(t_sample_iso-100, avg_drifts_sampled_iso, label='Random walk')
+
+    t_analy = np.linspace(0, t_max - 100, 1000)
+    D_analy = 0.0178**2/(t_max -100)
+    drift_analy = np.sqrt(D_analy * t_analy)
+    plt.plot(t_analy, drift_analy, label="Diffusion")
+#    plt.plot(t_sample_pa, avg_drifts_sampled_pa, label='pitch angle')
     plt.title("Average drift distance vs time")
-    plt.legend()
-    plt.savefig(f"{OUT_DIR}avg_drift_vs_time_theta-fr{theta_pi_frac:.3f}_tmax{t_max}.pdf")
+#    plt.legend()
+    plt.savefig(f"{OUT_DIR}PRODavg_drift_vs_time_theta-fr{theta_pi_frac:.3f}_tmax{t_max}.pdf")
     plt.show()
 
     ###############

@@ -87,6 +87,17 @@ program acceleration
          ierr &
       )
 
+      call MPI_REDUCE(&
+         NE_esc, &
+         NE_esc_tot, &
+         n_enbin, &
+         MPI_DOUBLE_PRECISION, &
+         MPI_SUM, &
+         0, &
+         MPI_COMM_WORLD, &
+         ierr &
+      )
+
       if (myid == 0) call output(set, n_proc)
 
       ! Write trajectory data

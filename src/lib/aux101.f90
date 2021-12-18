@@ -136,6 +136,9 @@ subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
       if (abs(cos_theta_cone) > 1) call error("cosine exceeds 1, max_scattering_angle", 0)
       theta_cone = acos(cos_theta_cone)
       theta_max_computed = 1.0*theta_cone
+      !print *, "!!!!!!!!!!!!!!!!!"
+      !print *, "theta max computed: ", theta_max_computed
+      !print *, "!!!!!!!!!!!!!!!!!"
    end if
 end subroutine max_scattering_angle
 

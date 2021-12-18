@@ -179,7 +179,8 @@ module result
       En_f(-pid_max:pid_max, n_enbin), &
       En_f_tot(-pid_max:pid_max, n_enbin), &
       ! Protons only
-      NE_esc(n_enbin) = 0 ! # protons escaped at each energy(bin)
+      NE_esc(n_enbin) = 0, & ! # protons escaped at each energy(bin)
+      NE_esc_tot(n_enbin) = 0 ! # protons escaped at each energy(bin) (total for a proc)
    double precision :: rel_energy_gain_total_sum
 
    double precision, allocatable :: exit_energies(:) ! # unbinned exit energies
