@@ -166,10 +166,17 @@ contains
                if (v_2 <= 0.d0) call error('v_2<=0', 0)
 
                ! Lorentz transformed random step (advection)
-               gamma_v = 1.d0/sqrt(1.d0 - v_2**2)                 ! v_2 dimless (v_2 = beta = v/c)
-               x(1) = x(1) + v_2*cos(phi_v)*sin(theta_v)*dt + l_0*sin(theta)*cos(phi)/gamma_v
-               x(2) = x(2) + v_2*sin(phi_v)*sin(theta_v)*dt + l_0*sin(theta)*sin(phi)/gamma_v
-               x(3) = x(3) + v_2*cos(theta_v)*dt + l_0*cos(theta)/gamma_v
+               v_x = v_2*cos(phi_v)*sin(theta_v)
+               v_y = v_2*sin(phi_v)*sin(theta_v)
+               v_z = v_2*cos(theta_v)
+
+               gamma_x = 1.d0/sqrt(1.d0 - v_x**2)                 ! v_2 dimless (v_2 = beta = v/c)
+               gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
+               gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
+
+               x(1) = x(1) + v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
+               x(2) = x(2) + v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
+               x(3) = x(3) + v_z*dt + l_0*cos(theta)/gamma_z
             else ! Particle in upstream
                ! random step (isotropic in current medium rest frame)
                x(1) = x(1) + l_0*cos(phi)*sin(theta)
