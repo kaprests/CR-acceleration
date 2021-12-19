@@ -24,7 +24,8 @@ contains
       double precision ran0, R_L, t_shock, v_shock, get_v_2
       integer, pointer :: pid, A, Z
       double precision, pointer :: E, x(:), t, w
-      double precision :: gamma_v, cos_theta
+      double precision :: v_x, v_y, v_z
+      double precision :: gamma_v, gamma_x, gamma_y, gamma_z, cos_theta
       double precision :: d0, r_sh0
 
       ! ############
@@ -292,7 +293,8 @@ contains
       double precision ran0, R_L, t_shock, v_shock, get_v_2
       integer, pointer :: pid, A, Z
       double precision, pointer :: E, x(:), t, w
-      double precision :: gamma_v, cos_theta
+      double precision :: v_x, v_y, v_z
+      double precision :: gamma_v, gamma_x, gamma_y, gamma_z, cos_theta
       double precision :: d0, r_sh0
 
       ! ############
