@@ -26,6 +26,7 @@ contains
       double precision, pointer :: E, x(:), t, w
       double precision :: v_x, v_y, v_z
       double precision :: gamma_v, gamma_x, gamma_y, gamma_z, cos_theta
+      double precision :: l_x, l_y, l_z
       double precision :: d0, r_sh0
 
       ! ############
@@ -214,6 +215,20 @@ contains
                if (num_crossings <= size(crossing_flight_angles, 2)) then
                   crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
                end if
+
+               ! Lorentz tranform three momentum 
+               v_x = v_2*cos(phi_v)*sin(theta_v)
+               v_y = v_2*sin(phi_v)*sin(theta_v)
+               v_z = v_2*cos(theta_v)
+
+               gamma_x = 1.d0/sqrt(1.d0 - v_x**2)                 ! v_2 dimless (v_2 = beta = v/c)
+               gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
+               gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
+
+               l_x = -v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
+               l_y = -v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
+               l_z = -v_z*dt + l_0*cos(theta)/gamma_z
+               call radially_outward(phi, theta, l_x, l_y, l_z)
             else if (d2 > r_sh2 .and. r_sh1 > d1) then ! Cossed shock (DS -> US)
                call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! direction of v_2 and shock
                v_2 = get_v_2(v_shock(t)) ! DS sees US approach at same velocity v_2
@@ -235,6 +250,20 @@ contains
                if (num_crossings <= size(crossing_flight_angles, 2)) then
                   crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
                end if
+
+               ! Lorentz tranform three momentum 
+               v_x = v_2*cos(phi_v)*sin(theta_v)
+               v_y = v_2*sin(phi_v)*sin(theta_v)
+               v_z = v_2*cos(theta_v)
+
+               gamma_x = 1.d0/sqrt(1.d0 - v_x**2)                 ! v_2 dimless (v_2 = beta = v/c)
+               gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
+               gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
+
+               l_x = v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
+               l_y = v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
+               l_z = v_z*dt + l_0*cos(theta)/gamma_z
+               call radially_outward(phi, theta, l_x, l_y, l_z)
             end if
 
             v_2 = get_v_2(v_shock(t))
