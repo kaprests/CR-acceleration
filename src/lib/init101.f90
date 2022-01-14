@@ -1,24 +1,24 @@
 !============================================================================!
+! File: init.f90                                                             !
 !============================================================================!
 subroutine init(myid, n_proc)
    use user_variables
+
    implicit none
    integer, intent(in) :: myid, n_proc
 
    call init_general(myid, n_proc)
    call init_inject_spec
-
 ! if (myid==0.and.restart>0) call read_old_results
-
 end subroutine init
-!============================================================================!
-!============================================================================!
+
+
 subroutine parse_cmd_arguments
    ! Very naive, non flexible argument parser
    use user_variables
    use constants, only: pi
-   implicit none
 
+   implicit none
    integer :: i, n_args
    integer :: j, n_flags
    character(20) :: flag
@@ -32,14 +32,10 @@ subroutine parse_cmd_arguments
                                               '--restart   ', &  ! j=4
                                               '--iseedshift', &  ! j=5
                                               '--injmod    ', &  ! j=6
-                                              ! Float (double precision):
                                               '--vshock    ', &  ! j=7
                                               '--gamma     ', &  ! j=8
-                                              ! Character
                                               '--fname     ', &  ! j=9
-                                              ! Integer (shockless random walks)
                                               '--nsteps    ', &  ! j=10
-                                              ! Float (shockless random walks)
                                               '--max-pi-fr ', &  ! j=11
                                               '--t-max     ', &  ! j=12
                                               '--iso       ', &  ! j=13
@@ -113,8 +109,8 @@ subroutine parse_cmd_arguments
       end do
    end do
 end subroutine parse_cmd_arguments
-!============================================================================!
-!============================================================================!
+
+
 subroutine init_general(myid, n_proc)
    use internal
    use user_variables
@@ -241,7 +237,8 @@ subroutine init_general(myid, n_proc)
    end if
 
 end subroutine init_general
-!=============================================================================!
+
+
 !=============================================================================!
 ! acceptance-rejection method, comparing dN/dEdt with f(t)=K*t**alpha_f       !
 ! with  f(t_EDST) = dN/dEdt(t_EDST) => K =  dN/dEdt(t_EDST)/t_EDST**alpha_f   !
@@ -272,8 +269,8 @@ subroutine init_inject_spec
    K_inj = K_inj*3d0              ! so that f(t) > dN/dEdt(t)
 
 end subroutine init_inject_spec
-!=============================================================================!
-!=============================================================================!
+
+
 subroutine inject !(i)
    use internal
    use event_internal
@@ -328,7 +325,4 @@ subroutine inject !(i)
    event(n)%E = E_inj
    event(n)%t = t
    event(n)%w = w
-
 end subroutine inject
-!=============================================================================!
-!=============================================================================!

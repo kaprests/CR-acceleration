@@ -1,5 +1,4 @@
 !=============================================================================!
-!=============================================================================!
 !            file ~/Programme/SNR/Nuclei11/output101.f90                      !
 !=============================================================================!
 subroutine output(set, n_proc)
@@ -126,5 +125,85 @@ subroutine banner(n_proc, i)
    write (*, *) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 
 end subroutine banner
-!=============================================================================!
-!=============================================================================!
+
+
+!!!!!!!!!!!!
+!! MPI IO !!
+!!!!!!!!!!!!
+
+
+subroutine init_mpi_io(comm_world, file_handle, fname, ierr)
+   ! Opens mpi file for concurrent I/O
+   use mpi_f08
+   implicit none
+   type(MPI_COMM), intent(in) :: comm_world
+   type(MPI_FILE), intent(out) :: file_handle
+   character(len=*), intent(in) :: fname
+   integer, intent(out) :: ierr
+
+   call MPI_FILE_OPEN(&
+      MPI_COMM_WORLD, &
+      fname, &
+      MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
+      MPI_INFO_NULL, &
+      file_handle, &
+      ierr &
+   )
+
+   if (ierr > 0) then
+      call MPI_FILE_DELETE(&
+         fname, &
+         MPI_INFO_NULL, &
+         ierr &    
+      )    
+    
+      call MPI_FILE_OPEN(&    
+         MPI_COMM_WORLD, &    
+         fname, &    
+         MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &    
+         MPI_INFO_NULL, &    
+         file_handle, &      
+         ierr &              
+      )    
+   end if    
+end subroutine init_mpi_io
+
+
+!! Does not work -- can't pass allocatable array buffer
+!subroutine write_mpi_io(file_handle, data_buf, myid, set, ierr)
+!   ! Writes to mpi file (from given proc). Writes double precision floats.
+!   use mpi_f08
+!   use user_variables, only: n_sets
+!   use result
+!
+!   implicit none
+!   type(MPI_FILE), intent(in) :: file_handle
+!   double precision, dimension(..), intent(out) :: data_buf
+!   integer, intent(in) :: myid, set
+!   integer, intent(out) :: ierr
+!
+!   integer :: data_buf_count, data_buf_byte_size
+!   integer(kind=MPI_OFFSET_KIND) :: offset
+!
+!   data_buf_count = size(data_buf)    
+!   data_buf_byte_size = sizeof(data_buf)    
+!   offset = myid * n_sets * data_buf_byte_size + data_buf_byte_size * (set - 1)    
+!     
+!   print *, "!!!!!!!!!!!!!!!!"
+!   print *, "subroutine data: "
+!   print *, data_buf_count
+!   print *, data_buf_byte_size
+!   !print *, data_buf
+!   print *, "!!!!!!!!!!!!!!!!"
+!     
+!   print *, "WRITING DATA NAOOOOO"    
+!   call MPI_FILE_WRITE_AT(&    
+!      file_handle, &    
+!      offset, &    
+!      data_buf, &    
+!      data_buf_count, &    
+!      MPI_DOUBLE_PRECISION, &    
+!      MPI_STATUS_IGNORE, &       
+!      ierr &                     
+!   )    
+!end subroutine write_mpi_io

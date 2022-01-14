@@ -28,114 +28,40 @@ program pitch_angle
    call init(myid, n_proc)
    
    ! MPI data file -- final positions
-   call MPI_FILE_OPEN(&
+   call init_mpi_io(&
       MPI_COMM_WORLD, &
+      fpos_filehandle, &
       trim(outdir)//'/pas_rw_fpos_tmax'//trim(t_max_str)//'_theta'//&
       trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//'_nsets'//trim(n_sets_str)//&
       '_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
-      MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
-      MPI_INFO_NULL, &
-      fpos_filehandle, &
       ierr &
    )
-   if (ierr > 0) then
-      call MPI_FILE_DELETE(&
-         trim(outdir)//'/pas_rw_fpos_tmax'//trim(t_max_str)//'_theta'//&
-         trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//'_nsets'//trim(n_sets_str)//&
-         '_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
-         MPI_INFO_NULL, &
-         ierr &
-      )
-      call MPI_FILE_OPEN(&
-         MPI_COMM_WORLD, &
-         trim(outdir)//'/pas_rw_fpos_tmax'//trim(t_max_str)//'_theta'//&
-         trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//'_nsets'//trim(n_sets_str)//&
-         '_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
-         MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
-         MPI_INFO_NULL, &
-         fpos_filehandle, &
-         ierr &
-      )
-   end if
-
    ! MPI data file -- Trajectories
-   call MPI_FILE_OPEN(&
+   call init_mpi_io(&
       MPI_COMM_WORLD, &
+      traj_filehandle, &
       trim(outdir)//'/pas_rw_trajectories_tmax'//&
       trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
       '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
-      MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
-      MPI_INFO_NULL, &
-      traj_filehandle, &
       ierr &
    )
-   if (ierr > 0) then
-      call MPI_FILE_DELETE(&
-         trim(outdir)//'/pas_rw_trajectories_tmax'//&
-         trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
-         '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
-         MPI_INFO_NULL, &
-         ierr &
-      )
-      call MPI_FILE_OPEN(&
-         MPI_COMM_WORLD, &
-         trim(outdir)//'/pas_rw_trajectories_tmax'//&
-         trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
-         '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
-         MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
-         MPI_INFO_NULL, &
-         traj_filehandle, &
-         ierr &
-      )
-   end if
-
-   ! MPI dat file -- sampled positions
-   call MPI_FILE_OPEN(&
+   ! MPI data file -- Trajectories
+   call init_mpi_io(&
       MPI_COMM_WORLD, &
+      samplepos_filehandle, &
       trim(outdir)//'/pas_rw_samplepos_tmax'//&
       trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
       '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
-      MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
-      MPI_INFO_NULL, &
-      samplepos_filehandle, &
       ierr &
    )
-   if (ierr > 0) then
-      call MPI_FILE_DELETE(&
-         trim(outdir)//'/pas_rw_samplepos_tmax'//&
-         trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
-         '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
-         MPI_INFO_NULL, &
-         ierr &
-      )
-      call MPI_FILE_OPEN(&
-         MPI_COMM_WORLD, &
-         trim(outdir)//'/pas_rw_samplepos_tmax'//&
-         trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
-         '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
-         MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
-         MPI_INFO_NULL, &
-         samplepos_filehandle, &
-         ierr &
-      )
-   end if
 
    do set = 1, n_sets
-
       call start_particle(set, myid, n_proc)
 
       ! Write final_positions
       fpos_array_bsize = sizeof(final_positions)
       fpos_offset = myid * n_sets * fpos_array_bsize + fpos_array_bsize * (set - 1)
       fpos_array_count = size(final_positions)
-
-      !print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!"
-      !print *, "Offset (bytes): ", myid * n_sets * fpos_array_bsize + fpos_array_bsize * (set - 1)
-      !print *, "buffer count: ", fpos_array_count
-      !print *, "nstart*3: ", n_start * 3
-      !print *, "buffer size(bytes): ", fpos_array_bsize
-      !print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!"
-
       call MPI_FILE_WRITE_AT(&
          fpos_filehandle, &
          fpos_offset, &
@@ -150,7 +76,6 @@ program pitch_angle
       traj_array_bsize = sizeof(trajectories)    
       traj_offset = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)    
       traj_array_count = size(trajectories)    
-
       call MPI_FILE_WRITE_AT(&
          traj_filehandle, &
          traj_offset, &
@@ -163,9 +88,8 @@ program pitch_angle
 
       ! Write sample_positions
       samplepos_array_bsize = sizeof(sample_positions)    
-      samplepos_offset = myid * n_sets * samplepos_array_bsize + samplepos_array_bsize * (set - 1)    
+      samplepos_offset = myid * n_sets * samplepos_array_bsize + samplepos_array_bsize * (set - 1)
       samplepos_array_count = size(sample_positions)    
-
       call MPI_FILE_WRITE_AT(&
          samplepos_filehandle, &
          samplepos_offset, &
@@ -178,12 +102,10 @@ program pitch_angle
    end do
 
    close (99)
-
    call MPI_FILE_CLOSE(fpos_filehandle, ierr)
    call MPI_FILE_CLOSE(traj_filehandle, ierr)
    call MPI_FILE_CLOSE(samplepos_filehandle, ierr)
    call MPI_FINALIZE(ierr)
-
 end program pitch_angle
 
 
@@ -275,7 +197,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    w => event(n_in)%w
 
    ! Trying different energy
-   E = E * 1.5
+   !E = E * 1.5
 
    r = ran0()
    m = A*m_p
@@ -331,6 +253,11 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    sample_count = 0
    num_steps_taken = 0
    if (.not. allocated(sample_positions)) allocate(sample_positions(4, n_start, num_samples))
+   
+   print *, "l_0: ", l_0    
+   print *, "v: ", l_0/dt    
+   print *, "D: ", l_0*(l_0/dt)/6    
+   print *, "D': ", l_0*(l_0/dt)/3
 
    do 
       ! log position

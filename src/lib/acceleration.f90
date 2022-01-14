@@ -152,6 +152,11 @@ contains
             trajectories(4, n_injected, num_steps_taken + 1) = t
          end if
 
+         !print *, "l_0: ", l_0
+         !print *, "v: ", l_0/dt
+         !print *, "D: ", l_0*(l_0/dt)/6
+         !print *, "D': ", l_0*(l_0/dt)/3
+
          ! Perform step(s)
          do k = 1, n_step
             ! distances before step
@@ -282,6 +287,9 @@ contains
                   else if (t > t_max .and. d0 > r_sh0) then
                      print *, "Time exit - particle in upstream - num_cross: ", num_crossings
                   end if
+                  print *, "!!!!!!!!!!!!!!!!!"
+                  print *, "w: ", w
+                  print *, "!!!!!!!!!!!!!!!!!"
                   call store(pid, E, w, num_crossings, rel_energy_gain_sum)
                   !call store_raw(E, set, n_injected, num_crossings)
                   print *, "#############################"
