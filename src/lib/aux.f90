@@ -132,7 +132,7 @@ subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
    else
       ! Compute loss cone opening, theta_cone
       ! Set max scattering, theta_max, to 100% of loss cone angle
-      cos_theta_cone = v_shock*m_p/sqrt(E_particle**2 - m_p**2)
+      cos_theta_cone = v_shock * abs(E_particle / sqrt(E_particle**2 - m_p**2))
       if (abs(cos_theta_cone) > 1) call error("cosine exceeds 1, max_scattering_angle", 0)
       theta_cone = acos(cos_theta_cone)
       theta_max_computed = 1.0*theta_cone

@@ -1,5 +1,8 @@
-!==============================================================================!
-!==============================================================================!
+!===================!
+! File: modules.f90 !
+!===================!
+
+
 module constants
    implicit none
    save
@@ -8,8 +11,8 @@ module constants
       pi = 3.1415926536d0, &
       two_pi = 2.d0*pi
 end module constants
-!==============================================================================!
-!==============================================================================!
+
+
 module user_variables
    ! Maybe read user_variables from file? Add option to override with cmd-line flag
    use constants, only: pi
@@ -49,8 +52,8 @@ module user_variables
    double precision :: stepsize_exp = 2.1
    character(10) :: stepsize_exp_str
 end module user_variables
-!==============================================================================!
-!==============================================================================!
+
+
 module SNR_data
    use user_variables, only: inj_model
    implicit none
@@ -72,8 +75,8 @@ module SNR_data
 
    double precision t_ch, R_ch, v_ch, t_EDST, R_EDST !,v_EDST
 end module SNR_data
-!==============================================================================!
-!==============================================================================!
+
+
 module event_internal                           ! used instead of stack
    implicit none
    save
@@ -84,8 +87,8 @@ module event_internal                           ! used instead of stack
    end type one_event
    type(one_event), target :: event(n_max)
 end module event_internal
-!=============================================================================!
-!=============================================================================!
+
+
 module stack                                      ! not used here
    implicit none
    save
@@ -106,8 +109,8 @@ module stack                                      ! not used here
    end type one_particle
    type(one_particle), target :: events(n_maxs)
 end module stack
-!==============================================================================!
-!==============================================================================!
+
+
 module particle
    implicit none
    save
@@ -117,8 +120,8 @@ module particle
    integer stable_pid(n_stable)
    data stable_pid/-8, -7, -5, -4, -1, 0, 1, 4, 5, 7, 8/      !...gamma,e,nue,numu,p
 end module particle
-!==============================================================================!
-!==============================================================================!
+
+
 module particle_data
 !  use particle
    implicit none
@@ -139,33 +142,30 @@ module particle_data
       alpha_em = 7.2973526d-3, &   ! alpha_em
       e_elm = 0.302822121d0                 ! e_em = sqrt(alpha*4*pi)
 end module particle_data
-!==============================================================================!
-!==============================================================================!
+
+
 module internal
    use particle
+
    implicit none
    save
-
    integer iseed, n_in, n_out
-
    double precision, parameter :: & ! all energies in eV
       E_inj = 1.0d10, & ! initial energy
       E_min = 1d10, & ! minimal energy for bining
       E_min_em = 1.d8                            ! minimal em energy to be stored
-
    double precision, parameter :: t_inj_init = 1.d0
    double precision t_inj_fin, d_f, d_em, d_time_out, d_time_inj, alpha_f, &
       alpha_f1, K_inj
-
    double precision, parameter ::  dn = 0.1d0
-
    integer n_tot
 end module internal
-!==============================================================================!
-!==============================================================================!
+
+
 module result
    use particle
    use user_variables, only: n_sets, n_start
+
    implicit none
    save
 
@@ -182,7 +182,6 @@ module result
       NE_esc(n_enbin) = 0, & ! # protons escaped at each energy(bin)
       NE_esc_tot(n_enbin) = 0 ! # protons escaped at each energy(bin) (total for a proc)
    double precision :: rel_energy_gain_total_sum
-
    double precision, allocatable :: exit_energies(:) ! # unbinned exit energies
    double precision, allocatable :: num_crossings_total(:) ! # number of shock crossings
    double precision, allocatable :: trajectories(:, :, :)
@@ -192,12 +191,10 @@ module result
    double precision, allocatable :: final_positions(:, :)
    double precision, allocatable :: sample_positions(:, :, :) ! Allocated in random walk/pitch angle routine
 end module result
-!==============================================================================!
-!==============================================================================!
+
+
 module test_var
    implicit none
    save
    integer n_injected, sec, flag, accel
 end module test_var
-!==============================================================================!
-!==============================================================================!

@@ -2,9 +2,9 @@
 !=============================================================================!
 !          file ~/Programme/SNR/Nuclei101/functions104.f90                    !
 !=============================================================================!
+!=============================================================================!
 
-!=============================================================================!
-!=============================================================================!
+
 double precision function R_p(r, t)
    use SNR_data
    implicit none
@@ -17,19 +17,20 @@ double precision function R_p(r, t)
    else
       R_p = 4.d0                       ! R=4
    end if
-
 end function R_p
-!=============================================================================!
+
+
 !=============================================================================!
 !            diffusion coefficient : Bohm diffusion                           !
 !=============================================================================!
-!double precision function D_coef(En,t) ! yr
-!  implicit none
-!  double precision En,t     ! eV, yr
-!  double precision R_L      ! yr
-!  D_coef = R_L(En,t)/3.d0   ! yr
-!end function D_coef
-!=============================================================================!
+double precision function D_coef(En,t) ! yr
+  implicit none
+  double precision En,t     ! eV, yr
+  double precision R_L      ! yr
+  D_coef = R_L(En,t)/3.d0   ! yr
+end function D_coef
+
+
 !=============================================================================!
 !                         Larmor Radius                                       !
 !=============================================================================!
@@ -39,7 +40,6 @@ double precision function R_L(En, t) ! yr
    double precision En, B, t     ! eV, yr
 
    B = B0_turb                 ! constant in time
-
 !  if (En>1.e11) B = B * En/1.e11
 !  if (En>1.e11) B = B * sqrt(En/1.e11)
 
@@ -48,17 +48,15 @@ double precision function R_L(En, t) ! yr
 !  else
 !     B = B/20.d0
 !  end if
-
    if (B .eq. 0.d0) then
       R_L = 1.d100             ! yr
    else
       R_L = 3.523d-21*En/B     ! yr,             R_l/pc=1.08d-3*En/1.d18/(B/G)
    end if
-
 end function R_L
-!=============================================================================!
-!=============================================================================!
-double precision function dNdEdt(t)             ! injection rate
+
+
+double precision function dNdEdt(t) ! injection rate
    use internal
    use SNR_data
    implicit none
@@ -85,12 +83,14 @@ double precision function dNdEdt(t)             ! injection rate
 !     dNdEdt = t_EDST**(6.d0/5.d0)*t**(4.d0/5.d0)*v_snr**a
 !  end if
 
+
 end function dNdEdt
-!=============================================================================!
-!=============================================================================!
+
+
 double precision function v_shock(t)   ! dimensionless
    use SNR_data
    use user_variables
+
    implicit none
    double precision t, x, v
    double precision t_star
@@ -117,10 +117,9 @@ double precision function v_shock(t)   ! dimensionless
    case default
       call error('wrong case in v_shock', 0)
    end select
-
 end function v_shock
-!=============================================================================!
-!=============================================================================!
+
+
 double precision function t_shock(t)
    use internal
    use SNR_data
@@ -151,10 +150,9 @@ double precision function t_shock(t)
    case default
       call error('wrong case in t_shock', 0)
    end select
-
 end function t_shock
-!=============================================================================!
-!=============================================================================!
+
+
 double precision function R_shock(t)     ! pc
    use SNR_data
    implicit none
@@ -183,13 +181,13 @@ double precision function R_shock(t)     ! pc
    case default
       call error('wrong case in R_shock', 0)
    end select
-
 end function R_shock
-!=============================================================================!
-!=============================================================================!
+
+
 double precision function tau_syn(m, E, t)     ! pc
    use particle_data
    use SNR_data
+
    implicit none
    double precision m, E, p_perp, B, chi, Psynch, t
    double precision, parameter :: B_cr = 4.14d13     !crit. B/Gauss, electrons
@@ -199,11 +197,8 @@ double precision function tau_syn(m, E, t)     ! pc
 !  write(*,*) log10(E),log10(m)
 !  write(*,*) (E/1.d9)**2,(m/1.d9)**2
    p_perp = sqrt(p_perp)
-
    B = B0_reg + B0_turb
-
    chi = p_perp/m*B/B_cr*(m_e/m)**2       ! dimensionless
-
 !!  Psynch = dE/dt
 
 ! Classical value, from Jackson's
@@ -211,14 +206,11 @@ double precision function tau_syn(m, E, t)     ! pc
    Psynch = Psynch*4.8d22 ! eV/yr (1d7/197 eV/cm * 0.9461d18 cm/yr)
 
 ! new expression by Baier, V.N, Kathov, V.M, valid for all chi's
-
    Psynch = Psynch/(1.d0 + 4.8d0*(1.d0 + chi)*log(1.d0 + 1.7d0*chi) + 3.44d0*chi**2)**(2./3.d0)
-
    tau_syn = E/Psynch  ! eV/(eV/yr) = yr
-
 end function tau_syn
-!=============================================================================!
-!=============================================================================!
+
+
 double precision function cycle_energy_gain(theta_in, theta_out, v) result(e_gain)
    ! Computes the relative energy gain of a particle from a shock crossing cycle
    ! Computed in the rest frame of the SNR (v1 = 0)
@@ -232,8 +224,8 @@ double precision function cycle_energy_gain(theta_in, theta_out, v) result(e_gai
       (1 - v*cos(theta_in) + v*cos(theta_out) - (v**2)*cos(theta_in)*cos(theta_out)) &
       /(1 - v**2) - 1
 end function cycle_energy_gain
-!=============================================================================!
+
+
 !=============================================================================!
 !                   end file functions101.f90                                 !
 !=============================================================================!
-

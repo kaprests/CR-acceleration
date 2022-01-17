@@ -8,7 +8,7 @@ contains
    subroutine pitch_angle_accel(set, n_injected)
       ! Pitch angle scattering shock acceleration
       use user_variables, only: debug, t_max, num_steps_log, stepsize_exp, inj_model
-      use constants; 
+      use constants
       use particle_data, only: m_p
       use event_internal
       use result
@@ -16,19 +16,22 @@ contains
       use test_var, only: sec, accel
 
       implicit none
-
+      ! Dummy variables
       integer, intent(in) :: set, n_injected
-      integer k, n_step
-      double precision r, m, f, df, dt, dE, delta, l_0, l_0_0
-      double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2
-      double precision ran0, R_L, t_shock, v_shock, get_v_2
+      ! Loop variables: incr, end
+      integer :: k, n_step
+      ! Functions
+      double precision :: ran0, R_L, t_shock, v_shock, get_v_2
+      ! Pointers
       integer, pointer :: pid, A, Z
       double precision, pointer :: E, x(:), t, w
+      ! Variables
+      double precision :: r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2
+      double precision :: r, m, f, df, dt, dE, delta, l_0, l_0_0
       double precision :: v_x, v_y, v_z
       double precision :: gamma_v, gamma_x, gamma_y, gamma_z, cos_theta
       double precision :: l_x, l_y, l_z
       double precision :: d0, r_sh0
-
       ! ############
       integer :: num_crossings, num_steps_taken
       double precision :: rel_energy_gain, E_old, rel_energy_gain_sum
@@ -44,6 +47,7 @@ contains
       t => event(n_in)%t
       w => event(n_in)%w
 
+      ! Initial radial position of particle
       d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
       if (sec == 0 .and. abs(d1/t_shock(t) - 1.01d0) .gt. 1.d-6 .and. inj_model == 0) then
          call error('wrong initial condition, shock', 0)
@@ -222,18 +226,18 @@ contains
                end if
 
                ! Lorentz tranform three momentum 
-               v_x = v_2*cos(phi_v)*sin(theta_v)
-               v_y = v_2*sin(phi_v)*sin(theta_v)
-               v_z = v_2*cos(theta_v)
+               v_x = v_2*cos(phi_v)*sin(theta_v)      ! Shock velocity in x direction
+               v_y = v_2*sin(phi_v)*sin(theta_v)      ! Shock velocity in y direction
+               v_z = v_2*cos(theta_v)                 ! Shock velocity in z direction
 
-               gamma_x = 1.d0/sqrt(1.d0 - v_x**2)                 ! v_2 dimless (v_2 = beta = v/c)
-               gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
-               gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
+               gamma_x = 1.d0/sqrt(1.d0 - v_x**2)     ! v_2 dimless (v_2 = beta = v/c)
+               gamma_y = 1.d0/sqrt(1.d0 - v_y**2)     ! v_2 dimless (v_2 = beta = v/c)
+               gamma_z = 1.d0/sqrt(1.d0 - v_z**2)     ! v_2 dimless (v_2 = beta = v/c)
 
-               l_x = -v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
-               l_y = -v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
-               l_z = -v_z*dt + l_0*cos(theta)/gamma_z
-               call radially_outward(phi, theta, l_x, l_y, l_z)
+               !l_x = -v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
+               !l_y = -v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
+               !l_z = -v_z*dt + l_0*cos(theta)/gamma_z
+               !call radially_outward(phi, theta, l_x, l_y, l_z)
             else if (d2 > r_sh2 .and. r_sh1 > d1) then ! Cossed shock (DS -> US)
                call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! direction of v_2 and shock
                v_2 = get_v_2(v_shock(t)) ! DS sees US approach at same velocity v_2
@@ -265,10 +269,10 @@ contains
                gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
                gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
 
-               l_x = v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
-               l_y = v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
-               l_z = v_z*dt + l_0*cos(theta)/gamma_z
-               call radially_outward(phi, theta, l_x, l_y, l_z)
+               !l_x = v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
+               !l_y = v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
+               !l_z = v_z*dt + l_0*cos(theta)/gamma_z
+               !call radially_outward(phi, theta, l_x, l_y, l_z)
             end if
 
             v_2 = get_v_2(v_shock(t))
