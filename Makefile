@@ -7,10 +7,15 @@ LIB_DIR = ./src/lib
 MOD_DIR = ./Modules
 BIN_DIR = ./bin
 
-#LIB_FILES = $(wildcard $(LIB_DIR)/*.f90)
-LIB_FILES = $(LIB_DIR)/modules101.f90 $(LIB_DIR)/init101.f90 $(LIB_DIR)/functions101.f90 $(LIB_DIR)/output101.f90 $(LIB_DIR)/aux101.f90 $(LIB_DIR)/acceleration.f90
+# TODO: Rename program(s):
+# main -> acceleration / shock acceleration ...
+# pitch_angle_rw -> shockless random walk etc. 
+# remove ..
 
-LIB_FILES_RW = $(LIB_DIR)/modules101.f90 $(LIB_DIR)/init101.f90 $(LIB_DIR)/functions101.f90 $(LIB_DIR)/output101.f90 $(LIB_DIR)/aux101.f90 
+#LIB_FILES = $(wildcard $(LIB_DIR)/*.f90)
+LIB_FILES = $(LIB_DIR)/modules.f90 $(LIB_DIR)/init.f90 $(LIB_DIR)/functions.f90 $(LIB_DIR)/output.f90 $(LIB_DIR)/aux.f90 $(LIB_DIR)/acceleration.f90
+
+LIB_FILES_RW = $(LIB_DIR)/modules.f90 $(LIB_DIR)/init.f90 $(LIB_DIR)/functions.f90 $(LIB_DIR)/output.f90 $(LIB_DIR)/aux.f90 
 
 ########################################################
 # pitch angle, L-transformed advection and energy gain #
@@ -33,11 +38,11 @@ iso: $(LIB_FILES) $(SRC_DIR)/main_iso.f90
 ######################################################################
 # isotropic rw, galilean advection and average energy gain per cycle #
 ######################################################################
-old: $(LIB_FILES) $(SRC_DIR)/old_main101.f90
-	$(FC) -J $(MOD_DIR) $(PFLAGS) $(LIB_FILES) $(SRC_DIR)/old_main101.f90 -o $(BIN_DIR)/$@
+old: $(LIB_FILES) $(SRC_DIR)/old_main.f90
+	$(FC) -J $(MOD_DIR) $(PFLAGS) $(LIB_FILES) $(SRC_DIR)/old_main.f90 -o $(BIN_DIR)/$@
 
-old_test: $(LIB_FILES) $(SRC_DIR)/old_main101.f90
-	$(FC) -J $(MOD_DIR) $(DFLAGS) $(LIB_FILES) $(SRC_DIR)/old_main101.f90 -o $(BIN_DIR)/$@
+old_test: $(LIB_FILES) $(SRC_DIR)/old_main.f90
+	$(FC) -J $(MOD_DIR) $(DFLAGS) $(LIB_FILES) $(SRC_DIR)/old_main.f90 -o $(BIN_DIR)/$@
 
 ########################################################
 # Shock less random walks (isotropic and pitcha angle) #
@@ -60,7 +65,7 @@ pitch_angle_rw_test: $(LIB_FILES_RW) $(SRC_DIR)/pitch_angle_rw.f90
 small_angle: $(LIB_FILES) $(SRC_DIR)/small_angle.f90
 	$(FC) -J $(MOD_DIR) $(DFLAGS) $(LIB_FILES) $(SRC_DIR)/small_angle.f90 -o $(BIN_DIR)/$@
 
-#small_angle: $(SRC)/modules101.f90 $(SRC)/small_angle.f90 $(SRC)/init101.f90 $(SRC)/functions101.f90 $(SRC)/output101.f90 $(SRC)/aux101.f90
-#	gfortran -J$(MOD) -O -w $(SRC)/modules101.f90 $(SRC)/small_angle.f90 $(SRC)/init101.f90 $(SRC)/functions101.f90 $(SRC)/output101.f90 $(SRC)/aux101.f90 -o $(BIN)/small_angle
+#small_angle: $(SRC)/modules.f90 $(SRC)/small_angle.f90 $(SRC)/init.f90 $(SRC)/functions.f90 $(SRC)/output.f90 $(SRC)/aux.f90
+#	gfortran -J$(MOD) -O -w $(SRC)/modules.f90 $(SRC)/small_angle.f90 $(SRC)/init.f90 $(SRC)/functions.f90 $(SRC)/output.f90 $(SRC)/aux.f90 -o $(BIN)/small_angle
 #
 #
