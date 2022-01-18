@@ -162,7 +162,7 @@ subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
          !print *, "theta max computed: ", theta_max_computed
          !print *, "!!!!!!!!!!!!!!!!!"
       endif
-   end if
+   endif
 end subroutine max_scattering_angle
 
 subroutine euler_RyRz(theta, phi, R)
