@@ -116,35 +116,52 @@ subroutine scattering_angle(theta, phi, theta_max)
    phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle
 
+function v_particle(E, m) result(v)
+   implicit none
+   double precision, intent(in) :: E, m
+   double precision :: v
+   v = sqrt(E**2 - m**2)/E
+   if (v < 0) call error("Negative particle velocity invalid E, m combo, 0")
+end function v_particle
+
 subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
    ! Computes the loss cone angle, and sets max_pitch scattering angle
    ! to some fraction of cone angle.
+   use constants, only: pi
    use particle_data, only: m_p
    use user_variables, only: theta_max, theta_max_set
+
    implicit none
    double precision, intent(out) :: theta_max_computed
    double precision, intent(in) :: v_shock, E_particle
+   double precision :: v_particle, v_p
    double precision :: cos_theta_cone, theta_cone
 
    if (theta_max_set) then
       ! Use user provided theta max
       theta_max_computed = theta_max
    else
-      ! Compute loss cone opening, theta_cone
-      ! Set max scattering, theta_max, to 100% of loss cone angle
-      cos_theta_cone = v_shock * abs(E_particle*v_shock / sqrt(E_particle**2 - m_p**2))
-      if (abs(cos_theta_cone) > 1) then 
-         print *, "v_shock: ", v_shock
-         print *, "E: ", E_particle
-         print *, "m: ", m_p
-         print *, "cos_theta_cone: ", cos_theta_cone
-         call error("cosine exceeds 1, max_scattering_angle", 0)
+      v_p = v_particle(E_particle, m_p)
+      if (v_shock > v_particle) then
+         ! isotropic -- E.g. particles injected in front of UR shock (before overtaken 1st time)
+         theta_max_computed = pi
+      else 
+         ! Compute loss cone opening, theta_cone
+         ! Set max scattering, theta_max, to 100% of loss cone angle
+         cos_theta_cone = v_shock / v_p
+         if (abs(cos_theta_cone) > 1) then 
+            print *, "v_shock: ", v_shock
+            print *, "E: ", E_particle
+            print *, "m: ", m_p
+            print *, "cos_theta_cone: ", cos_theta_cone
+            call error("cosine exceeds 1, max_scattering_angle", 0)
+         endif
+         theta_cone = acos(cos_theta_cone)
+         theta_max_computed = 1.0*theta_cone
+         !print *, "!!!!!!!!!!!!!!!!!"
+         !print *, "theta max computed: ", theta_max_computed
+         !print *, "!!!!!!!!!!!!!!!!!"
       endif
-      theta_cone = acos(cos_theta_cone)
-      theta_max_computed = 1.0*theta_cone
-      !print *, "!!!!!!!!!!!!!!!!!"
-      !print *, "theta max computed: ", theta_max_computed
-      !print *, "!!!!!!!!!!!!!!!!!"
    end if
 end subroutine max_scattering_angle
 
