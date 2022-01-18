@@ -88,19 +88,19 @@ subroutine isotropic(phi, theta)
 end subroutine isotropic
 !=============================================================================!
 !=============================================================================!
-subroutine scattering_angle_dev(theta, phi)
-   ! Random small angle within a cone centered around z-axis
-   use constants, only: pi, two_pi
-   use user_variables, only: theta_max ! Maximal scattering angle
-   implicit none
-   double precision, intent(out) :: phi, theta
-   double precision :: ran0, z
-
-   ! Random angle within the max scattering cone
-   z = cos(theta_max) + (1 - cos(theta_max)) * ran0()
-   theta = acos(z) ! Theta within max
-   phi = two_pi*ran0() ! Azimuthal angle phi isotropic
-end subroutine scattering_angle_dev
+!subroutine scattering_angle_dev(theta, phi)
+!   ! Random small angle within a cone centered around z-axis
+!   use constants, only: pi, two_pi
+!   use user_variables, only: theta_max ! Maximal scattering angle
+!   implicit none
+!   double precision, intent(out) :: phi, theta
+!   double precision :: ran0, z
+!
+!   ! Random angle within the max scattering cone
+!   z = cos(theta_max) + (1 - cos(theta_max)) * ran0()
+!   theta = acos(z) ! Theta within max
+!   phi = two_pi*ran0() ! Azimuthal angle phi isotropic
+!end subroutine scattering_angle_dev
 
 subroutine scattering_angle(theta, phi, theta_max)
    ! Random small angle within a cone centered around z-axis
@@ -132,7 +132,7 @@ subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
    else
       ! Compute loss cone opening, theta_cone
       ! Set max scattering, theta_max, to 100% of loss cone angle
-      cos_theta_cone = v_shock * abs(E_particle / sqrt(E_particle**2 - m_p**2))
+      cos_theta_cone = v_shock * abs(E_particle*v_shock / sqrt(E_particle**2 - m_p**2))
       if (abs(cos_theta_cone) > 1) call error("cosine exceeds 1, max_scattering_angle", 0)
       theta_cone = acos(cos_theta_cone)
       theta_max_computed = 1.0*theta_cone
