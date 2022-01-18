@@ -121,7 +121,7 @@ function v_particle(E, m) result(v)
    double precision, intent(in) :: E, m
    double precision :: v
    v = sqrt(E**2 - m**2)/E
-   if (v < 0) call error("Negative particle velocity invalid E, m combo, 0")
+   if (v < 0) call error("Negative particle velocity invalid E, m combo", 0)
 end function v_particle
 
 subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
@@ -142,7 +142,7 @@ subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
       theta_max_computed = theta_max
    else
       v_p = v_particle(E_particle, m_p)
-      if (v_shock > v_particle) then
+      if (v_shock > v_p) then
          ! isotropic -- E.g. particles injected in front of UR shock (before overtaken 1st time)
          theta_max_computed = pi
       else 
