@@ -6,10 +6,10 @@ import sys
 DATA_DIR = './Data/'
 OUT_DIR = './figs/'
 t_max = 101
-theta_pi_frac = 1.0
+theta_pi_frac = 0.1
 theta = theta_pi_frac*pi
-nsets = 102
-nstart = 102
+nsets = 100
+nstart = 10
 nproc = 1
 stepexp = 2.1
 
@@ -195,6 +195,7 @@ if __name__ == "__main__":
             z_samples[seti*len(z_samples_seti):(seti+1)*len(z_samples_seti)] = z_samples_seti
         avg_drifts_sampled_iso[sample] = np.average(np.sqrt(x_samples**2 + y_samples**2 + z_samples**2))
 
-    plt.plot(t_sampled, avg_drifts_sampled)
-    plt.plot(t_sampled_iso[:-100], avg_drifts_sampled_iso[:-100])
+    plt.plot(t_sampled, avg_drifts_sampled, label=f"theta: {theta}")
+    plt.plot(t_sampled_iso, avg_drifts_sampled_iso, label="isotropic")
+    plt.legend()
     plt.show()

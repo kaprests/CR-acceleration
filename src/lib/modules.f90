@@ -27,7 +27,7 @@ module user_variables
       inj_model = 0                             ! constant shock_velocity
    double precision :: shock_velocity = 3.d-2   ! velocity of constant shock
    double precision :: gamma_sh                 ! gamma of constant velocity shock
-   logical :: gamma_set = .false.                  ! True if gamma was set instead of vshock
+   logical :: gamma_set = .false.               ! True if gamma was set instead of vshock (in init)
 
    character(4) ::  basename = '_pas'           ! name in output
    character(len=:), allocatable :: filename    ! name in output

@@ -88,19 +88,36 @@ subroutine isotropic(phi, theta)
 end subroutine isotropic
 !=============================================================================!
 !=============================================================================!
-!subroutine scattering_angle_dev(theta, phi)
-!   ! Random small angle within a cone centered around z-axis
-!   use constants, only: pi, two_pi
-!   use user_variables, only: theta_max ! Maximal scattering angle
-!   implicit none
-!   double precision, intent(out) :: phi, theta
-!   double precision :: ran0, z
-!
-!   ! Random angle within the max scattering cone
-!   z = cos(theta_max) + (1 - cos(theta_max)) * ran0()
-!   theta = acos(z) ! Theta within max
-!   phi = two_pi*ran0() ! Azimuthal angle phi isotropic
-!end subroutine scattering_angle_dev
+subroutine scattering_angle_dev(theta, phi)
+   ! Random small angle within a cone centered around z-axis
+   use constants, only: pi, two_pi
+   use user_variables, only: theta_max ! Maximal scattering angle
+   implicit none
+   double precision, intent(out) :: phi, theta
+   double precision :: ran0, z
+
+   ! Random angle within the max scattering cone
+   z = cos(theta_max) + (1 - cos(theta_max)) * ran0()
+   theta = acos(z) ! Theta within max
+   phi = two_pi*ran0() ! Azimuthal angle phi isotropic
+end subroutine scattering_angle_dev
+
+function v_particle(E, m) result(v)
+   ! Maybe move to functions.f90?
+   implicit none
+   double precision, intent(in) :: E, m
+   double precision :: v
+   v = sqrt(E**2 - m**2)/E
+   if (v < 0) call error("Negative particle velocity invalid E, m combo", 0)
+end function v_particle
+
+double precision function stepsize(En, t, theta_max)
+   use particle_data, only: m_p
+   implicit none
+   double precision En, t, theta_max
+   double precision D_coef, v_particle
+   stepsize = (3*D_coef(En, t)/v_particle(En, m_p)) * (1-cos(theta_max))/2
+end function
 
 subroutine scattering_angle(theta, phi, theta_max)
    ! Random small angle within a cone centered around z-axis
@@ -115,14 +132,6 @@ subroutine scattering_angle(theta, phi, theta_max)
    theta = acos(z) ! Theta within max
    phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle
-
-function v_particle(E, m) result(v)
-   implicit none
-   double precision, intent(in) :: E, m
-   double precision :: v
-   v = sqrt(E**2 - m**2)/E
-   if (v < 0) call error("Negative particle velocity invalid E, m combo", 0)
-end function v_particle
 
 subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
    ! Computes the loss cone angle, and sets max_pitch scattering angle

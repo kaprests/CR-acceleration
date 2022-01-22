@@ -187,6 +187,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    integer i, j, k
    double precision :: t0
    integer :: num_steps_total, idx, sample_count, sample_int, num_samples
+   double precision stepsize
 
    pid => event(n_in)%pid
    A => event(n_in)%A
@@ -208,16 +209,23 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    x(2) = 0
    x(3) = 0
 
-   ! Step size
-   df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
-   call scales_charged(m, Z, E, t, w, df, dt, dE)
-   l_0 = R_L(E, t)/dble(Z)
-
-   ! Modify stepsize for pitch angle scattering
-   l_0 = l_0 * (theta_max/pi)**stepsize_exp ! Guess work
-
-   l_0_0 = l_0 ! Why l_0_0
+   ! Stepsize    
+   df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)    
+   call scales_charged(m, Z, E, t, w, df, dt, dE)                       
+   l_0 = stepsize(E, t, theta_max)/dble(Z)                             
+   l_0_0 = l_0                                                   
    if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
+
+!   ! Step size
+!   df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
+!   call scales_charged(m, Z, E, t, w, df, dt, dE)
+!   l_0 = R_L(E, t)/dble(Z)
+!
+!   ! Modify stepsize for pitch angle scattering
+!   l_0 = l_0 * (theta_max/pi)**stepsize_exp ! Guess work
+!
+!   l_0_0 = l_0 ! Why l_0_0
+!   if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
    ! Number of steps
    if (dt >= l_0) then

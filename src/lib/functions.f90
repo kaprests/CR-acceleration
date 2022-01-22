@@ -82,8 +82,6 @@ double precision function dNdEdt(t) ! injection rate
 !  else
 !     dNdEdt = t_EDST**(6.d0/5.d0)*t**(4.d0/5.d0)*v_snr**a
 !  end if
-
-
 end function dNdEdt
 
 

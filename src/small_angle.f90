@@ -18,14 +18,29 @@ end module constants
 !=============================================================================!
 program test
   use constants
+  use particle_data, only: e_elm
+  use SNR_data, only: B0_turb
   implicit none
   integer, parameter :: n=3
   integer i,j
   double precision k(3),p(3),R_Euler(n,n),phi,theta,phi0,theta0
 
+  !!! Testing stuff !!!
+  double precision :: R_L, D_coef, v_particle
+  double precision :: E_inj
+
+  E_inj = 1.0d10
+  print *, "!!!!!!!!!!!!!!!!!!!!!!!!"
+  print *, "E_inj(eV): ", E_inj
+  print *, "R_L(yr): ", R_L(E_inj, 1.0)
+  print *, "R_L/3: ", R_L(E_inj, 1.0)/3
+  print *, "R_L: ", sqrt(E_inj**2 - m_p**2)/(abs(e_elm)*B0_turb)
+  print *, "R_L - R_L: ", sqrt(E_inj**2 - m_p**2)/(abs(e_elm)*B0_turb) - R_L(E_inj, 1.0)
+  print *, "D_coeff(?): ", D_coef(E_inj, 1.0)
+  print *, "!!!!!!!!!!!!!!!!!!!!!!!!"
   
 ! initial momentum vector
-  theta0=30.d0*degree_rad
+  theta0=0.d0*degree_rad
   phi0=0.d0*degree_rad 
   
   k(1) = cos(phi0)*sin(theta0)
@@ -112,8 +127,11 @@ subroutine small_angle(theta,phi)
 !  print *, "Theta cone: ", theta_cone
   theta_max = 5.0
 
-  theta = theta_max * degree_rad * ran0()
-  phi = two_pi * ran0()
+  !theta = theta_max * degree_rad * ran0()
+  !phi = two_pi * ran0()
+
+  theta = 10.0 * degree_rad
+  phi = 0.0 * degree_rad
 end subroutine small_angle
 !=============================================================================!
 !=============================================================================!
