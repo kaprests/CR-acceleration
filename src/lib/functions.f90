@@ -209,6 +209,16 @@ double precision function tau_syn(m, E, t)     ! pc
 end function tau_syn
 
 
+function v_particle(E, m) result(v)
+   ! Maybe move to functions.f90?
+   implicit none
+   double precision, intent(in) :: E, m
+   double precision :: v
+   v = sqrt(E**2 - m**2)/E
+   if (v < 0) call error("Negative particle velocity invalid E, m combo", 0)
+end function v_particle
+
+
 double precision function cycle_energy_gain(theta_in, theta_out, v) result(e_gain)
    ! Computes the relative energy gain of a particle from a shock crossing cycle
    ! Computed in the rest frame of the SNR (v1 = 0)

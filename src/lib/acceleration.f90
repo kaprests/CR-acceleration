@@ -69,6 +69,7 @@ contains
          ! Max scattering angle 
          call max_scattering_angle(theta_max, v_shock(t), E)
          if (num_steps_taken == 0) then
+            print *, "theta_max (initial): ", theta_max
             ! Log first theta max 
             theta_max0 = theta_max
          end if

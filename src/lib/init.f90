@@ -39,7 +39,7 @@ subroutine parse_cmd_arguments
                                               '--max-pi-fr ', &  ! j=11
                                               '--t-max     ', &  ! j=12
                                               '--iso       ', &  ! j=13
-                                              '--stepexp   ' &  ! j=14
+                                              '--stepexp   ' &  ! j=14 Deprecated
                                               ]
 
    n_args = command_argument_count()
@@ -118,7 +118,7 @@ subroutine init_general(myid, n_proc)
    use result
    implicit none
    integer, intent(in) :: myid, n_proc
-   double precision v_EDST, v_shock
+   double precision v_EDST, v_shock, stepsize
    !character(10) :: n_start_str, n_sets_str, , v_shock_str, gamma_str
 
    ! Parse command line arguments, and apply given settings/config
@@ -127,7 +127,7 @@ subroutine init_general(myid, n_proc)
    ! TODO: read parameters from file
    call parse_cmd_arguments ! Command line arguments
 
-   ! Adds configuration metadata to filename
+   ! Add configuration metadata to filename
    write (n_sets_str, '(I10)') n_sets
    write (n_start_str, '(I10)') n_start
    write (n_proc_str, '(I10)') n_proc
@@ -175,6 +175,8 @@ subroutine init_general(myid, n_proc)
    t_max_str = adjustl(t_max_str)
    write (stepsize_exp_str, '(f10.3)') stepsize_exp
    stepsize_exp_str = adjustl(stepsize_exp_str)
+   write (stepsize_str, '(f10.3)') stepsize(E_inj, 1.0, theta_max)
+   stepsize_str = adjustl(stepsize_str)
    print *, "=========================="
    print *, "For shockless random walk:"
    print *, "t_max: ", t_max

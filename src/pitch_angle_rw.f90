@@ -10,7 +10,8 @@ program pitch_angle
       stepsize_exp_str, &
       n_sets_str, &
       n_start_str, &
-      n_proc_str
+      n_proc_str, &
+      stepsize_str
    use internal, only: E_inj
    implicit none
    integer myid, n_proc, ierr, set
@@ -32,7 +33,7 @@ program pitch_angle
       MPI_COMM_WORLD, &
       fpos_filehandle, &
       trim(outdir)//'/pas_rw_fpos_tmax'//trim(t_max_str)//'_theta'//&
-      trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//'_nsets'//trim(n_sets_str)//&
+      trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//'_nsets'//trim(n_sets_str)//&
       '_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
       ierr &
    )
@@ -41,7 +42,7 @@ program pitch_angle
       MPI_COMM_WORLD, &
       traj_filehandle, &
       trim(outdir)//'/pas_rw_trajectories_tmax'//&
-      trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
+      trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//&
       '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
       ierr &
    )
@@ -50,7 +51,7 @@ program pitch_angle
       MPI_COMM_WORLD, &
       samplepos_filehandle, &
       trim(outdir)//'/pas_rw_samplepos_tmax'//&
-      trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepexp'//trim(stepsize_exp_str)//&
+      trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//&
       '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
       ierr &
    )
@@ -212,7 +213,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    ! Stepsize    
    df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)    
    call scales_charged(m, Z, E, t, w, df, dt, dE)                       
-   l_0 = stepsize(E, t, theta_max)/dble(Z)                             
+   l_0 = R_L(E, t)/dble(z)!stepsize(E, t, theta_max)/dble(Z)                             
    l_0_0 = l_0                                                   
    if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 

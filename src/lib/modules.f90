@@ -51,6 +51,7 @@ module user_variables
    character(10) :: t_max_str
    double precision :: stepsize_exp = 2.1
    character(10) :: stepsize_exp_str
+   character(10) :: stepsize_str
 end module user_variables
 
 
