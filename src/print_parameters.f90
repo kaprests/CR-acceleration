@@ -21,7 +21,7 @@ program print_parameters
   implicit none
   integer, parameter :: n=3
   integer i,j
-  double precision k(3),p(3),R_Euler(n,n),phi,theta,phi0,theta0, cubic_spline
+  double precision k(3),p(3),R_Euler(n,n),phi,theta,phi0,theta0, cubic_spline_stepsize
 
   !!! Testing stuff !!!
   double precision :: R_L, D_coef, v_particle
