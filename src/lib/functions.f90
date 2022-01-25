@@ -219,19 +219,56 @@ function v_particle(E, m) result(v)
 end function v_particle
 
 
-double precision function cycle_energy_gain(theta_in, theta_out, v) result(e_gain)
-   ! Computes the relative energy gain of a particle from a shock crossing cycle
-   ! Computed in the rest frame of the SNR (v1 = 0)
-   ! v = v2 - v1, function of v_shock
-   ! Can use for comparison, but will probably be scrapped
-   ! Assumed c = 1
+double precision function analytical_stepsize(En, t, theta_max)
+   use particle_data, only: m_p
    implicit none
-   double precision, intent(in) :: theta_in, theta_out, v
+   double precision En, t, theta_max
+   double precision D_coef, v_particle
+   analytical_stepsize = (3*D_coef(En, t)/v_particle(En, m_p)) * (1-cos(theta_max))/2
+end function analytical_stepsize
 
-   e_gain = &
-      (1 - v*cos(theta_in) + v*cos(theta_out) - (v**2)*cos(theta_in)*cos(theta_out)) &
-      /(1 - v**2) - 1
-end function cycle_energy_gain
+
+double precision function cubic_spline_stepsize(x) 
+   use stepsize_interpolated_polynom_coefficients, only: bp, coeffs
+   implicit none
+   double precision, intent(in) :: x
+   !double precision, dimension(:), intent(in) :: bp
+   !double precision, dimension(:, :), intent(in) :: coeffs
+   double precision :: output
+   integer :: i, j, k
+
+   if (x < bp(1) .or. x > bp(size(bp))) then
+      call error("Argument x out of range", 0)
+   end if
+
+   do i = 1, size(bp), 1
+   if (x <= bp(i)) then
+      k = 3
+      output = 0
+      do j = 1, k+1, 1
+         output = output + coeffs(i, j) * (x - bp(i))**(k-j+1)
+      end do
+      cubic_spline_stepsize = output
+      return
+   end if
+   end do
+   call error("Unknown error, possibly invalid argument", 0)
+end function cubic_spline_stepsize
+
+
+!double precision function cycle_energy_gain(theta_in, theta_out, v) result(e_gain)
+!   ! Computes the relative energy gain of a particle from a shock crossing cycle
+!   ! Computed in the rest frame of the SNR (v1 = 0)
+!   ! v = v2 - v1, function of v_shock
+!   ! Can use for comparison, but will probably be scrapped
+!   ! Assumed c = 1
+!   implicit none
+!   double precision, intent(in) :: theta_in, theta_out, v
+!
+!   e_gain = &
+!      (1 - v*cos(theta_in) + v*cos(theta_out) - (v**2)*cos(theta_in)*cos(theta_out)) &
+!      /(1 - v**2) - 1
+!end function cycle_energy_gain
 
 
 !=============================================================================!

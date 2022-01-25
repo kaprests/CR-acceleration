@@ -102,41 +102,6 @@ subroutine scattering_angle_dev(theta, phi)
    phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle_dev
 
-double precision function stepsize(En, t, theta_max)
-   use particle_data, only: m_p
-   implicit none
-   double precision En, t, theta_max
-   double precision D_coef, v_particle
-   stepsize = (3*D_coef(En, t)/v_particle(En, m_p)) * (1-cos(theta_max))/2
-end function
-
-double precision function cubic_spline_stepsize(x) 
-   use stepsize_interpolated_polynom_coefficients, only: bp, coeffs
-   implicit none
-   double precision, intent(in) :: x
-   !double precision, dimension(:), intent(in) :: bp
-   !double precision, dimension(:, :), intent(in) :: coeffs
-   double precision :: output
-   integer :: i, j, k
-
-   if (x < bp(1) .or. x > bp(size(bp))) then
-      call error("Argument x out of range", 0)
-   end if
-
-   do i = 1, size(bp), 1
-   if (x <= bp(i)) then
-      k = 3
-      output = 0
-      do j = 1, k+1, 1
-         output = output + coeffs(i, j) * (x - bp(i))**(k-j+1)
-      end do
-      cubic_spline_stepsize = output
-      return
-   end if
-   end do
-   call error("Unknown error, possibly invalid argument", 0)
-end function cubic_spline_stepsize
-
 subroutine scattering_angle(theta, phi, theta_max)
    ! Random small angle within a cone centered around z-axis
    use constants, only: pi, two_pi
