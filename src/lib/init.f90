@@ -200,6 +200,8 @@ subroutine init_general(myid, n_proc)
    allocate (trajectories(4, n_start, num_steps_log))
    allocate (crossing_flight_angles(n_start, num_cross_log))
 
+   allocate(phase_space_dist(7, n_start, num_steps_log))
+
    ! For shockless random walks only
    allocate (final_positions(3, n_start))
    print *, "!!!!!!!!!"

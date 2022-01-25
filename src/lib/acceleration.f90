@@ -21,15 +21,17 @@ contains
       ! Loop variables: incr, end
       integer :: k, n_step
       ! Functions
-      double precision :: ran0, R_L, t_shock, v_shock, get_v_2, cubic_spline_stepsize
+      double precision :: ran0, R_L, t_shock, v_shock, get_v_2, cubic_spline_stepsize, v_particle
       ! Pointers
       integer, pointer :: pid, A, Z
       double precision, pointer :: E, x(:), t, w
       ! Variables
-      double precision :: r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2
+      double precision :: r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2, v_p
       double precision :: r, m, f, df, dt, dE, delta, l_0, l_0_0
       double precision :: v_x, v_y, v_z
+      double precision :: v_px, v_py, v_pz ! particle velocity components
       double precision :: gamma_v, gamma_x, gamma_y, gamma_z, cos_theta
+      double precision :: gamma_pv, gamma_px, gamma_py, gamma_pz
       double precision :: l_x, l_y, l_z
       double precision :: d0, r_sh0
       ! ############
@@ -153,12 +155,44 @@ contains
 
          ! Log position
          if (num_steps_taken + 1 <= size(trajectories, 3)) then
-            trajectories(1, n_injected, num_steps_taken + 1) = x(1)
-            trajectories(2, n_injected, num_steps_taken + 1) = x(2)
-            trajectories(3, n_injected, num_steps_taken + 1) = x(3)
-            trajectories(4, n_injected, num_steps_taken + 1) = t
+            trajectories(1, n_injected, num_steps_taken + 1) = t
+            trajectories(2, n_injected, num_steps_taken + 1) = x(1)
+            trajectories(3, n_injected, num_steps_taken + 1) = x(2)
+            trajectories(4, n_injected, num_steps_taken + 1) = x(3)
          end if
 
+         if (num_steps_taken + 1 <= size(phase_space_dist, 3)) then
+            ! Store in shock rest frame -- eventually transform afterwards
+            v_p = v_particle(E, t)
+            v_px = v_p*cos(phi)*sin(theta)
+            v_py = v_p*sin(phi)*sin(theta)
+            v_pz = v_p*cos(theta)
+            gamma_px = 1.d0/sqrt(1.d0 - v_px**2)                 ! v_2 dimless (v_2 = beta = v/c)
+            gamma_py = 1.d0/sqrt(1.d0 - v_py**2)                 ! v_2 dimless (v_2 = beta = v/c)
+            gamma_pz = 1.d0/sqrt(1.d0 - v_pz**2)                 ! v_2 dimless (v_2 = beta = v/c)
+
+            v_2 = v_shock(t)
+            v_x = v_p*cos(phi_v)*sin(theta_v)
+            v_y = v_p*sin(phi_v)*sin(theta_v)
+            v_z = v_p*cos(theta_v)
+            gamma_x = 1.d0/sqrt(1.d0 - v_x**2)                 ! v_2 dimless (v_2 = beta = v/c)
+            gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
+            gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
+            gamma_v = 1.d0/sqrt(1.d0 - v_2**2)
+
+            phase_space_dist(1, n_injected, num_steps_taken + 1) = &
+               gamma_v*(t - v_2*sqrt(x(1)**2+x(2)**2+x(3)**2))
+            phase_space_dist(2, n_injected, num_steps_taken + 1) = gamma_x*(x(1)-v_x*t)
+            phase_space_dist(3, n_injected, num_steps_taken + 1) = gamma_y*(x(2)-v_y*t)
+            phase_space_dist(4, n_injected, num_steps_taken + 1) = gamma_z*(x(3)-v_z*t)
+
+            phase_space_dist(5, n_injected, num_steps_taken + 1) = &
+               gamma_x*(gamma_px * m_p * v_px - E*v_x)
+            phase_space_dist(6, n_injected, num_steps_taken + 1) = &
+               gamma_y*(gamma_py * m_p * v_py - E*v_y)
+            phase_space_dist(7, n_injected, num_steps_taken + 1) = &
+               gamma_z*(gamma_pz * m_p * v_pz - E*v_z)
+         end if
          !print *, "l_0: ", l_0
          !print *, "v: ", l_0/dt
          !print *, "D: ", l_0*(l_0/dt)/6
@@ -337,7 +371,7 @@ contains
       double precision ran0, R_L, t_shock, v_shock, get_v_2
       integer, pointer :: pid, A, Z
       double precision, pointer :: E, x(:), t, w
-      double precision :: v_x, v_y, v_z
+      double precision :: v_x, v_y, v_z ! Shock velocity components
       double precision :: gamma_v, gamma_x, gamma_y, gamma_z, cos_theta
       double precision :: d0, r_sh0
 

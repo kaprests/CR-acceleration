@@ -6,10 +6,11 @@ program acceleration
    implicit none
    integer set
    integer myid, n_proc, ierr, n_array
-   type(MPI_FILE) traj_filehandle, crossang_filehandle
+   type(MPI_FILE) traj_filehandle, crossang_filehandle, phase_space_filehandle
    integer traj_array_count, traj_array_bsize
    integer crossang_array_count, crossang_array_bsize
-   integer(kind=MPI_OFFSET_KIND) :: traj_offset, crossang_offset
+   integer phase_space_array_count, phase_space_array_bsize
+   integer(kind=MPI_OFFSET_KIND) :: traj_offset, crossang_offset, phase_space_offset
 
    ! MPI init
    call MPI_INIT(ierr)  ! Initiate/create 
@@ -29,6 +30,13 @@ program acceleration
    call init_mpi_io(MPI_COMM_WORLD, &
       crossang_filehandle, &
       trim(outdir)//'/cross_angles'//filename, &
+      ierr &
+   )
+
+   ! MPI data file -- phase space density/distribution
+   call init_mpi_io(MPI_COMM_WORLD, &
+      phase_space_filehandle, &
+      trim(outdir)//'/phase_space'//filename, &
       ierr &
    )
 
@@ -86,11 +94,26 @@ program acceleration
          MPI_STATUS_IGNORE, &
          ierr &
       )
+
+      ! Write phase data 
+      phase_space_array_bsize = sizeof(phase_space_dist)
+      phase_space_offset = myid * n_sets * phase_space_array_bsize + phase_space_array_bsize * (set - 1)
+      phase_space_array_count = size(phase_space_dist)
+      call MPI_FILE_WRITE_AT(&
+         phase_space_filehandle, &
+         crossang_offset, &
+         phase_space_dist, &
+         phase_space_array_count, &
+         MPI_DOUBLE_PRECISION, &
+         MPI_STATUS_IGNORE, &
+         ierr &
+      )
    end do
 
    ! close outputs and finalize
    call MPI_FILE_CLOSE(traj_filehandle, ierr)
    call MPI_FILE_CLOSE(crossang_filehandle, ierr)
+   call MPI_FILE_CLOSE(phase_space_filehandle, ierr)
    close (99)
    call MPI_FINALIZE(ierr)
 end program acceleration

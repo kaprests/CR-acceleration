@@ -33,7 +33,7 @@ module user_variables
    character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
    character(10) :: outdir_raw = './RawData'
-   integer :: num_steps_log = 100               ! Must reduce for large particle count
+   integer :: num_steps_log = 200               ! Must reduce for large particle count
    integer :: num_cross_log = 100               ! Must reduce for large particle count
    logical :: isotropic = .false.               ! Use isotropic rw if true
 
@@ -187,6 +187,7 @@ module result
    double precision, allocatable :: num_crossings_total(:) ! # number of shock crossings
    double precision, allocatable :: trajectories(:, :, :)
    double precision, allocatable :: crossing_flight_angles(:, :)
+   double precision, allocatable :: phase_space_dist(:, :, :)
 
    ! For shockless random walks only
    double precision, allocatable :: final_positions(:, :)
