@@ -115,10 +115,11 @@ subroutine init_general(myid, n_proc)
    use internal
    use user_variables
    use SNR_data
+   use constants
    use result
    implicit none
    integer, intent(in) :: myid, n_proc
-   double precision v_EDST, v_shock, stepsize
+   double precision v_EDST, v_shock, cubic_spline_stepsize, D_coef, R_L
    !character(10) :: n_start_str, n_sets_str, , v_shock_str, gamma_str
 
    ! Parse command line arguments, and apply given settings/config
@@ -162,6 +163,7 @@ subroutine init_general(myid, n_proc)
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
    filename = filename//'_n_proc'//trim(n_proc_str)
    print *, "filename metadata: ", filename
+   print *, "D_coef: ", D_coef(E_inj, 1.0)
 
    ! If no t_max given by user, set default exit time t_max_snr from SNR_data
    if (t_max == -1) then
@@ -173,15 +175,21 @@ subroutine init_general(myid, n_proc)
    num_steps_tot_str = adjustl(num_steps_tot_str)
    write (t_max_str, '(f10.3)') t_max
    t_max_str = adjustl(t_max_str)
-   write (stepsize_exp_str, '(f10.3)') stepsize_exp
-   stepsize_exp_str = adjustl(stepsize_exp_str)
-   write (stepsize_str, '(f10.3)') stepsize(E_inj, 1.0, theta_max)
-   stepsize_str = adjustl(stepsize_str)
+   !write (stepsize_exp_str, '(f10.3)') stepsize_exp
+   !stepsize_exp_str = adjustl(stepsize_exp_str)
+   !write (stepsize_str, '(f10.3)') cubic_spline_stepsize(theta_max)
+   !stepsize_str = adjustl(stepsize_str)
    print *, "=========================="
    print *, "For shockless random walk:"
    print *, "t_max: ", t_max
-   print *, "theta max: ", pi*theta_max_pi_frac
-   print *, "stepsize exp: ", stepsize_exp
+   print *, "theta max1: ", pi*theta_max_pi_frac
+   print *, "theta_max2: ", theta_max
+   print *, "Current step size: ", cubic_spline_stepsize(theta_max)
+   print *, "Isotropic step size (cs): ", cubic_spline_stepsize(pi)
+   print *, "Isotropic step size RL: ", R_L(E_inj, 1.0)
+   print *, "D_coeff: ", R_L(E_inj, 1.0)/3
+   print *, "D_coeff2: ",  D_coef(E_inj, 1.0)
+   print *, "stepsize exp (deprecated): ", stepsize_exp
    print *, "=========================="
 
    ! Allocate dynamic arrays

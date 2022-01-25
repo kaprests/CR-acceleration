@@ -5,13 +5,14 @@ import sys
 
 DATA_DIR = './Data/'
 OUT_DIR = './figs/'
-t_max = 101
-theta_pi_frac = 0.1
+t_max = 105
+theta_pi_frac = 0.2
 theta = theta_pi_frac*pi
-nsets = 100
+nsets = 10
 nstart = 10
 nproc = 1
-stepexp = 2.1
+#stepexp = 2.1
+#stepsize = 0
 
 flags = ['--theta-pi-fr', '--tmax', '--stepexp']
 
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     fpos_fname += (
             f"pas_rw_fpos_tmax{t_max:.3f}_"
             f"theta{theta:.3f}_"
-            f"stepexp{stepexp:.3f}_"
+            #f"stepsize{stepsize:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
             f"nproc{nproc}"
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     fpos_fname_iso += (
             f"pas_rw_fpos_tmax{t_max:.3f}_"
             f"theta{np.pi:.3f}_"
-            f"stepexp{stepexp:.3f}_"
+            #f"stepsize{0.016:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
             f"nproc{nproc}"
@@ -122,7 +123,7 @@ if __name__ == "__main__":
     samplepos_fname += (
             f"pas_rw_samplepos_tmax{t_max:.3f}_"
             f"theta{theta:.3f}_"
-            f"stepexp{stepexp:.3f}_"
+            #f"stepsize{stepsize:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
             f"nproc{nproc}"
@@ -154,14 +155,14 @@ if __name__ == "__main__":
             x_samples[seti*len(x_samples_seti):(seti+1)*len(x_samples_seti)] = x_samples_seti
             y_samples[seti*len(y_samples_seti):(seti+1)*len(y_samples_seti)] = y_samples_seti
             z_samples[seti*len(z_samples_seti):(seti+1)*len(z_samples_seti)] = z_samples_seti
-        avg_drifts_sampled[sample] = np.average(np.sqrt(x_samples**2 + y_samples**2 + z_samples**2))
+        avg_drifts_sampled[sample] = np.average(x_samples**2 + y_samples**2 + z_samples**2)
 
     # isotropic data
     samplepos_fname_iso = DATA_DIR
     samplepos_fname_iso += (
             f"pas_rw_samplepos_tmax{t_max:.3f}_"
             f"theta{np.pi:.3f}_"
-            f"stepexp{stepexp:.3f}_"
+            #f"stepsize{0.016:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
             f"nproc{nproc}"
@@ -193,9 +194,12 @@ if __name__ == "__main__":
             x_samples[seti*len(x_samples_seti):(seti+1)*len(x_samples_seti)] = x_samples_seti
             y_samples[seti*len(y_samples_seti):(seti+1)*len(y_samples_seti)] = y_samples_seti
             z_samples[seti*len(z_samples_seti):(seti+1)*len(z_samples_seti)] = z_samples_seti
-        avg_drifts_sampled_iso[sample] = np.average(np.sqrt(x_samples**2 + y_samples**2 + z_samples**2))
+        avg_drifts_sampled_iso[sample] = np.average(x_samples**2 + y_samples**2 + z_samples**2)
 
     plt.plot(t_sampled, avg_drifts_sampled, label=f"theta: {theta}")
     plt.plot(t_sampled_iso, avg_drifts_sampled_iso, label="isotropic")
     plt.legend()
     plt.show()
+
+    print("D': ", (avg_drifts_sampled[-1]-avg_drifts_sampled[0])/(t_sampled[-1] - t_sampled[0])/3)
+    print("D'(iso): ", (avg_drifts_sampled_iso[-1]-avg_drifts_sampled_iso[0])/(t_sampled_iso[-1] - t_sampled_iso[0])/3)

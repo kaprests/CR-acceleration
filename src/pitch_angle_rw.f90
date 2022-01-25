@@ -33,7 +33,8 @@ program pitch_angle
       MPI_COMM_WORLD, &
       fpos_filehandle, &
       trim(outdir)//'/pas_rw_fpos_tmax'//trim(t_max_str)//'_theta'//&
-      trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//'_nsets'//trim(n_sets_str)//&
+      !trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//'_nsets'//trim(n_sets_str)//&
+      trim(theta_max_str)//'_nsets'//trim(n_sets_str)//&
       '_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
       ierr &
    )
@@ -42,7 +43,8 @@ program pitch_angle
       MPI_COMM_WORLD, &
       traj_filehandle, &
       trim(outdir)//'/pas_rw_trajectories_tmax'//&
-      trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//&
+      !trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//&
+      trim(t_max_str)//'_theta'//trim(theta_max_str)//&
       '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
       ierr &
    )
@@ -51,7 +53,8 @@ program pitch_angle
       MPI_COMM_WORLD, &
       samplepos_filehandle, &
       trim(outdir)//'/pas_rw_samplepos_tmax'//&
-      trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//&
+      !trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//&
+      trim(t_max_str)//'_theta'//trim(theta_max_str)//&
       '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
       ierr &
    )
@@ -172,7 +175,7 @@ end subroutine tracer
 
 
 subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
-   use user_variables, only: debug, t_max, theta_max, num_steps_log, stepsize_exp
+   use user_variables, only: debug, t_max, theta_max, num_steps_log, stepsize_exp, theta_max_str
    use constants; use particle_data, only: m_p
    use event_internal; use result
    use internal
@@ -188,7 +191,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    integer i, j, k
    double precision :: t0
    integer :: num_steps_total, idx, sample_count, sample_int, num_samples
-   double precision stepsize
+   double precision cubic_spline_stepsize
 
    pid => event(n_in)%pid
    A => event(n_in)%A
@@ -213,7 +216,19 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    ! Stepsize    
    df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)    
    call scales_charged(m, Z, E, t, w, df, dt, dE)                       
-   l_0 = R_L(E, t)/dble(z)!stepsize(E, t, theta_max)/dble(Z)                             
+   if (abs(theta_max - pi) < 0.0001) then
+      print *, "Isotropic stepsize"
+      print *, "theta_max - pi: ", theta_max - pi
+      print *, "theta_max: ", theta_max
+      print *, "theta_max_str: ", theta_max_str
+      l_0 = R_L(E, t)/dble(z)!stepsize(E, t, theta_max)/dble(Z)                             
+   else
+      print *, "Cubic spline stepsize"
+      l_0 = cubic_spline_stepsize(theta_max)/dble(Z)
+   end if
+      print *, "Using stepsize: ", l_0
+      print *, "Isotropic stepsize: ", R_L(E, t)
+      print *, "l/R_L: ", l_0/R_L(E, t)
    l_0_0 = l_0                                                   
    if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
@@ -263,11 +278,6 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    num_steps_taken = 0
    if (.not. allocated(sample_positions)) allocate(sample_positions(4, n_start, num_samples))
    
-   print *, "l_0: ", l_0    
-   print *, "v: ", l_0/dt    
-   print *, "D: ", l_0*(l_0/dt)/6    
-   print *, "D': ", l_0*(l_0/dt)/3
-
    do 
       ! log position
       if (num_steps_taken+1 <= size(trajectories, 3)) then

@@ -65,6 +65,10 @@ pitch_angle_rw_test: $(LIB_FILES_RW) $(SRC_DIR)/pitch_angle_rw.f90
 small_angle: $(LIB_FILES) $(SRC_DIR)/small_angle.f90
 	$(FC) -J $(MOD_DIR) $(DFLAGS) $(LIB_FILES) $(SRC_DIR)/small_angle.f90 -o $(BIN_DIR)/$@
 
+print_params: $(LIB_FILES) $(SRC_DIR)/print_parameters.f90
+	$(FC) -J $(MOD_DIR) $(DFLAGS) $(LIB_FILES) $(SRC_DIR)/print_parameters.f90 -o $(BIN_DIR)/$@
+
+
 #small_angle: $(SRC)/modules.f90 $(SRC)/small_angle.f90 $(SRC)/init.f90 $(SRC)/functions.f90 $(SRC)/output.f90 $(SRC)/aux.f90
 #	gfortran -J$(MOD) -O -w $(SRC)/modules.f90 $(SRC)/small_angle.f90 $(SRC)/init.f90 $(SRC)/functions.f90 $(SRC)/output.f90 $(SRC)/aux.f90 -o $(BIN)/small_angle
 #
