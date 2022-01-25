@@ -136,7 +136,8 @@ subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
       v_p = v_particle(E_particle, m_p)
       if (v_shock > v_p) then
          ! isotropic -- E.g. particles injected in front of UR shock (before overtaken 1st time)
-         theta_max_computed = pi
+         !theta_max_computed = pi
+         theta_max_computed = 1/(1/sqrt(1-v_shock**2)) !approx for UR shocks from Achterberg et at. 
       else 
          ! Compute loss cone opening, theta_cone
          ! Set max scattering, theta_max, to 100% of loss cone angle

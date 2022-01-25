@@ -21,7 +21,7 @@ contains
       ! Loop variables: incr, end
       integer :: k, n_step
       ! Functions
-      double precision :: ran0, R_L, t_shock, v_shock, get_v_2, stepsize
+      double precision :: ran0, R_L, t_shock, v_shock, get_v_2, cubic_spline_stepsize
       ! Pointers
       integer, pointer :: pid, A, Z
       double precision, pointer :: E, x(:), t, w
@@ -77,7 +77,7 @@ contains
          ! Stepsize
          df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
          call scales_charged(m, Z, E, t, w, df, dt, dE)
-         l_0 = stepsize(E, t, theta_max)/dble(Z)
+         l_0 = cubic_spline_stepsize(theta_max)/dble(Z)
          l_0_0 = l_0
          ! Old adjustment of stepsize
          !l_0 = l_0*(theta_max/pi)**stepsize_exp
@@ -85,14 +85,14 @@ contains
          if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
          ! Step direction
-         r_sh0 = t_shock(t)                              ! shock position WHY?
+         r_sh0 = t_shock(t)                              ! shock position (not needed here?)
          d0 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! particle radial position
          if (num_steps_taken == 0) then
             ! First step isotropic
-            !call isotropic(phi, theta)
+            call isotropic(phi, theta)
 
             ! First step in radial direction
-            call radially_outward(phi, theta, x(1), x(2), x(3))
+            !call radially_outward(phi, theta, x(1), x(2), x(3))
          else
             ! Following steps small angle
             ! g: initial momentum vector
