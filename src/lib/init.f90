@@ -124,7 +124,7 @@ subroutine init_general(myid, n_proc)
    use result
    implicit none
    integer, intent(in) :: myid, n_proc
-   double precision v_EDST, v_shock, cubic_spline_stepsize, D_coef, R_L
+   double precision v_EDST, v_shock, D_coef, R_L
    !character(10) :: n_start_str, n_sets_str, , v_shock_str, gamma_str
 
    ! Parse command line arguments, and apply given settings/config
@@ -196,8 +196,8 @@ subroutine init_general(myid, n_proc)
    print *, "t_max: ", t_max
    print *, "theta max1: ", pi*theta_max_pi_frac
    print *, "theta_max2: ", theta_max
-   print *, "Current step size: ", cubic_spline_stepsize(theta_max)
-   print *, "Isotropic step size (cs): ", cubic_spline_stepsize(pi)
+   !print *, "Current step size: ", cubic_spline_stepsize(theta_max)
+   !print *, "Isotropic step size (cs): ", cubic_spline_stepsize(pi)
    print *, "Isotropic step size RL: ", R_L(E_inj, 1.0)
    print *, "D_coeff: ", R_L(E_inj, 1.0)/3
    print *, "D_coeff2: ",  D_coef(E_inj, 1.0)

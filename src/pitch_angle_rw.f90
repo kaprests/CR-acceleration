@@ -11,7 +11,7 @@ program pitch_angle
       n_sets_str, &
       n_start_str, &
       n_proc_str, &
-      stepsize_str
+      E_inj_exp_str
    use internal, only: E_inj
    implicit none
    integer myid, n_proc, ierr, set
@@ -35,7 +35,8 @@ program pitch_angle
       trim(outdir)//'/pas_rw_fpos_tmax'//trim(t_max_str)//'_theta'//&
       !trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//'_nsets'//trim(n_sets_str)//&
       trim(theta_max_str)//'_nsets'//trim(n_sets_str)//&
-      '_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
+      '_nstart'//trim(n_start_str)//'_Eexp'//trim(E_inj_exp_str)&
+      //'_nproc'//trim(n_proc_str), &
       ierr &
    )
    ! MPI data file -- Trajectories
@@ -45,7 +46,8 @@ program pitch_angle
       trim(outdir)//'/pas_rw_trajectories_tmax'//&
       !trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//&
       trim(t_max_str)//'_theta'//trim(theta_max_str)//&
-      '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
+      '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_Eexp'//trim(E_inj_exp_str)&
+      //'_nproc'//trim(n_proc_str), &
       ierr &
    )
    ! MPI data file -- Trajectories
@@ -55,7 +57,9 @@ program pitch_angle
       trim(outdir)//'/pas_rw_samplepos_tmax'//&
       !trim(t_max_str)//'_theta'//trim(theta_max_str)//'_stepsize'//trim(stepsize_str)//&
       trim(t_max_str)//'_theta'//trim(theta_max_str)//&
-      '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)//'_nproc'//trim(n_proc_str), &
+      '_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)&
+      //'_Eexp'//trim(E_inj_exp_str)&
+      //'_nproc'//trim(n_proc_str), &
       ierr &
    )
 
@@ -191,7 +195,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    integer i, j, k
    double precision :: t0
    integer :: num_steps_total, idx, sample_count, sample_int, num_samples
-   double precision cubic_spline_stepsize
+   double precision cubic_spline_small_angle_step_correction
 
    pid => event(n_in)%pid
    A => event(n_in)%A
@@ -225,8 +229,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    else
       print *, "Cubic spline stepsize"
       print *, "Using isotropic stepsize for interpolation (temp sol)"
-      l_0 = cubic_spline_stepsize(theta_max)/dble(Z)
-      l_0 = R_L(E, t)/dble(z)!stepsize(E, t, theta_max)/dble(Z)                             
+      l_0 = R_L(E, t)*cubic_spline_small_angle_step_correction(theta_max)/dble(Z)
    end if
       print *, "Using stepsize: ", l_0
       print *, "Isotropic stepsize: ", R_L(E, t)

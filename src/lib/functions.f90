@@ -228,8 +228,7 @@ double precision function analytical_stepsize(En, t, theta_max)
 end function analytical_stepsize
 
 
-! Must update to include energy dependency
-double precision function cubic_spline_stepsize(x) 
+double precision function cubic_spline_small_angle_step_correction(x) 
    use stepsize_interpolated_polynom_coefficients, only: bp, coeffs
    implicit none
    double precision, intent(in) :: x
@@ -250,12 +249,12 @@ double precision function cubic_spline_stepsize(x)
       do j = 1, k+1, 1
          output = output + coeffs(i, j) * (x - bp(i))**(k-j+1)
       end do
-      cubic_spline_stepsize = output
+      cubic_spline_small_angle_step_correction = (output/3.504386947787479d-05)
       return
    end if
    end do
    call error("Unknown error, possibly invalid argument", 0)
-end function cubic_spline_stepsize
+end function cubic_spline_small_angle_step_correction
 
 
 !double precision function cycle_energy_gain(theta_in, theta_out, v) result(e_gain)

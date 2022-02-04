@@ -5,12 +5,13 @@ import sys
 
 DATA_DIR = './Data/'
 OUT_DIR = './figs/'
-t_max = 105
-theta_pi_frac = 0.2
+t_max = 110
+theta_pi_frac = 0.5
 theta = theta_pi_frac*pi
-nsets = 10
+nsets = 100
 nstart = 10
-nproc = 1
+nproc = 2
+E_inj_exp = 13
 #stepexp = 2.1
 #stepsize = 0
 
@@ -66,9 +67,9 @@ if __name__ == "__main__":
     fpos_fname += (
             f"pas_rw_fpos_tmax{t_max:.3f}_"
             f"theta{theta:.3f}_"
-            #f"stepsize{stepsize:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
+            f"Eexp{E_inj_exp:.3f}_"
             f"nproc{nproc}"
         )
     fpos_file = open(fpos_fname, 'rb')
@@ -85,6 +86,7 @@ if __name__ == "__main__":
             #f"stepsize{0.016:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
+            f"Eexp{E_inj_exp:.3f}_"
             f"nproc{nproc}"
         )
     fpos_file_iso = open(fpos_fname_iso, 'rb')
@@ -126,6 +128,7 @@ if __name__ == "__main__":
             #f"stepsize{stepsize:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
+            f"Eexp{E_inj_exp:.3f}_"
             f"nproc{nproc}"
         )
     samplepos_file = open(samplepos_fname, 'rb')
@@ -165,6 +168,7 @@ if __name__ == "__main__":
             #f"stepsize{0.016:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
+            f"Eexp{E_inj_exp:.3f}_"
             f"nproc{nproc}"
         )
     samplepos_file_iso = open(samplepos_fname_iso, 'rb')
