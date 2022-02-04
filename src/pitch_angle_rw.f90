@@ -224,7 +224,9 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
       l_0 = R_L(E, t)/dble(z)!stepsize(E, t, theta_max)/dble(Z)                             
    else
       print *, "Cubic spline stepsize"
+      print *, "Using isotropic stepsize for interpolation (temp sol)"
       l_0 = cubic_spline_stepsize(theta_max)/dble(Z)
+      l_0 = R_L(E, t)/dble(z)!stepsize(E, t, theta_max)/dble(Z)                             
    end if
       print *, "Using stepsize: ", l_0
       print *, "Isotropic stepsize: ", R_L(E, t)
