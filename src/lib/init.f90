@@ -17,13 +17,14 @@ subroutine parse_cmd_arguments
    ! Very naive, non flexible argument parser
    use user_variables
    use constants, only: pi
+   use internal, only: E_inj
 
    implicit none
    integer :: i, n_args
    integer :: j, n_flags
    character(20) :: flag
    character(20) :: arg
-   character(20), dimension(14), parameter :: flags = &
+   character(20), dimension(15), parameter :: flags = &
                                               [ &
                                               ! Integer:
                                               '--nsets     ', &  ! j=1
@@ -39,7 +40,8 @@ subroutine parse_cmd_arguments
                                               '--max-pi-fr ', &  ! j=11
                                               '--t-max     ', &  ! j=12
                                               '--iso       ', &  ! j=13
-                                              '--stepexp   ' &  ! j=14 Deprecated
+                                              '--stepexp   ', &  ! j=14 Deprecated
+                                              '--E-inj-exp '  &  ! j=15 
                                               ]
 
    n_args = command_argument_count()
@@ -101,6 +103,9 @@ subroutine parse_cmd_arguments
                end if
             case (14)
                read (arg, *) stepsize_exp
+            case (15)
+               read (arg, *) E_inj_exp
+               E_inj = 10**E_inj_exp
             end select
             exit
          elseif (j == n_flags) then
@@ -160,8 +165,15 @@ subroutine init_general(myid, n_proc)
       theta_max_str = adjustl(theta_max_str)
       filename = filename//'_theta-max'//trim(theta_max_str)
    end if
+
+   write (E_inj_exp_str, '(f10.3)') log10(E_inj)
+   E_inj_exp_str = adjustl(E_inj_exp_str)
+   print *, "E_inj_exp_str: ", E_inj_exp_str
+   print *, "E_inj: ", E_inj
+
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
-   filename = filename//'_n_proc'//trim(n_proc_str)
+   filename = filename//'_E_inj_exp'//trim(E_inj_exp_str)
+   filename = filename//'_nproc'//trim(n_proc_str)
    print *, "filename metadata: ", filename
    print *, "D_coef: ", D_coef(E_inj, 1.0)
 

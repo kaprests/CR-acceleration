@@ -228,6 +228,7 @@ double precision function analytical_stepsize(En, t, theta_max)
 end function analytical_stepsize
 
 
+! Must update to include energy dependency
 double precision function cubic_spline_stepsize(x) 
    use stepsize_interpolated_polynom_coefficients, only: bp, coeffs
    implicit none

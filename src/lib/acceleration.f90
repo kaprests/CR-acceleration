@@ -22,6 +22,7 @@ contains
       integer :: k, n_step
       ! Functions
       double precision :: ran0, R_L, t_shock, v_shock, get_v_2, cubic_spline_stepsize, v_particle
+      double precision :: analytical_stepsize
       ! Pointers
       integer, pointer :: pid, A, Z
       double precision, pointer :: E, x(:), t, w
@@ -72,6 +73,7 @@ contains
          call max_scattering_angle(theta_max, v_shock(t), E)
          if (num_steps_taken == 0) then
             print *, "theta_max (initial): ", theta_max
+            print *, "E_inj_exp: ", log10(E_inj)
             ! Log first theta max 
             theta_max0 = theta_max
          end if
@@ -79,7 +81,8 @@ contains
          ! Stepsize
          df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
          call scales_charged(m, Z, E, t, w, df, dt, dE)
-         l_0 = cubic_spline_stepsize(theta_max)/dble(Z)
+         !l_0 = cubic_spline_stepsize(theta_max)/dble(Z)
+         l_0 = analytical_stepsize(E, t, theta_max)/dble(Z)
          l_0_0 = l_0
          ! Old adjustment of stepsize
          !l_0 = l_0*(theta_max/pi)**stepsize_exp

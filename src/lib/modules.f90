@@ -36,6 +36,8 @@ module user_variables
    integer :: num_steps_log = 200               ! Must reduce for large particle count
    integer :: num_cross_log = 100               ! Must reduce for large particle count
    logical :: isotropic = .false.               ! Use isotropic rw if true
+   double precision :: E_inj_exp ! initial energy exponent (base 10) (E_inj)
+   character(10) :: E_inj_exp_str
 
    ! Strings
    character(10) :: n_start_str, n_sets_str, v_shock_str, gamma_str, n_proc_str
@@ -151,8 +153,8 @@ module internal
    implicit none
    save
    integer iseed, n_in, n_out
+   double precision :: E_inj = 1.0d10 ! initial energy
    double precision, parameter :: & ! all energies in eV
-      E_inj = 1.0d10, & ! initial energy
       E_min = 1d10, & ! minimal energy for bining
       E_min_em = 1.d8                            ! minimal em energy to be stored
    double precision, parameter :: t_inj_init = 1.d0
