@@ -21,7 +21,8 @@ program print_parameters
   implicit none
   integer, parameter :: n=3
   integer i,j
-  double precision k(3),p(3),R_Euler(n,n),phi,theta,phi0,theta0, cubic_spline_stepsize
+  double precision k(3),p(3),R_Euler(n,n),phi,theta,phi0,theta0
+  double precision cubic_spline_small_angle_step_correction
 
   !!! Testing stuff !!!
   double precision :: R_L, D_coef, v_particle
@@ -29,9 +30,14 @@ program print_parameters
   double precision, dimension(100) :: x
 
   E_inj = 1.0d10
+  do i = 1, 100, 1
+     print *, cubic_spline_small_angle_step_correction(i*0.01*pi)
+  end do
 !  print *, "!!!!!!!!!!!!!!!!!!!!!!!!"
 !  print *, "E_inj(eV): ", E_inj
 !  print *, "R_L(yr): ", R_L(E_inj, 1.0)
+!  print *, "stepsize small angle corr: ", cubic_spline_small_angle_step_correction(pi*0.999)
+!  print *, "stepsize (iso): ", R_L(E_inj, 1.0)*cubic_spline_small_angle_step_correction(pi*0.999)
 !  print *, "R_L/3: ", R_L(E_inj, 1.0)/3
 !  print *, "R_L: ", sqrt(E_inj**2 - m_p**2)/(abs(e_elm)*B0_turb)
 !  print *, "R_L - R_L: ", sqrt(E_inj**2 - m_p**2)/(abs(e_elm)*B0_turb) - R_L(E_inj, 1.0)
@@ -53,9 +59,9 @@ program print_parameters
 !  print *, "cs(1.0pi): ", cubic_spline(0.99*pi)
 !
 !  print *, "///////////////"
-  x_val = pi/100
-  do i = 1, 100, 1
-     x(i) = i * pi/100
-     print *, x(i), ", ",cubic_spline_stepsize(x(i))
-     end do
+!  x_val = pi/100
+!  do i = 1, 100, 1
+!     x(i) = i * pi/100
+!     print *, x(i), ", ",cubic_spline_stepsize(x(i))
+!     end do
 end program print_parameters

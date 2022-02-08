@@ -22,7 +22,7 @@ contains
       integer :: k, n_step
       ! Functions
       double precision :: &
-         ran0, R_L, t_shock, v_shock, get_v_2, cubic_spline_small_angle_step_correction, v_particle
+         ran0, R_L, t_shock, v_shock, get_v_2, v_particle, stepsize
       double precision :: analytical_stepsize
       ! Pointers
       integer, pointer :: pid, A, Z
@@ -83,7 +83,7 @@ contains
          df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
          call scales_charged(m, Z, E, t, w, df, dt, dE)
          !l_0 = analytical_stepsize(E, t, theta_max)/dble(Z)
-         l_0 = R_L(E, t)*cubic_spline_small_angle_step_correction(theta_max)/dble(Z)
+         l_0 = stepsize(E, t, theta_max)
          l_0_0 = l_0
          ! Old adjustment of stepsize
          !l_0 = l_0*(theta_max/pi)**stepsize_exp

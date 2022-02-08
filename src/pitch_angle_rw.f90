@@ -195,7 +195,7 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    integer i, j, k
    double precision :: t0
    integer :: num_steps_total, idx, sample_count, sample_int, num_samples
-   double precision cubic_spline_small_angle_step_correction
+   double precision stepsize
 
    pid => event(n_in)%pid
    A => event(n_in)%A
@@ -220,21 +220,20 @@ subroutine random_walk(set, n_injected) ! w/wo diffusion in trapping phase
    ! Stepsize    
    df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)    
    call scales_charged(m, Z, E, t, w, df, dt, dE)                       
-   if (abs(theta_max - pi) < 0.0001) then
-      print *, "Isotropic stepsize"
-      print *, "theta_max - pi: ", theta_max - pi
-      print *, "theta_max: ", theta_max
-      print *, "theta_max_str: ", theta_max_str
-      l_0 = R_L(E, t)/dble(z)!stepsize(E, t, theta_max)/dble(Z)                             
-   else
-      print *, "Cubic spline stepsize"
-      print *, "Using isotropic stepsize for interpolation (temp sol)"
-      l_0 = R_L(E, t)*cubic_spline_small_angle_step_correction(theta_max)/dble(Z)
-   end if
-      print *, "Using stepsize: ", l_0
-      print *, "Isotropic stepsize: ", R_L(E, t)
-      print *, "l/R_L: ", l_0/R_L(E, t)
-   l_0_0 = l_0                                                   
+!   if (abs(theta_max - pi) < 0.0001) then
+!      print *, "Isotropic stepsize"
+!      print *, "theta_max - pi: ", theta_max - pi
+!      print *, "theta_max: ", theta_max
+!      print *, "theta_max_str: ", theta_max_str
+!      l_0 = R_L(E, t)/dble(z)!stepsize(E, t, theta_max)/dble(Z)                             
+!   else
+!      print *, "Cubic spline stepsize"
+!      l_0 = R_L(E, t)*cubic_spline_small_angle_step_correction(theta_max)/dble(Z)
+!   end if
+!      print *, "Using stepsize: ", l_0
+!      print *, "Isotropic stepsize: ", R_L(E, t)
+!   l_0_0 = l_0                                                   
+   l_0 = stepsize(E, t, theta_max)
    if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
 !   ! Step size

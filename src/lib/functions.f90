@@ -230,6 +230,7 @@ end function analytical_stepsize
 
 double precision function cubic_spline_small_angle_step_correction(x) 
    use stepsize_interpolated_polynom_coefficients, only: bp, coeffs
+   use constants, only: pi
    implicit none
    double precision, intent(in) :: x
    !double precision, dimension(:), intent(in) :: bp
@@ -238,23 +239,43 @@ double precision function cubic_spline_small_angle_step_correction(x)
    integer :: i, j, k
 
    if (x < bp(1) .or. x > bp(size(bp))) then
-      print *, "x = ", x
       call error("Argument x out of range", 0)
    end if
 
-   do i = 1, size(bp), 1
+   do i = 2, size(bp), 1
    if (x <= bp(i)) then
       k = 3
       output = 0
       do j = 1, k+1, 1
          output = output + coeffs(i, j) * (x - bp(i))**(k-j+1)
       end do
+      !output = &
+      !   coeffs(i, 1)*(x-bp(i))**3 + &
+      !   coeffs(i, 2)*(x-bp(i))**2 + &
+      !   coeffs(i, 3)*(x-bp(i)) + &
+      !   coeffs(i, 4)
+      if (x > bp(size(bp)-1)) then
+         ! Something strange happens when x > 0.9pi
+         ! Temporary hard code of the right cubic spline
+         output = &
+            -8.27279487e-06*(x-0.9*pi)**3 & 
+            -1.43409581e-05*(x-0.9*pi)**2 &
+            +1.05892290e-05*(x-0.9*pi) &
+            +3.33890695e-05
+      end if
       cubic_spline_small_angle_step_correction = (output/3.504386947787479d-05)
       return
    end if
    end do
    call error("Unknown error, possibly invalid argument", 0)
 end function cubic_spline_small_angle_step_correction
+
+
+double precision function stepsize(En, t, theta_max)
+   double precision, intent(in) :: En, t, theta_max
+   double precision :: R_L, cubic_spline_small_angle_step_correction
+   stepsize = R_L(En, t) * cubic_spline_small_angle_step_correction(theta_max)
+end function stepsize
 
 
 !double precision function cycle_energy_gain(theta_in, theta_out, v) result(e_gain)
