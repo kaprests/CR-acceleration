@@ -1,23 +1,35 @@
 program acceleration
    use mpi_f08
    use result
-   use user_variables, only: n_sets, filename, outdir, stepsize_exp_str
+   use user_variables, only: n_sets, filename, outdir, stepsize_exp_str, shockless
 
    implicit none
-   integer set
-   integer myid, n_proc, ierr, n_array
-   type(MPI_FILE) traj_filehandle, crossang_filehandle, phase_space_filehandle
-   integer traj_array_count, traj_array_bsize
-   integer crossang_array_count, crossang_array_bsize
-   integer phase_space_array_count, phase_space_array_bsize
-   integer(kind=MPI_OFFSET_KIND) :: traj_offset, crossang_offset, phase_space_offset
+   integer :: set
+   integer :: myid, n_proc, ierr, n_array
+   type(MPI_FILE) :: &
+      traj_filehandle, &            ! Used both w/wo shock
+      crossang_filehandle, &        ! Only w shock
+      phase_space_filehandle, &     ! Only w shock
+      fpos_filehandle, &            ! Only wo shock
+      samplepos_filehandle          ! Only wo shock
+   integer :: traj_array_count, traj_array_bsize
+   integer :: crossang_array_count, crossang_array_bsize
+   integer :: phase_space_array_count, phase_space_array_bsize
+   integer :: fpos_array_count, fpos_array_bsize
+   integer :: samplepos_array_count, samplepos_array_bsize
+   integer(kind=MPI_OFFSET_KIND) :: &
+      traj_offset, &
+      crossang_offset, &
+      phase_space_offset, &
+      fpos_offset, &
+      samplepos_offset
 
    ! MPI init
    call MPI_INIT(ierr)  ! Initiate/create 
    call MPI_COMM_RANK(MPI_COMM_WORLD, myid, ierr) ! Get proc id
    call MPI_COMM_SIZE(MPI_COMM_WORLD, n_proc, ierr) ! Get communicator size (# procs)
 
-   ! Siulation init
+   ! Simulation init
    call init(myid, n_proc)
 
    ! MPI data file -- trajectories
@@ -26,47 +38,63 @@ program acceleration
       trim(outdir)//'/trajectories'//filename, &
       ierr &
    )
-   ! MPI data file -- crossing flight angles
-   call init_mpi_io(MPI_COMM_WORLD, &
-      crossang_filehandle, &
-      trim(outdir)//'/cross_angles'//filename, &
-      ierr &
-   )
-
-   ! MPI data file -- phase space density/distribution
-   call init_mpi_io(MPI_COMM_WORLD, &
-      phase_space_filehandle, &
-      trim(outdir)//'/phase_space'//filename, &
-      ierr &
-   )
+   if (.not. shockless) then
+      ! MPI data file -- crossing flight angles
+      call init_mpi_io(MPI_COMM_WORLD, &
+         crossang_filehandle, &
+         trim(outdir)//'/cross_angles'//filename, &
+         ierr &
+      )
+      ! MPI data file -- phase space density/distribution
+      call init_mpi_io(MPI_COMM_WORLD, &
+         phase_space_filehandle, &
+         trim(outdir)//'/phase_space'//filename, &
+         ierr &
+      )
+   else
+      ! MPI data file -- final positions
+      call init_mpi_io(MPI_COMM_WORLD, &
+         fpos_filehandle, &
+         trim(outdir)//'/fpos'//filename, &
+         ierr &
+      )
+      ! MPI data file -- phase space density/distribution
+      call init_mpi_io(MPI_COMM_WORLD, &
+         samplepos_filehandle, &
+         trim(outdir)//'/samplepos'//filename, &
+         ierr &
+      )
+   end if
 
    ! Simulation loop -- loop through each set of particles and simulate
    do set = 1, n_sets
       call start_particle(set, myid, n_proc)
 
-      ! Collect data from all procs
-      n_array = (2*pid_max+1)*n_enbin
-      call MPI_REDUCE(&
-         En_f, &
-         En_f_tot, &
-         n_array, &
-         MPI_DOUBLE_PRECISION, &
-         MPI_SUM, &
-         0, &
-         MPI_COMM_WORLD, &
-         ierr &
-      )
-      call MPI_REDUCE(&
-         NE_esc, &
-         NE_esc_tot, &
-         n_enbin, &
-         MPI_DOUBLE_PRECISION, &
-         MPI_SUM, &
-         0, &
-         MPI_COMM_WORLD, &
-         ierr &
-      )
-      if (myid == 0) call output(set, n_proc)
+      if (.not. shockless) then
+         ! Collect data from all procs
+         n_array = (2*pid_max+1)*n_enbin
+         call MPI_REDUCE(&
+            En_f, &
+            En_f_tot, &
+            n_array, &
+            MPI_DOUBLE_PRECISION, &
+            MPI_SUM, &
+            0, &
+            MPI_COMM_WORLD, &
+            ierr &
+         )
+         call MPI_REDUCE(&
+            NE_esc, &
+            NE_esc_tot, &
+            n_enbin, &
+            MPI_DOUBLE_PRECISION, &
+            MPI_SUM, &
+            0, &
+            MPI_COMM_WORLD, &
+            ierr &
+         )
+         if (myid == 0) call output(set, n_proc)
+      end if
 
       ! Write trajectory data
       traj_array_bsize = sizeof(trajectories)
@@ -81,39 +109,73 @@ program acceleration
          MPI_STATUS_IGNORE, &
          ierr &
       )
-      ! Write cross angle data
-      crossang_array_bsize = sizeof(crossing_flight_angles)
-      crossang_offset = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)
-      crossang_array_count = size(crossing_flight_angles)
-      call MPI_FILE_WRITE_AT(&
-         crossang_filehandle, &
-         crossang_offset, &
-         crossing_flight_angles, &
-         crossang_array_count, &
-         MPI_DOUBLE_PRECISION, &
-         MPI_STATUS_IGNORE, &
-         ierr &
-      )
-
-      ! Write phase data 
-      phase_space_array_bsize = sizeof(phase_space_dist)
-      phase_space_offset = myid * n_sets * phase_space_array_bsize + phase_space_array_bsize * (set - 1)
-      phase_space_array_count = size(phase_space_dist)
-      call MPI_FILE_WRITE_AT(&
-         phase_space_filehandle, &
-         crossang_offset, &
-         phase_space_dist, &
-         phase_space_array_count, &
-         MPI_DOUBLE_PRECISION, &
-         MPI_STATUS_IGNORE, &
-         ierr &
-      )
+      if (.not. shockless) then
+         ! Write cross angle data
+         crossang_array_bsize = sizeof(crossing_flight_angles)
+         crossang_offset = myid * n_sets * traj_array_bsize + traj_array_bsize * (set - 1)
+         crossang_array_count = size(crossing_flight_angles)
+         call MPI_FILE_WRITE_AT(&
+            crossang_filehandle, &
+            crossang_offset, &
+            crossing_flight_angles, &
+            crossang_array_count, &
+            MPI_DOUBLE_PRECISION, &
+            MPI_STATUS_IGNORE, &
+            ierr &
+         )
+         ! Write phase data 
+         phase_space_array_bsize = sizeof(phase_space_dist)
+         phase_space_offset = myid * n_sets * phase_space_array_bsize + phase_space_array_bsize * (set - 1)
+         phase_space_array_count = size(phase_space_dist)
+         call MPI_FILE_WRITE_AT(&
+            phase_space_filehandle, &
+            crossang_offset, &
+            phase_space_dist, &
+            phase_space_array_count, &
+            MPI_DOUBLE_PRECISION, &
+            MPI_STATUS_IGNORE, &
+            ierr &
+         )
+      else 
+         ! Write fpos data
+         fpos_array_bsize = sizeof(final_positions)
+         fpos_offset = myid * n_sets * fpos_array_bsize + fpos_array_bsize * (set - 1)
+         fpos_array_count = size(final_positions)
+         call MPI_FILE_WRITE_AT(&
+            fpos_filehandle, &
+            fpos_offset, &
+            final_positions, &
+            fpos_array_count, &
+            MPI_DOUBLE_PRECISION, &
+            MPI_STATUS_IGNORE, &
+            ierr &
+         )
+         ! Write sample_positions    
+         samplepos_array_bsize = sizeof(sample_positions)        
+         samplepos_offset = &
+            myid * n_sets * samplepos_array_bsize + samplepos_array_bsize * (set - 1)    
+         samplepos_array_count = size(sample_positions)        
+         call MPI_FILE_WRITE_AT(&    
+            samplepos_filehandle, &    
+            samplepos_offset, &    
+            sample_positions, &    
+            samplepos_array_count, &    
+            MPI_DOUBLE_PRECISION, &    
+            MPI_STATUS_IGNORE, &    
+            ierr &    
+         )
+      end if
    end do
 
    ! close outputs and finalize
    call MPI_FILE_CLOSE(traj_filehandle, ierr)
-   call MPI_FILE_CLOSE(crossang_filehandle, ierr)
-   call MPI_FILE_CLOSE(phase_space_filehandle, ierr)
+   if (.not. shockless) then
+      call MPI_FILE_CLOSE(crossang_filehandle, ierr)
+      call MPI_FILE_CLOSE(phase_space_filehandle, ierr)
+   else
+      call MPI_FILE_CLOSE(fpos_filehandle, ierr)
+      call MPI_FILE_CLOSE(samplepos_filehandle, ierr)
+   end if
    close (99)
    call MPI_FINALIZE(ierr)
 end program acceleration
@@ -149,7 +211,7 @@ end subroutine start_particle
 
 subroutine tracer(set, n_injected)
    use event_internal; use internal, only: n_in
-   use acceleration
+   use random_walk
    use user_variables, only: isotropic
 
    implicit none
@@ -170,11 +232,12 @@ subroutine tracer(set, n_injected)
       n_in = n_in - 1
       return
    case (7, 145:159)
-      if (isotropic) then
-         call isotropic_random_walk(set, n_injected)
-      else
-         call pitch_angle_accel(set, n_injected)
-      end if
+      call pitch_angle_random_walk(set, n_injected)
+      !if (isotropic) then
+      !   call isotropic_random_walk(set, n_injected)
+      !else
+      !   call pitch_angle_accel(set, n_injected)
+      !end if
    case default
       write (*, *) 'A,pid', A, pid
       call error('wrong particle typ in tracer', 0)

@@ -420,5 +420,4 @@ subroutine store(n_injected, x1, x2, x3)
    final_positions(1, n_injected) = x1
    final_positions(2, n_injected) = x2
    final_positions(3, n_injected) = x3
-
 end subroutine store

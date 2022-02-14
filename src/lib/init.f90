@@ -40,8 +40,8 @@ subroutine parse_cmd_arguments
                                               '--max-pi-fr ', &  ! j=11
                                               '--t-max     ', &  ! j=12
                                               '--iso       ', &  ! j=13
-                                              '--stepexp   ', &  ! j=14 Deprecated
-                                              '--E-inj-exp '  &  ! j=15 
+                                              '--E-inj-exp ', &  ! j=14
+                                              '--shockless ' &   ! j=15
                                               ]
 
    n_args = command_argument_count()
@@ -102,10 +102,14 @@ subroutine parse_cmd_arguments
                   write (*, *) "Unrecognized argument for the --iso flag. Using default (false)."
                end if
             case (14)
-               read (arg, *) stepsize_exp
-            case (15)
                read (arg, *) E_inj_exp
                E_inj = 10**E_inj_exp
+            case (15)
+               if (arg == "true") then
+                  shockless = .true.
+               else if (arg == "false") then
+                  shockless = .false.
+               end if
             end select
             exit
          elseif (j == n_flags) then
@@ -125,7 +129,6 @@ subroutine init_general(myid, n_proc)
    implicit none
    integer, intent(in) :: myid, n_proc
    double precision v_EDST, v_shock, D_coef, R_L
-   !character(10) :: n_start_str, n_sets_str, , v_shock_str, gamma_str
 
    ! Parse command line arguments, and apply given settings/config
    ! Default values in are code overridden by values in file (future)
@@ -134,31 +137,29 @@ subroutine init_general(myid, n_proc)
    call parse_cmd_arguments ! Command line arguments
 
    ! Add configuration metadata to filename
-   write (n_sets_str, '(I10)') n_sets
-   write (n_start_str, '(I10)') n_start
-   write (n_proc_str, '(I10)') n_proc
-   n_sets_str = adjustl(n_sets_str)
-   n_start_str = adjustl(n_start_str)
-   n_proc_str = adjustl(n_proc_str)
-   if (isotropic) then
-      basename = '_iso'
+   if (shockless) then
+      filename = trim(basename_rw)
+   else
+      filename = trim(basename)
    end if
-   filename = trim(basename)
-   if (inj_model == 0) then
-      ! constant shock velocity
-      if (gamma_set) then
-         ! gamma instead of vshock
-         write (gamma_str, '(f10.3)') gamma_sh
-         filename = filename//'_gamma'//trim(adjustl(gamma_str))
-      else
-         print *, v_shock(0)
-         write (v_shock_str, '(f10.3)') v_shock(0)
-         filename = filename//'_vshock'//trim(adjustl(v_shock_str))
+
+   ! Conditional parameters
+   if (.not. shockless) then
+      if (inj_model == 0) then
+         ! constant shock velocity
+         if (gamma_set) then
+            ! gamma instead of vshock
+            write (gamma_str, '(f10.3)') gamma_sh
+            filename = filename//'_gamma'//trim(adjustl(gamma_str))
+         else
+            write (v_shock_str, '(f10.3)') v_shock(0)
+            filename = filename//'_vshock'//trim(adjustl(v_shock_str))
+         end if
+      else if (inj_model == 1) then
+         filename = filename//'_injmod1'
+      else if (inj_model == 2) then
+         filename = filename//'_injmod2'
       end if
-   else if (inj_model == 1) then
-      filename = filename//'_injmod1'
-   else if (inj_model == 2) then
-      filename = filename//'_injmod2'
    end if
    if (theta_max_set) then
       write (theta_max_str, '(f10.3)') pi*theta_max_pi_frac
@@ -166,11 +167,15 @@ subroutine init_general(myid, n_proc)
       filename = filename//'_theta-max'//trim(theta_max_str)
    end if
 
+   ! base parameters
+   write (n_sets_str, '(I10)') n_sets
+   write (n_start_str, '(I10)') n_start
+   write (n_proc_str, '(I10)') n_proc
    write (E_inj_exp_str, '(f10.3)') log10(E_inj)
+   n_sets_str = adjustl(n_sets_str)
+   n_start_str = adjustl(n_start_str)
+   n_proc_str = adjustl(n_proc_str)
    E_inj_exp_str = adjustl(E_inj_exp_str)
-   print *, "E_inj_exp_str: ", E_inj_exp_str
-   print *, "E_inj: ", E_inj
-
    filename = filename//'_nsets'//trim(n_sets_str)//'_nstart'//trim(n_start_str)
    filename = filename//'_E_inj_exp'//trim(E_inj_exp_str)
    filename = filename//'_nproc'//trim(n_proc_str)
@@ -179,70 +184,70 @@ subroutine init_general(myid, n_proc)
 
    ! If no t_max given by user, set default exit time t_max_snr from SNR_data
    if (t_max == -1) then
-      t_max = t_max_snr
+      t_max = t_max_snr ! End of Sedov-Taylor phase
    end if
 
    ! For shockless random walk
-   write (num_steps_tot_str, '(I10)') num_steps_tot
-   num_steps_tot_str = adjustl(num_steps_tot_str)
-   write (t_max_str, '(f10.3)') t_max
-   t_max_str = adjustl(t_max_str)
-   !write (stepsize_exp_str, '(f10.3)') stepsize_exp
-   !stepsize_exp_str = adjustl(stepsize_exp_str)
-   !write (stepsize_str, '(f10.3)') cubic_spline_stepsize(theta_max)
-   !stepsize_str = adjustl(stepsize_str)
-   print *, "=========================="
-   print *, "For shockless random walk:"
-   print *, "t_max: ", t_max
-   print *, "theta max1: ", pi*theta_max_pi_frac
-   print *, "theta_max2: ", theta_max
-   !print *, "Current step size: ", cubic_spline_stepsize(theta_max)
-   !print *, "Isotropic step size (cs): ", cubic_spline_stepsize(pi)
-   print *, "Isotropic step size RL: ", R_L(E_inj, 1.0)
-   print *, "D_coeff: ", R_L(E_inj, 1.0)/3
-   print *, "D_coeff2: ",  D_coef(E_inj, 1.0)
-   print *, "stepsize exp (deprecated): ", stepsize_exp
-   print *, "=========================="
+   if (shockless) then
+      write (num_steps_tot_str, '(I10)') num_steps_tot
+      num_steps_tot_str = adjustl(num_steps_tot_str)
+      write (t_max_str, '(f10.3)') t_max
+      t_max_str = adjustl(t_max_str)
+      !write (stepsize_exp_str, '(f10.3)') stepsize_exp
+      !stepsize_exp_str = adjustl(stepsize_exp_str)
+      !write (stepsize_str, '(f10.3)') cubic_spline_stepsize(theta_max)
+      !stepsize_str = adjustl(stepsize_str)
+      print *, "=========================="
+      print *, "For shockless random walk:"
+      print *, "t_max: ", t_max
+      print *, "theta max1: ", pi*theta_max_pi_frac
+      print *, "theta_max2: ", theta_max
+      !print *, "Current step size: ", cubic_spline_stepsize(theta_max)
+      !print *, "Isotropic step size (cs): ", cubic_spline_stepsize(pi)
+      print *, "Isotropic step size RL: ", R_L(E_inj, 1.0)
+      print *, "D_coeff: ", R_L(E_inj, 1.0)/3
+      print *, "D_coeff2: ",  D_coef(E_inj, 1.0)
+      print *, "stepsize exp (deprecated): ", stepsize_exp
+      print *, "=========================="
+   end if
 
    ! Allocate dynamic arrays
-   ! Not finalized
-   allocate (exit_energies(n_sets*n_start))
-   allocate (num_crossings_total(n_sets*n_start))
-
-   allocate (trajectories(4, n_start, num_steps_log))
+   ! Not finalized -- WORK IN PROGRESS
+   !allocate (exit_energies(n_sets*n_start))
+   !allocate (num_crossings_total(n_sets*n_start))
    allocate (crossing_flight_angles(n_start, num_cross_log))
-
    allocate(phase_space_dist(7, n_start, num_steps_log))
+   ! Works
+   allocate (trajectories(4, n_start, num_steps_log))
 
    ! For shockless random walks only
-   allocate (final_positions(3, n_start))
-   print *, "!!!!!!!!!"
-   print *, "final_positions allocated"
-   print *, "size final_positions(bytes): ", sizeof(final_positions)
-   print *, "count final_positions(bytes): ", size(final_positions)
-   print *, "n_start * 3: ", n_start * 3
-   print *, "n_start : ", n_start
-   print *, "!!!!!!!!!"
+   if (shockless) then
+      allocate (final_positions(3, n_start))
+      print *, "!!!!!!!!!"
+      print *, "final_positions allocated"
+      print *, "size final_positions(bytes): ", sizeof(final_positions)
+      print *, "count final_positions(bytes): ", size(final_positions)
+      print *, "n_start * 3: ", n_start * 3
+      print *, "n_start : ", n_start
+      print *, "!!!!!!!!!"
+   end if
 
    ! initialisation for random number (NumRec):
    iseed = 15321 + 2*(1 + iseed_shift)*(myid + 1)
-
    n_in = 0                         ! # of particles on stack
    n_out = 0                        ! # of escaped particles
-
    d_f = log10(E_min) - 0.1d0         ! init internal variables
    d_em = log10(E_min_em) - 0.1d0
-
    if (myid == 0) then
       !   call test_int
       open (unit=99, file=trim(outdir)//'/error'//filename)
       write (*, *) 'iseed = ', iseed
    end if
+
    ! transition time between ED and ST phases (yr) (McKee)  ! init SNR_data variables
    t_ch = 423.d0/sqrt(E_snr/1.d51)*(M_ej/M_sun)**(5.d0/6.d0)/n_ISM**(1.d0/3.d0) ! yr
    R_ch = 3.07d0*(M_ej/M_sun)**(1.d0/3.d0)/n_ISM**(1.d0/3.d0)! pc
    v_ch = R_ch/t_ch
-
    t_EDST = 0.495d0*t_ch  ! yr
    R_EDST = 0.727d0*R_ch ! pc
    v_EDST = sqrt(2.d0*E_snr/M_ej)
@@ -259,7 +264,6 @@ subroutine init_general(myid, n_proc)
       write (*, *) 'compared to'
       write (*, *) 't_max     =', real(t_max), '/yr'
    end if
-
 end subroutine init_general
 
 

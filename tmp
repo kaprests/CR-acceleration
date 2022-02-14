@@ -1,0 +1,15 @@
+Diff acceleration vs shockless:
+
+common files:
+    - trajectories (initial) -- rethink
+    - err(?) -- check 
+
+shockless files:
+    - final positions
+    - sampled positions
+
+acceleration files:
+    - spec
+    - cross angles -- rethink
+    - phase space -- rethink
+    - escape prob

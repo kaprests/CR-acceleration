@@ -18,42 +18,61 @@ module user_variables
    use constants, only: pi
    implicit none
    save
+
+   ! Core config
    integer :: &
-      n_sets = 10, & ! number of MC set
-      n_start = 1*10**2, & ! injected particles/set
-      debug = 0, & ! 0, no debugging info
-      restart = 0, & ! 1 use old data
+      n_sets = 10, &                            ! number of MC set
+      n_start = 1*10**2, &                      ! injected particles/set
+      debug = 0, &                              ! 0, no debugging info
+      restart = 0, &                            ! 1 use old data
       iseed_shift = 0, &                        ! positive shift of random seed
       inj_model = 0                             ! constant shock_velocity
-   double precision :: shock_velocity = 3.d-2   ! velocity of constant shock
+
+   ! Injmod 0: constant shock velocity -- specify either velocity or gamma factor
+   double precision :: shock_velocity = 3.d-2   ! velocity of constant shock (injmod0)
    double precision :: gamma_sh                 ! gamma of constant velocity shock
    logical :: gamma_set = .false.               ! True if gamma was set instead of vshock (in init)
 
+   ! Filename
    character(4) ::  basename = '_pas'           ! name in output
+   character(4) ::  basename_rw = '_pas_rw'     ! name in output
    character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
    character(10) :: outdir_raw = './RawData'
+
+   ! Number of data points to store (per particle) (rethink should scale with # sets not # particles
    integer :: num_steps_log = 200               ! Must reduce for large particle count
    integer :: num_cross_log = 100               ! Must reduce for large particle count
-   logical :: isotropic = .false.               ! Use isotropic rw if true
+
+   ! Injection/initial CR particle energy
    double precision :: E_inj_exp ! initial energy exponent (base 10) (E_inj)
    character(10) :: E_inj_exp_str
 
-   ! Strings
-   character(10) :: n_start_str, n_sets_str, v_shock_str, gamma_str, n_proc_str
-
-   ! For shockless random walks only
-   integer :: num_steps_tot = 10000
-   character(10) :: num_steps_tot_str
+   ! Max scattering angle
    double precision :: theta_max_pi_frac = 1.0  ! fraction of pi
    double precision :: theta_max
    character(10) :: theta_max_str
    logical :: theta_max_set = .false.
+
+   ! Strings
+   character(10) :: n_start_str, n_sets_str, v_shock_str, gamma_str, n_proc_str
+
+   ! Fixed # of steps for shockless random walks only
+   integer :: num_steps_tot = 10000 
+   character(10) :: num_steps_tot_str
+
+   ! Fixed simulation time for shockless random walks only
    double precision :: t_max = -1 ! -1 temp value, means not set (will default to t_max_str)
    character(10) :: t_max_str
+
+   ! Shock on/off
+   logical :: shockless = .false.
+!--------------------------------------------------
+   ! Remove
    double precision :: stepsize_exp = 2.1
    character(10) :: stepsize_exp_str
    character(10) :: stepsize_str
+   logical :: isotropic = .false.               ! Use isotropic rw if true
 end module user_variables
 
 
