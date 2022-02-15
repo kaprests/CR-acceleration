@@ -34,8 +34,8 @@ module user_variables
    logical :: gamma_set = .false.               ! True if gamma was set instead of vshock (in init)
 
    ! Filename
-   character(4) ::  basename = '_pas'           ! name in output
-   character(4) ::  basename_rw = '_pas_rw'     ! name in output
+   character(4) ::  basename = '_acc'           ! name in output
+   character(4) ::  basename_rw = '_rwk'        ! name in output
    character(len=:), allocatable :: filename    ! name in output
    character(10) :: outdir = './Data'
    character(10) :: outdir_raw = './RawData'
@@ -62,7 +62,7 @@ module user_variables
    character(10) :: num_steps_tot_str
 
    ! Fixed simulation time for shockless random walks only
-   double precision :: t_max = -1 ! -1 temp value, means not set (will default to t_max_str)
+   double precision :: t_max = 120 ! -1 temp value, means not set (will default to t_max_str)
    character(10) :: t_max_str
 
    ! Shock on/off

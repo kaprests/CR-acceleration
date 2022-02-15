@@ -90,6 +90,7 @@ subroutine parse_cmd_arguments
             case (11)
                read (arg, *) theta_max_pi_frac
                theta_max = pi*theta_max_pi_frac
+               print *, "Theta max set: ", theta_max
                theta_max_set = .true.
             case (12)
                read (arg, *) t_max
@@ -137,11 +138,34 @@ subroutine init_general(myid, n_proc)
    call parse_cmd_arguments ! Command line arguments
 
    ! Add configuration metadata to filename
+   print *, shockless
+   print *, shockless
+   print *, shockless
    if (shockless) then
+      print *, "SHOCKLESS YO"
       filename = trim(basename_rw)
    else
+      print *, "SHOCKFULL WHY??", shockless
       filename = trim(basename)
    end if
+   print *, "!!!!-------------------------------!!!!!!!!!!!"
+   print *, "!!!!-------------------------------!!!!!!!!!!!"
+   print *, "!!!!-------------------------------!!!!!!!!!!!"
+   print *, "basename: ", filename
+   print *, "basename: ", filename
+   print *, "basename: ", filename
+   print *, "basename: ", filename
+   print *, "basename: ", filename
+   print *, "basename: ", filename
+   print *, "basename: ", filename
+   print *, "basename: ", filename
+   print *, "basename: ", filename
+   print *, "basename: ", filename
+   print *, "basename: ", filename
+   print *, "!!!!-------------------------------!!!!!!!!!!!"
+   print *, "!!!!-------------------------------!!!!!!!!!!!"
+   print *, "!!!!-------------------------------!!!!!!!!!!!"
+   print *, "!!!!-------------------------------!!!!!!!!!!!"
 
    ! Conditional parameters
    if (.not. shockless) then
@@ -160,8 +184,12 @@ subroutine init_general(myid, n_proc)
       else if (inj_model == 2) then
          filename = filename//'_injmod2'
       end if
+   else
+      write (t_max_str, '(f10.3)') t_max
+      t_max_str = adjustl(t_max_str)
+      filename = filename//'_tmax'//trim(t_max_str)
    end if
-   if (theta_max_set) then
+   if (theta_max_set .or. shockless) then
       write (theta_max_str, '(f10.3)') pi*theta_max_pi_frac
       theta_max_str = adjustl(theta_max_str)
       filename = filename//'_theta-max'//trim(theta_max_str)
@@ -187,29 +215,27 @@ subroutine init_general(myid, n_proc)
       t_max = t_max_snr ! End of Sedov-Taylor phase
    end if
 
-   ! For shockless random walk
-   if (shockless) then
-      write (num_steps_tot_str, '(I10)') num_steps_tot
-      num_steps_tot_str = adjustl(num_steps_tot_str)
-      write (t_max_str, '(f10.3)') t_max
-      t_max_str = adjustl(t_max_str)
-      !write (stepsize_exp_str, '(f10.3)') stepsize_exp
-      !stepsize_exp_str = adjustl(stepsize_exp_str)
-      !write (stepsize_str, '(f10.3)') cubic_spline_stepsize(theta_max)
-      !stepsize_str = adjustl(stepsize_str)
-      print *, "=========================="
-      print *, "For shockless random walk:"
-      print *, "t_max: ", t_max
-      print *, "theta max1: ", pi*theta_max_pi_frac
-      print *, "theta_max2: ", theta_max
-      !print *, "Current step size: ", cubic_spline_stepsize(theta_max)
-      !print *, "Isotropic step size (cs): ", cubic_spline_stepsize(pi)
-      print *, "Isotropic step size RL: ", R_L(E_inj, 1.0)
-      print *, "D_coeff: ", R_L(E_inj, 1.0)/3
-      print *, "D_coeff2: ",  D_coef(E_inj, 1.0)
-      print *, "stepsize exp (deprecated): ", stepsize_exp
-      print *, "=========================="
-   end if
+!   ! For shockless random walk
+!   if (shockless) then
+!      write (num_steps_tot_str, '(I10)') num_steps_tot
+!      num_steps_tot_str = adjustl(num_steps_tot_str)
+!      !write (stepsize_exp_str, '(f10.3)') stepsize_exp
+!      !stepsize_exp_str = adjustl(stepsize_exp_str)
+!      !write (stepsize_str, '(f10.3)') cubic_spline_stepsize(theta_max)
+!      !stepsize_str = adjustl(stepsize_str)
+!      print *, "=========================="
+!      print *, "For shockless random walk:"
+!      print *, "t_max: ", t_max
+!      print *, "theta max1: ", pi*theta_max_pi_frac
+!      print *, "theta_max2: ", theta_max
+!      !print *, "Current step size: ", cubic_spline_stepsize(theta_max)
+!      !print *, "Isotropic step size (cs): ", cubic_spline_stepsize(pi)
+!      print *, "Isotropic step size RL: ", R_L(E_inj, 1.0)
+!      print *, "D_coeff: ", R_L(E_inj, 1.0)/3
+!      print *, "D_coeff2: ",  D_coef(E_inj, 1.0)
+!      print *, "stepsize exp (deprecated): ", stepsize_exp
+!      print *, "=========================="
+!   end if
 
    ! Allocate dynamic arrays
    ! Not finalized -- WORK IN PROGRESS
@@ -223,13 +249,13 @@ subroutine init_general(myid, n_proc)
    ! For shockless random walks only
    if (shockless) then
       allocate (final_positions(3, n_start))
-      print *, "!!!!!!!!!"
-      print *, "final_positions allocated"
-      print *, "size final_positions(bytes): ", sizeof(final_positions)
-      print *, "count final_positions(bytes): ", size(final_positions)
-      print *, "n_start * 3: ", n_start * 3
-      print *, "n_start : ", n_start
-      print *, "!!!!!!!!!"
+!      print *, "!!!!!!!!!"
+!      print *, "final_positions allocated"
+!      print *, "size final_positions(bytes): ", sizeof(final_positions)
+!      print *, "count final_positions(bytes): ", size(final_positions)
+!      print *, "n_start * 3: ", n_start * 3
+!      print *, "n_start : ", n_start
+!      print *, "!!!!!!!!!"
    end if
 
    ! initialisation for random number (NumRec):

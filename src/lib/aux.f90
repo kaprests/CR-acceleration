@@ -116,6 +116,16 @@ subroutine scattering_angle(theta, phi, theta_max)
    phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle
 
+
+subroutine set_theta_max(theta)
+   ! Sets default/user provded theta max
+   use user_variables, only: theta_max, theta_max_set
+   implicit none
+   double precision, intent(inout) :: theta
+   theta = theta_max
+end subroutine set_theta_max
+
+
 subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
    ! Computes the loss cone angle, and sets max_pitch scattering angle
    ! to some fraction of cone angle.

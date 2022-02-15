@@ -239,6 +239,7 @@ double precision function cubic_spline_small_angle_step_correction(x)
    integer :: i, j, k
 
    if (x < bp(1) .or. x > bp(size(bp))) then
+      print *, x
       call error("Argument x out of range", 0)
    end if
 

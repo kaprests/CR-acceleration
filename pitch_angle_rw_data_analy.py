@@ -5,13 +5,13 @@ import sys
 
 DATA_DIR = './Data/'
 OUT_DIR = './figs/'
-t_max = 110
-theta_pi_frac = 0.5
+t_max = 120
+theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
-nsets = 100
+nsets = 10
 nstart = 10
 nproc = 2
-E_inj_exp = 13
+E_inj_exp = 10
 #stepexp = 2.1
 #stepsize = 0
 
@@ -65,11 +65,11 @@ if __name__ == "__main__":
     # pitch angle data
     fpos_fname = DATA_DIR
     fpos_fname += (
-            f"pas_rw_fpos_tmax{t_max:.3f}_"
-            f"theta{theta:.3f}_"
+            f"fpos_rwk_tmax{t_max:.3f}_"
+            f"theta-max{theta:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
-            f"Eexp{E_inj_exp:.3f}_"
+            f"E_inj_exp{E_inj_exp:.3f}_"
             f"nproc{nproc}"
         )
     fpos_file = open(fpos_fname, 'rb')
@@ -81,12 +81,11 @@ if __name__ == "__main__":
     # Isotropic data (max theta = 2*pi)
     fpos_fname_iso = DATA_DIR
     fpos_fname_iso += (
-            f"pas_rw_fpos_tmax{t_max:.3f}_"
-            f"theta{np.pi:.3f}_"
-            #f"stepsize{0.016:.3f}_"
+            f"fpos_rwk_tmax{t_max:.3f}_"
+            f"theta-max{np.pi:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
-            f"Eexp{E_inj_exp:.3f}_"
+            f"E_inj_exp{E_inj_exp:.3f}_"
             f"nproc{nproc}"
         )
     fpos_file_iso = open(fpos_fname_iso, 'rb')
@@ -123,12 +122,11 @@ if __name__ == "__main__":
     # pitch angle data
     samplepos_fname = DATA_DIR
     samplepos_fname += (
-            f"pas_rw_samplepos_tmax{t_max:.3f}_"
-            f"theta{theta:.3f}_"
-            #f"stepsize{stepsize:.3f}_"
+            f"samplepos_rwk_tmax{t_max:.3f}_"
+            f"theta-max{theta:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
-            f"Eexp{E_inj_exp:.3f}_"
+            f"E_inj_exp{E_inj_exp:.3f}_"
             f"nproc{nproc}"
         )
     samplepos_file = open(samplepos_fname, 'rb')
@@ -163,12 +161,11 @@ if __name__ == "__main__":
     # isotropic data
     samplepos_fname_iso = DATA_DIR
     samplepos_fname_iso += (
-            f"pas_rw_samplepos_tmax{t_max:.3f}_"
-            f"theta{np.pi:.3f}_"
-            #f"stepsize{0.016:.3f}_"
+            f"samplepos_rwk_tmax{t_max:.3f}_"
+            f"theta-max{np.pi:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
-            f"Eexp{E_inj_exp:.3f}_"
+            f"E_inj_exp{E_inj_exp:.3f}_"
             f"nproc{nproc}"
         )
     samplepos_file_iso = open(samplepos_fname_iso, 'rb')
