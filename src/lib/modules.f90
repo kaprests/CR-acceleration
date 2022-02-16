@@ -40,6 +40,9 @@ module user_variables
    character(10) :: outdir = './Data'
    character(10) :: outdir_raw = './RawData'
 
+   ! Initial step dist
+   logical :: z_axis = .false. ! First shockless rw step in the z-direction, if false -> isotropic
+
    ! Number of data points to store (per particle) (rethink should scale with # sets not # particles
    integer :: num_steps_log = 200               ! Must reduce for large particle count
    integer :: num_cross_log = 100               ! Must reduce for large particle count

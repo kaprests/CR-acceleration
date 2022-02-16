@@ -24,7 +24,7 @@ subroutine parse_cmd_arguments
    integer :: j, n_flags
    character(20) :: flag
    character(20) :: arg
-   character(20), dimension(15), parameter :: flags = &
+   character(20), dimension(16), parameter :: flags = &
                                               [ &
                                               ! Integer:
                                               '--nsets     ', &  ! j=1
@@ -41,7 +41,8 @@ subroutine parse_cmd_arguments
                                               '--t-max     ', &  ! j=12
                                               '--iso       ', &  ! j=13
                                               '--E-inj-exp ', &  ! j=14
-                                              '--shockless ' &   ! j=15
+                                              '--shockless ', &  ! j=15
+                                              '--init-z-ax ' &   ! j=16
                                               ]
 
    n_args = command_argument_count()
@@ -111,6 +112,10 @@ subroutine parse_cmd_arguments
                else if (arg == "false") then
                   shockless = .false.
                end if
+            case (16)
+               if (arg == "true") then
+                  z_axis = .true.
+               end if
             end select
             exit
          elseif (j == n_flags) then
@@ -142,30 +147,13 @@ subroutine init_general(myid, n_proc)
    print *, shockless
    print *, shockless
    if (shockless) then
-      print *, "SHOCKLESS YO"
       filename = trim(basename_rw)
+      if (z_axis) then
+         filename = filename//"_init-z-ax"
+      end if
    else
-      print *, "SHOCKFULL WHY??", shockless
       filename = trim(basename)
    end if
-   print *, "!!!!-------------------------------!!!!!!!!!!!"
-   print *, "!!!!-------------------------------!!!!!!!!!!!"
-   print *, "!!!!-------------------------------!!!!!!!!!!!"
-   print *, "basename: ", filename
-   print *, "basename: ", filename
-   print *, "basename: ", filename
-   print *, "basename: ", filename
-   print *, "basename: ", filename
-   print *, "basename: ", filename
-   print *, "basename: ", filename
-   print *, "basename: ", filename
-   print *, "basename: ", filename
-   print *, "basename: ", filename
-   print *, "basename: ", filename
-   print *, "!!!!-------------------------------!!!!!!!!!!!"
-   print *, "!!!!-------------------------------!!!!!!!!!!!"
-   print *, "!!!!-------------------------------!!!!!!!!!!!"
-   print *, "!!!!-------------------------------!!!!!!!!!!!"
 
    ! Conditional parameters
    if (.not. shockless) then

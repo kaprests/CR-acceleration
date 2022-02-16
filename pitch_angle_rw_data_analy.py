@@ -8,12 +8,13 @@ OUT_DIR = './figs/'
 t_max = 120
 theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
-nsets = 10
+nsets = 100
 nstart = 10
 nproc = 2
 E_inj_exp = 10
 #stepexp = 2.1
 #stepsize = 0
+z_ax = True
 
 flags = ['--theta-pi-fr', '--tmax', '--stepexp']
 
@@ -64,14 +65,24 @@ if __name__ == "__main__":
 
     # pitch angle data
     fpos_fname = DATA_DIR
-    fpos_fname += (
-            f"fpos_rwk_tmax{t_max:.3f}_"
-            f"theta-max{theta:.3f}_"
-            f"nsets{nsets}_"
-            f"nstart{nstart}_"
-            f"E_inj_exp{E_inj_exp:.3f}_"
-            f"nproc{nproc}"
-        )
+    if z_ax:
+        fpos_fname += (
+                f"fpos_rwk_init-z-ax_tmax{t_max:.3f}_"
+                f"theta-max{theta:.3f}_"
+                f"nsets{nsets}_"
+                f"nstart{nstart}_"
+                f"E_inj_exp{E_inj_exp:.3f}_"
+                f"nproc{nproc}"
+            )
+    else:
+        fpos_fname += (
+                f"fpos_rwk_tmax{t_max:.3f}_"
+                f"theta-max{theta:.3f}_"
+                f"nsets{nsets}_"
+                f"nstart{nstart}_"
+                f"E_inj_exp{E_inj_exp:.3f}_"
+                f"nproc{nproc}"
+            )
     fpos_file = open(fpos_fname, 'rb')
     fpos_data = np.fromfile(fpos_file)
     
@@ -106,29 +117,86 @@ if __name__ == "__main__":
     ###  Final drift distribution (histogram) ###
     #############################################
     
+    # Total drift distance
     final_drift_distances = np.sqrt(x_final**2 + y_final**2 + z_final**2)
     final_drift_distances_iso = np.sqrt(x_final_iso**2 + y_final_iso**2 + z_final_iso**2)
     n_bins = 20
     bins = np.linspace(min(final_drift_distances), max(final_drift_distances), n_bins)
     bins_iso = np.linspace(min(final_drift_distances_iso), max(final_drift_distances_iso), n_bins)
+    plt.title("Total drift")
     plt.hist(final_drift_distances, label='pitch angle', histtype=u'step', color='blue', bins=bins)
     plt.hist(final_drift_distances_iso, label='isotropic', histtype=u'step', color='red', bins=bins_iso)
     plt.show()
-    
+
+    # Drift z-direction
+    zbins = np.linspace(min(z_final), max(z_final), n_bins)
+    zbins_iso = np.linspace(min(z_final_iso), max(z_final_iso), n_bins)
+    plt.title("Distribution along z-axis")
+    plt.hist(
+        z_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
+        histtype=u'step', color='blue', bins=zbins
+    )
+    plt.hist(
+        z_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
+        histtype=u'step', color='red', bins=zbins_iso
+    )
+    plt.legend()
+    plt.show()
+
+    # Drift x-direction
+    xbins = np.linspace(min(x_final), max(x_final), n_bins)
+    xbins_iso = np.linspace(min(x_final_iso), max(x_final_iso), n_bins)
+    plt.title("Distribution along x-axis")
+    plt.hist(
+        x_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
+        histtype=u'step', color='blue', bins=xbins
+    )
+    plt.hist(
+        x_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
+        histtype=u'step', color='red', bins=xbins_iso
+    )
+    plt.legend()
+    plt.show()
+
+    # Drift y-direction
+    ybins = np.linspace(min(y_final), max(y_final), n_bins)
+    ybins_iso = np.linspace(min(y_final_iso), max(y_final_iso), n_bins)
+    plt.title("Distribution along y-axis")
+    plt.hist(
+        y_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
+        histtype=u'step', color='blue', bins=ybins
+    )
+    plt.hist(
+        y_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
+        histtype=u'step', color='red', bins=ybins_iso
+    )
+    plt.legend()
+    plt.show()
+
     ######################################
     ### Average drift over time - plot ###
     ######################################
 
     # pitch angle data
     samplepos_fname = DATA_DIR
-    samplepos_fname += (
-            f"samplepos_rwk_tmax{t_max:.3f}_"
-            f"theta-max{theta:.3f}_"
-            f"nsets{nsets}_"
-            f"nstart{nstart}_"
-            f"E_inj_exp{E_inj_exp:.3f}_"
-            f"nproc{nproc}"
-        )
+    if z_ax:
+        samplepos_fname += (
+                f"samplepos_rwk_init-z-ax_tmax{t_max:.3f}_"
+                f"theta-max{theta:.3f}_"
+                f"nsets{nsets}_"
+                f"nstart{nstart}_"
+                f"E_inj_exp{E_inj_exp:.3f}_"
+                f"nproc{nproc}"
+            )
+    else:
+        samplepos_fname += (
+                f"samplepos_rwk_tmax{t_max:.3f}_"
+                f"theta-max{theta:.3f}_"
+                f"nsets{nsets}_"
+                f"nstart{nstart}_"
+                f"E_inj_exp{E_inj_exp:.3f}_"
+                f"nproc{nproc}"
+            )
     samplepos_file = open(samplepos_fname, 'rb')
     samplepos_data = np.fromfile(samplepos_file, dtype='float64')
     n_samples = int(len(samplepos_data) / (nproc * nsets * nstart * 4))
@@ -197,10 +265,10 @@ if __name__ == "__main__":
             z_samples[seti*len(z_samples_seti):(seti+1)*len(z_samples_seti)] = z_samples_seti
         avg_drifts_sampled_iso[sample] = np.average(x_samples**2 + y_samples**2 + z_samples**2)
 
-    plt.plot(t_sampled, avg_drifts_sampled, label=f"theta: {theta}")
-    plt.plot(t_sampled_iso, avg_drifts_sampled_iso, label="isotropic")
-    plt.legend()
-    plt.show()
+    #plt.plot(t_sampled, avg_drifts_sampled, label=f"theta: {theta}")
+    #plt.plot(t_sampled_iso, avg_drifts_sampled_iso, label="isotropic")
+    #plt.legend()
+    #plt.show()
 
     print("D': ", (avg_drifts_sampled[-1]-avg_drifts_sampled[0])/(t_sampled[-1] - t_sampled[0])/3)
     print("D'(iso): ", (avg_drifts_sampled_iso[-1]-avg_drifts_sampled_iso[0])/(t_sampled_iso[-1] - t_sampled_iso[0])/3)

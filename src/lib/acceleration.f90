@@ -13,7 +13,8 @@ contains
          num_steps_log, &
          inj_model, &
          shockless, &
-         num_steps_log
+         num_steps_log, &
+         z_axis
       use constants
       use particle_data, only: m_p
       use event_internal
@@ -87,6 +88,9 @@ contains
       m = A*m_p
       f = 0.d0
 
+      ! Set theta_max (max scattering angle) for whole simulation run
+      call set_theta_max(theta_max)
+
       if (shockless) then
          ! For shock off
          ! Initiate at (0, 0, 0)
@@ -95,8 +99,10 @@ contains
          x(3) = 0
          ! Find number of steps, sample intervals etc.
          t0 = t
-         call set_theta_max(theta_max)
-         num_steps_total = abs(t0-t_max)/stepsize(E, t0, theta_max)+1
+         l_0 = stepsize(E, t0, theta_max)
+         dt = l_0
+         if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
+         num_steps_total = abs(t0-t_max)/l_0+1
          sample_int = floor(real(num_steps_total/num_steps_log)) + 1 ! sample interval
          num_samples = floor(real(num_steps_total/sample_int))
          sample_count = 0
@@ -111,98 +117,12 @@ contains
       num_steps_taken = 0
 
       do
-         ! Max scattering angle 
-         call max_scattering_angle(theta_max, v_shock(t), E)
-         if (num_steps_taken == 0) then
-            !print *, "theta_max (initial): ", theta_max
-            !print *, "E_inj_exp: ", log10(E_inj)
-            ! Log first theta max 
-            theta_max0 = theta_max
-         end if
-
-         ! Stepsize
-         df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
-         call scales_charged(m, Z, E, t, w, df, dt, dE)
-         l_0 = stepsize(E, t, theta_max)
-         l_0_0 = l_0
-         !l_0 = analytical_stepsize(E, t, theta_max)/dble(Z)
-         ! Old adjustment of stepsize
-         !l_0 = l_0*(theta_max/pi)**stepsize_exp
-         if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
-
-         ! Step direction
-         r_sh0 = t_shock(t)                              ! shock position (not needed here?)
-         d0 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! particle radial position
-         if (num_steps_taken == 0) then
-            ! First step isotropic
-            call isotropic(phi, theta)
-
-            ! First step in radial direction
-            !call radially_outward(phi, theta, x(1), x(2), x(3))
-         else
-            ! Following steps small angle
-            ! g: initial momentum vector
-            g(1) = cos(phi)*sin(theta)
-            g(2) = sin(phi)*sin(theta)
-            g(3) = cos(theta)
-
-            ! Random scattering angles within scattering cone in rotated frame
-            call scattering_angle(theta_e, phi_e, theta_max)
-
-            ! Scattered momentum vector in rotated frame
-            p(1) = cos(phi_e)*sin(theta_e)
-            p(2) = sin(phi_e)*sin(theta_e)
-            p(3) = cos(theta_e)
-
-            ! Rotate p back to lab frame and update momentum vector
-            call euler_RyRz(-theta, -phi, R_euler)
-            g = 0.d0
-            do i = 1, 3, 1
-               do j = 1, 3, 1
-                  g(i) = g(i) + R_euler(i, j)*p(j)
-               end do
-            end do
-
-            ! New angles
-            theta = atan2(sqrt(g(1)**2 + g(2)**2), g(3))
-            phi = atan(g(2)/g(1))
-            if (g(1) < 0.d0 .and. g(2) > 0) phi = phi + pi
-            if (g(1) < 0.d0 .and. g(2) < 0) phi = phi + pi
-            if (g(1) > 0.d0 .and. g(2) < 0) phi = phi + two_pi
-         end if
-
-         ! Number of steps
-         if (dt >= l_0) then                     ! one random step of size l_0
-            dE = dE*l_0/dt
-            dt = l_0
-            n_step = 1
-         else                                    ! n steps l0 in same direction
-            l_0 = dt
-            if (l_0_0/dt < 1.d3) then
-               n_step = int(l_0_0/dt + 0.5d0)
-            else                                 ! fast decays lead to overflow
-               n_step = 1000                     ! this should be enough
-            end if
-            if (debug > 0) write (*, *) 'E, step number', E, n_step
-         end if
-         if (n_step < 1) then
-            write (*, *) l_0_0, l_0
-            write (*, *) dt, df
-            write (*, *) A, Z
-            write (*, *) E
-            write (*, *) l_0_0/dt, n_step
-            call error('wrong step number', 0)
-         end if
-
-         ! Increment number of steps taken
-         num_steps_taken = num_steps_taken + 1
-
          ! Log position
          if (num_steps_taken + 1 <= size(trajectories, 3)) then
-            trajectories(1, n_injected, num_steps_taken + 1) = t
-            trajectories(2, n_injected, num_steps_taken + 1) = x(1)
-            trajectories(3, n_injected, num_steps_taken + 1) = x(2)
-            trajectories(4, n_injected, num_steps_taken + 1) = x(3)
+            trajectories(1, n_injected, num_steps_taken + 1) = x(1)
+            trajectories(2, n_injected, num_steps_taken + 1) = x(2)
+            trajectories(3, n_injected, num_steps_taken + 1) = x(3)
+            trajectories(4, n_injected, num_steps_taken + 1) = t
          end if
 
          ! Sample positions
@@ -257,14 +177,92 @@ contains
                gamma_z*(gamma_pz * m_p * v_pz - E*v_z)
          end if
 
+         ! Stepsize
+         df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
+         call scales_charged(m, Z, E, t, w, df, dt, dE)
+         l_0 = stepsize(E, t, theta_max)
+         l_0_0 = l_0
+         !l_0 = analytical_stepsize(E, t, theta_max)/dble(Z)
+         if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
+
+         ! Number of steps
+         if (dt >= l_0) then                     ! one random step of size l_0
+            dE = dE*l_0/dt
+            dt = l_0
+            n_step = 1
+         else                                    ! n steps l0 in same direction
+            l_0 = dt
+            if (l_0_0/dt < 1.d3) then
+               n_step = int(l_0_0/dt + 0.5d0)
+            else                                 ! fast decays lead to overflow
+               n_step = 1000                     ! this should be enough
+            end if
+            if (debug > 0) write (*, *) 'E, step number', E, n_step
+         end if
+         if (n_step < 1) then
+            write (*, *) l_0_0, l_0
+            write (*, *) dt, df
+            write (*, *) A, Z
+            write (*, *) E
+            write (*, *) l_0_0/dt, n_step
+            call error('wrong step number', 0)
+         end if
+
+         ! Step direction
+         r_sh0 = t_shock(t)                              ! shock position (not needed here?)
+         d0 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! particle radial position
+         if (num_steps_taken == 0) then
+            if (z_axis .and. shockless) then
+               ! First step along z-axis
+               theta = 0.0
+               phi = 0.0 ! Can by anything
+            else
+               ! First step isotropic, always the case when shock is on
+               call isotropic(phi, theta)
+            end if
+         else
+            ! Following steps small angle
+            ! g: initial momentum vector
+            g(1) = cos(phi)*sin(theta)
+            g(2) = sin(phi)*sin(theta)
+            g(3) = cos(theta)
+
+            ! Random scattering angles within scattering cone in rotated frame
+            call scattering_angle(theta_e, phi_e, theta_max)
+
+            ! Scattered momentum vector in rotated frame
+            p(1) = cos(phi_e)*sin(theta_e)
+            p(2) = sin(phi_e)*sin(theta_e)
+            p(3) = cos(theta_e)
+
+            ! Rotate p back to lab frame and update momentum vector
+            call euler_RyRz(-theta, -phi, R_euler)
+            g = 0.d0
+            do i = 1, 3, 1
+               do j = 1, 3, 1
+                  g(i) = g(i) + R_euler(i, j)*p(j)
+               end do
+            end do
+
+            ! New angles
+            theta = atan2(sqrt(g(1)**2 + g(2)**2), g(3))
+            phi = atan(g(2)/g(1))
+            if (g(1) < 0.d0 .and. g(2) > 0) phi = phi + pi
+            if (g(1) < 0.d0 .and. g(2) < 0) phi = phi + pi
+            if (g(1) > 0.d0 .and. g(2) < 0) phi = phi + two_pi
+         end if
+
+         ! Increment number of steps taken
+         num_steps_taken = num_steps_taken + 1
+
          ! Perform step(s)
          do k = 1, n_step
             ! distances before step
-            r_sh1 = t_shock(t)                              ! old shock position
-            d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! old distance/particle radial position
+            r_sh1 = t_shock(t)                          ! old shock position
+            d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)      ! old distance/particle radial position
 
             ! Perform random step
-            if (d1 < r_sh1) then ! Particle in downstream
+            if (d1 < r_sh1 .and. .not. shockless) then ! Particle in downstream
                ! find direction of v_2 from position x (radially outward):
                call radially_outward(phi_v, theta_v, x(1), x(2), x(3))
 
