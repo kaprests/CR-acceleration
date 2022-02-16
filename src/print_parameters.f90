@@ -1,38 +1,37 @@
 module constants
-  implicit none
-  save
-  double precision, parameter ::             & 
-    N_av = 6.022142d23,                      & ! Avogadro's number
-    pi = 3.1415926536d0,                     &
-    two_pi = 2.d0*pi,                        &
-    degree_rad = pi/180.d0,                  &     
-    rad_degree = 180.d0/pi,                  &
-    E = 1.1d10,                              & ! Particle energy
-    v_sh = 0.8,                              & ! Shock velocity (fraction of light speed)
-    m_p = 938.272d6                            ! Proton mass
+    implicit none
+    save
+    double precision, parameter :: &
+        N_av = 6.022142d23, & ! Avogadro's number
+        pi = 3.1415926536d0, &
+        two_pi = 2.d0*pi, &
+        degree_rad = pi/180.d0, &
+        rad_degree = 180.d0/pi, &
+        E = 1.1d10, & ! Particle energy
+        v_sh = 0.8, & ! Shock velocity (fraction of light speed)
+        m_p = 938.272d6                            ! Proton mass
 end module constants
 
-
 program print_parameters
-  use constants
-  use particle_data, only: e_elm
-  use SNR_data, only: B0_turb
-  use stepsize_interpolated_polynom_coefficients
-  implicit none
-  integer, parameter :: n=3
-  integer i,j
-  double precision k(3),p(3),R_Euler(n,n),phi,theta,phi0,theta0
-  double precision cubic_spline_small_angle_step_correction
+    use constants
+    use particle_data, only: e_elm
+    use SNR_data, only: B0_turb
+    use stepsize_interpolated_polynom_coefficients
+    implicit none
+    integer, parameter :: n = 3
+    integer i, j
+    double precision k(3), p(3), R_Euler(n, n), phi, theta, phi0, theta0
+    double precision cubic_spline_small_angle_step_correction
 
   !!! Testing stuff !!!
-  double precision :: R_L, D_coef, v_particle
-  double precision :: E_inj, x_val
-  double precision, dimension(100) :: x
+    double precision :: R_L, D_coef, v_particle
+    double precision :: E_inj, x_val
+    double precision, dimension(100) :: x
 
-  E_inj = 1.0d10
-  do i = 1, 100, 1
-     print *, cubic_spline_small_angle_step_correction(i*0.01*pi)
-  end do
+    E_inj = 1.0d10
+    do i = 1, 100, 1
+        print *, cubic_spline_small_angle_step_correction(i*0.01*pi)
+    end do
 !  print *, "!!!!!!!!!!!!!!!!!!!!!!!!"
 !  print *, "E_inj(eV): ", E_inj
 !  print *, "R_L(yr): ", R_L(E_inj, 1.0)

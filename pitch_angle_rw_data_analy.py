@@ -124,8 +124,14 @@ if __name__ == "__main__":
     bins = np.linspace(min(final_drift_distances), max(final_drift_distances), n_bins)
     bins_iso = np.linspace(min(final_drift_distances_iso), max(final_drift_distances_iso), n_bins)
     plt.title("Total drift")
-    plt.hist(final_drift_distances, label='pitch angle', histtype=u'step', color='blue', bins=bins)
-    plt.hist(final_drift_distances_iso, label='isotropic', histtype=u'step', color='red', bins=bins_iso)
+    plt.hist(
+        final_drift_distances, label='pitch angle', histtype=u'step', color='blue', bins=bins,
+        density=True
+    )
+    plt.hist(
+        final_drift_distances_iso, label='isotropic', histtype=u'step', color='red', bins=bins_iso,
+        density=True
+    )
     plt.show()
 
     # Drift z-direction
@@ -134,11 +140,11 @@ if __name__ == "__main__":
     plt.title("Distribution along z-axis")
     plt.hist(
         z_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
-        histtype=u'step', color='blue', bins=zbins
+        histtype=u'step', color='blue', bins=zbins, density=True
     )
     plt.hist(
         z_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
-        histtype=u'step', color='red', bins=zbins_iso
+        histtype=u'step', color='red', bins=zbins_iso, density=True
     )
     plt.legend()
     plt.show()
@@ -149,11 +155,11 @@ if __name__ == "__main__":
     plt.title("Distribution along x-axis")
     plt.hist(
         x_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
-        histtype=u'step', color='blue', bins=xbins
+        histtype=u'step', color='blue', bins=xbins, density=True
     )
     plt.hist(
         x_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
-        histtype=u'step', color='red', bins=xbins_iso
+        histtype=u'step', color='red', bins=xbins_iso, density=True
     )
     plt.legend()
     plt.show()
