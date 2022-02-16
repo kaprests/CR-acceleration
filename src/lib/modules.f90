@@ -68,6 +68,9 @@ module user_variables
 
     ! Shock on/off
     logical :: shockless = .false.
+
+    ! Small angle correction on/off
+    logical :: no_small_angle_corr = .false.
 !--------------------------------------------------
     ! Remove
     double precision :: stepsize_exp = 2.1

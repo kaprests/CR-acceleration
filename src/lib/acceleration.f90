@@ -14,7 +14,8 @@ contains
             inj_model, &
             shockless, &
             num_steps_log, &
-            z_axis
+            z_axis, &
+            no_small_angle_corr
         use constants
         use particle_data, only: m_p
         use event_internal
@@ -100,7 +101,11 @@ contains
             x(3) = 0
             ! Find number of steps, sample intervals etc.
             t0 = t
-            l_0 = stepsize(E, t0, theta_max)
+            if (no_small_angle_corr) then
+                l_0 = R_L(E, t0)
+            else
+                l_0 = stepsize(E, t0, theta_max)
+            end if
             dt = l_0
             if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
             num_steps_total = abs(t0 - t_max)/l_0 + 1
@@ -190,7 +195,11 @@ contains
             ! Stepsize
             df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
             call scales_charged(m, Z, E, t, w, df, dt, dE)
-            l_0 = stepsize(E, t, theta_max)
+            if (no_small_angle_corr) then
+                l_0 = R_L(E, t)
+            else
+                l_0 = stepsize(E, t, theta_max)
+            end if
             l_0_0 = l_0
             !l_0 = analytical_stepsize(E, t, theta_max)/dble(Z)
             if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)

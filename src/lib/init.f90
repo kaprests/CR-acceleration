@@ -23,7 +23,7 @@ subroutine parse_cmd_arguments
     integer :: j, n_flags
     character(20) :: flag
     character(20) :: arg
-    character(20), dimension(16), parameter :: flags = &
+    character(20), dimension(17), parameter :: flags = &
                                                [ &
                                                ! Integer:
                                                '--nsets     ', &  ! j=1
@@ -41,7 +41,8 @@ subroutine parse_cmd_arguments
                                                '--iso       ', &  ! j=13
                                                '--E-inj-exp ', &  ! j=14
                                                '--shockless ', &  ! j=15
-                                               '--init-z-ax ' &   ! j=16
+                                               '--init-z-ax ', &  ! j=16
+                                               '--no-corr   ' &   ! j=17
                                                ]
 
     n_args = command_argument_count()
@@ -115,6 +116,10 @@ subroutine parse_cmd_arguments
                     if (arg == "true") then
                         z_axis = .true.
                     end if
+                case (17)
+                    if (arg == "true") then
+                        no_small_angle_corr = .true.
+                    end if
                 end select
                 exit
             elseif (j == n_flags) then
@@ -146,6 +151,9 @@ subroutine init_general(myid, n_proc)
     print *, shockless
     if (shockless) then
         filename = trim(basename_rw)
+        if (no_small_angle_corr) then
+            filename = filename//"_iso-stepsize"
+        end if
         if (z_axis) then
             filename = filename//"_init-z-ax"
         end if
