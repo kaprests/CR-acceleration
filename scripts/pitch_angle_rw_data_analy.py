@@ -6,16 +6,15 @@ import os.path
 
 DATA_DIR = os.path.dirname(__file__)+'/../Data/'
 OUT_DIR = './figs/'
-t_max = 120
-theta_pi_frac = 1.0
+t_max = 150
+theta_pi_frac = 0.1
 theta = theta_pi_frac*pi
 nsets = 100
 nstart = 10
-nproc = 2
+nproc = 4
 E_inj_exp = 10
-#stepexp = 2.1
-#stepsize = 0
-z_ax = True
+z_ax = False
+iso_stepsize = True
 
 flags = ['--theta-pi-fr', '--tmax', '--stepexp']
 
@@ -60,30 +59,33 @@ if __name__ == "__main__":
     print("########################")
     print()
 
+    filename = "rwk_"
+    if iso_stepsize: filename += "iso-stepsize_"
+    if z_ax: filename += "init-z-ax_"
+    filename += (
+            f"tmax{t_max:.3f}_"
+            f"theta-max{theta:.3f}_"
+            f"nsets{nsets}_"
+            f"nstart{nstart}_"
+            f"E_inj_exp{E_inj_exp:.3f}_"
+            f"nproc{nproc}"
+    )
+
+    filename_iso = (
+            f"rwk_tmax{t_max:.3f}_"
+            f"theta-max{np.pi:.3f}_"
+            f"nsets{nsets}_"
+            f"nstart{nstart}_"
+            f"E_inj_exp{E_inj_exp:.3f}_"
+            f"nproc{nproc}"
+    )
+
     #####################################
     ### Final particle positions plot ###
     #####################################
 
     # pitch angle data
-    fpos_fname = DATA_DIR
-    if z_ax:
-        fpos_fname += (
-                f"fpos_rwk_init-z-ax_tmax{t_max:.3f}_"
-                f"theta-max{theta:.3f}_"
-                f"nsets{nsets}_"
-                f"nstart{nstart}_"
-                f"E_inj_exp{E_inj_exp:.3f}_"
-                f"nproc{nproc}"
-            )
-    else:
-        fpos_fname += (
-                f"fpos_rwk_tmax{t_max:.3f}_"
-                f"theta-max{theta:.3f}_"
-                f"nsets{nsets}_"
-                f"nstart{nstart}_"
-                f"E_inj_exp{E_inj_exp:.3f}_"
-                f"nproc{nproc}"
-            )
+    fpos_fname = DATA_DIR+"fpos_"+filename
     fpos_file = open(fpos_fname, 'rb')
     fpos_data = np.fromfile(fpos_file)
     
@@ -91,15 +93,7 @@ if __name__ == "__main__":
     x_final, y_final, z_final = fpos_data.T
 
     # Isotropic data (max theta = 2*pi)
-    fpos_fname_iso = DATA_DIR
-    fpos_fname_iso += (
-            f"fpos_rwk_tmax{t_max:.3f}_"
-            f"theta-max{np.pi:.3f}_"
-            f"nsets{nsets}_"
-            f"nstart{nstart}_"
-            f"E_inj_exp{E_inj_exp:.3f}_"
-            f"nproc{nproc}"
-        )
+    fpos_fname_iso = DATA_DIR+"fpos_"+filename_iso
     fpos_file_iso = open(fpos_fname_iso, 'rb')
     fpos_data_iso = np.fromfile(fpos_file_iso)
     
@@ -171,11 +165,11 @@ if __name__ == "__main__":
     plt.title("Distribution along y-axis")
     plt.hist(
         y_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
-        histtype=u'step', color='blue', bins=ybins
+        histtype=u'step', color='blue', bins=ybins,density=True
     )
     plt.hist(
         y_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
-        histtype=u'step', color='red', bins=ybins_iso
+        histtype=u'step', color='red', bins=ybins_iso, density=True
     )
     plt.legend()
     plt.show()
@@ -185,25 +179,7 @@ if __name__ == "__main__":
     ######################################
 
     # pitch angle data
-    samplepos_fname = DATA_DIR
-    if z_ax:
-        samplepos_fname += (
-                f"samplepos_rwk_init-z-ax_tmax{t_max:.3f}_"
-                f"theta-max{theta:.3f}_"
-                f"nsets{nsets}_"
-                f"nstart{nstart}_"
-                f"E_inj_exp{E_inj_exp:.3f}_"
-                f"nproc{nproc}"
-            )
-    else:
-        samplepos_fname += (
-                f"samplepos_rwk_tmax{t_max:.3f}_"
-                f"theta-max{theta:.3f}_"
-                f"nsets{nsets}_"
-                f"nstart{nstart}_"
-                f"E_inj_exp{E_inj_exp:.3f}_"
-                f"nproc{nproc}"
-            )
+    samplepos_fname = DATA_DIR+"samplepos_"+filename
     samplepos_file = open(samplepos_fname, 'rb')
     samplepos_data = np.fromfile(samplepos_file, dtype='float64')
     n_samples = int(len(samplepos_data) / (nproc * nsets * nstart * 4))
@@ -234,15 +210,7 @@ if __name__ == "__main__":
         avg_drifts_sampled[sample] = np.average(x_samples**2 + y_samples**2 + z_samples**2)
 
     # isotropic data
-    samplepos_fname_iso = DATA_DIR
-    samplepos_fname_iso += (
-            f"samplepos_rwk_tmax{t_max:.3f}_"
-            f"theta-max{np.pi:.3f}_"
-            f"nsets{nsets}_"
-            f"nstart{nstart}_"
-            f"E_inj_exp{E_inj_exp:.3f}_"
-            f"nproc{nproc}"
-        )
+    samplepos_fname_iso = DATA_DIR+"samplepos_"+filename_iso
     samplepos_file_iso = open(samplepos_fname_iso, 'rb')
     samplepos_data_iso = np.fromfile(samplepos_file_iso, dtype='float64')
     n_samples_iso = int(len(samplepos_data_iso) / (nproc * nsets * nstart * 4))
