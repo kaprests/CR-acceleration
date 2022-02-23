@@ -24,7 +24,7 @@ module user_variables
         debug = 0, &                              ! 0, no debugging info
         restart = 0, &                            ! 1 use old data
         iseed_shift = 0, &                        ! positive shift of random seed
-        inj_model = 0                             ! constant shock_velocity
+        inj_model = 2                             ! constant shock_velocity
 
     ! Injmod 0: constant shock velocity -- specify either velocity or gamma factor
     double precision :: shock_velocity = 3.d-2   ! velocity of constant shock (injmod0)
@@ -44,6 +44,7 @@ module user_variables
     ! Number of data points to store (per particle) (rethink should scale with # sets not # particles
     integer :: num_steps_log = 200               ! Must reduce for large particle count
     integer :: num_cross_log = 100               ! Must reduce for large particle count
+    integer :: num_phase_log = 5                 ! # Sample times to log phase space position
 
     ! Injection/initial CR particle energy
     double precision :: E_inj_exp ! initial energy exponent (base 10) (E_inj)
@@ -179,6 +180,7 @@ module internal
         alpha_f1, K_inj
     double precision, parameter ::  dn = 0.1d0
     integer n_tot
+    double precision :: t_0_0 ! Lowest possible injection time (dependent on model)
 end module internal
 
 module result
@@ -201,11 +203,13 @@ module result
         NE_esc(n_enbin) = 0, & ! # protons escaped at each energy(bin)
         NE_esc_tot(n_enbin) = 0 ! # protons escaped at each energy(bin) (total for a proc)
     double precision :: rel_energy_gain_total_sum
+
+    double precision, allocatable :: trajectories(:, :, :)
+    double precision, allocatable :: phase_space_pos(:, :, :) ! (dist from shock, momentum, sample index)
+    ! Below not yet complete or tentative
+    double precision, allocatable :: crossing_flight_angles(:, :)
     double precision, allocatable :: exit_energies(:) ! # unbinned exit energies
     double precision, allocatable :: num_crossings_total(:) ! # number of shock crossings
-    double precision, allocatable :: trajectories(:, :, :)
-    double precision, allocatable :: crossing_flight_angles(:, :)
-    double precision, allocatable :: phase_space_dist(:, :, :)
 
     ! For shockless random walks only
     double precision, allocatable :: final_positions(:, :)

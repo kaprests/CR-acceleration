@@ -28,10 +28,9 @@ program print_parameters
     double precision :: E_inj, x_val
     double precision, dimension(100) :: x
 
-    E_inj = 1.0d10
-    do i = 1, 100, 1
-        print *, cubic_spline_small_angle_step_correction(i*0.01*pi)
-    end do
+    print *, "calling inject"
+    call inject
+    print *, "done calling inject"
 !  print *, "!!!!!!!!!!!!!!!!!!!!!!!!"
 !  print *, "E_inj(eV): ", E_inj
 !  print *, "R_L(yr): ", R_L(E_inj, 1.0)

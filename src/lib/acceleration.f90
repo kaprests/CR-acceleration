@@ -14,6 +14,7 @@ contains
             inj_model, &
             shockless, &
             num_steps_log, &
+            num_phase_log, &
             z_axis, &
             no_small_angle_corr
         use constants
@@ -43,7 +44,10 @@ contains
             phi_v, theta_v, &                            ! Shock normal angles
             d1, d2, dmax, &                              ! Radial pos of particle bef/aft step
             v_2, v_p, &                                  ! Velocity of shock and particle
-            v_shock_rel                                  ! Relative velocity between US/DS and shock
+            v_shock_rel, &                               ! Relative velocity between US/DS and shock
+            dist_particle_shock, &                       ! Distance between particle and shock
+            p_particle, &
+            E_srf                                        ! Energy in shock rest frame
         double precision :: &
             r, m, f, df, dt, dE, delta, &
             l_0, l_0_0
@@ -60,10 +64,10 @@ contains
         integer :: num_crossings, num_steps_taken
         double precision :: &
             rel_energy_gain, E_old, rel_energy_gain_sum
-        double precision :: theta_max, theta_max0       ! Max scattering angles
+        double precision :: theta_max                   ! Max scattering angles
         double precision :: &
             g(3), p(3), R_euler(3, 3), theta_e, phi_e    ! Pitch angle quantities
-        integer :: i, j, idx                            ! Iteration variables
+        integer :: i, j, idx, l                          ! Iteration variables
         double precision :: t0
         integer :: sample_int, sample_count, num_samples, num_steps_total
 
@@ -121,7 +125,10 @@ contains
         ! Both shock on and off
         num_steps_taken = 0
 
+        print *, "initial time: ", t
+
         do
+            !t0 = t ! Time before step
             ! Log position
             if (num_steps_taken + 1 <= size(trajectories, 3)) then
                 trajectories(1, n_injected, num_steps_taken + 1) = x(1)
@@ -146,49 +153,6 @@ contains
                     sample_positions(2, n_injected, sample_count) = x(2)
                     sample_positions(3, n_injected, sample_count) = x(3)
                     sample_positions(4, n_injected, sample_count) = t
-                end if
-            end if
-
-            if (num_steps_taken + 1 <= size(phase_space_dist, 3) .and. .not. shockless) then
-                ! Store in shock rest frame -- eventually transform afterwards
-                r_sh1 = t_shock(t)                          ! shock position
-                d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)      ! distance/particle radial position
-
-                ! Particle speed -> px, py, pz
-                v_p = v_particle(E, t)
-                v_px = v_p*cos(phi)*sin(theta)
-                v_py = v_p*sin(phi)*sin(theta)
-                v_pz = v_p*cos(theta)
-                px = m_p*v_px                                      ! x-comp 3-momentum
-                py = m_p*v_py                                      ! y-comp 3-momentum
-                pz = m_p*v_pz                                      ! z-comp 3-momentum
-
-                ! Relative velocity (for transform to shock rest frame)
-                if (d1 >= r_sh1) then
-                    ! Particle in upstream
-                    v_shock_rel = v_shock(t)
-                else
-                    v_2 = get_v_2(v_shock(t))
-                    v_shock_rel = v_shock(t) - v_2
-                end if
-                call radially_outward(phi_v, theta_v, x(1), x(2), x(3))
-                v_x = v_shock_rel*cos(phi_v)*sin(theta_v)
-                v_y = v_shock_rel*sin(phi_v)*sin(theta_v)
-                v_z = v_shock_rel*cos(theta_v)
-                gamma_x = 1.d0/sqrt(1.d0 - v_x**2)                 ! v_2 dimless (v_2 = beta = v/c)
-                gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
-                gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
-
-                ! Transform 3-momentum components to shock rest frame
-                px = gamma_x*(px - E*v_x)
-                py = gamma_y*(py - E*v_y)
-                pz = gamma_z*(pz - E*v_z)
-
-                phase_space_dist(1, n_injected, t) = d1 - r_sh1
-                phase_space_dist(2, n_injected, t) = sqrt(px**2 + py**2 + pz**2)
-                if (size(phase_space_dist) > 2*n_sets*n_start*2*num_steps_log) then
-                    print *, "PHASE SPACE ARRAY TOO LARGE"
-                    call error("Phase space data array too large", 1)
                 end if
             end if
 
@@ -332,18 +296,18 @@ contains
                     num_crossings = num_crossings + 1
 
                     ! log angles at crossing
-                    if (num_crossings <= size(crossing_flight_angles, 2)) then
-                        crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
-                    end if
+                    !if (num_crossings <= size(crossing_flight_angles, 2)) then
+                    !    crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
+                    !end if
 
-                    ! Lorentz tranform three momentum
-                    v_x = v_2*cos(phi_v)*sin(theta_v)      ! Shock velocity in x direction
-                    v_y = v_2*sin(phi_v)*sin(theta_v)      ! Shock velocity in y direction
-                    v_z = v_2*cos(theta_v)                 ! Shock velocity in z direction
+                    !! Lorentz tranform three momentum
+                    !v_x = v_2*cos(phi_v)*sin(theta_v)      ! Shock velocity in x direction
+                    !v_y = v_2*sin(phi_v)*sin(theta_v)      ! Shock velocity in y direction
+                    !v_z = v_2*cos(theta_v)                 ! Shock velocity in z direction
 
-                    gamma_x = 1.d0/sqrt(1.d0 - v_x**2)     ! v_2 dimless (v_2 = beta = v/c)
-                    gamma_y = 1.d0/sqrt(1.d0 - v_y**2)     ! v_2 dimless (v_2 = beta = v/c)
-                    gamma_z = 1.d0/sqrt(1.d0 - v_z**2)     ! v_2 dimless (v_2 = beta = v/c)
+                    !gamma_x = 1.d0/sqrt(1.d0 - v_x**2)     ! v_2 dimless (v_2 = beta = v/c)
+                    !gamma_y = 1.d0/sqrt(1.d0 - v_y**2)     ! v_2 dimless (v_2 = beta = v/c)
+                    !gamma_z = 1.d0/sqrt(1.d0 - v_z**2)     ! v_2 dimless (v_2 = beta = v/c)
 
                     !l_x = -v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
                     !l_y = -v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
@@ -367,24 +331,46 @@ contains
                     accel = 1
                     num_crossings = num_crossings + 1
 
-                    if (num_crossings <= size(crossing_flight_angles, 2)) then
-                        crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
-                    end if
+                    !if (num_crossings <= size(crossing_flight_angles, 2)) then
+                    !    crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
+                    !end if
 
-                    ! Lorentz tranform three momentum
-                    v_x = v_2*cos(phi_v)*sin(theta_v)
-                    v_y = v_2*sin(phi_v)*sin(theta_v)
-                    v_z = v_2*cos(theta_v)
+                    !! Lorentz tranform three momentum
+                    !v_x = v_2*cos(phi_v)*sin(theta_v)
+                    !v_y = v_2*sin(phi_v)*sin(theta_v)
+                    !v_z = v_2*cos(theta_v)
 
-                    gamma_x = 1.d0/sqrt(1.d0 - v_x**2)                 ! v_2 dimless (v_2 = beta = v/c)
-                    gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
-                    gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
+                    !gamma_x = 1.d0/sqrt(1.d0 - v_x**2)                 ! v_2 dimless (v_2 = beta = v/c)
+                    !gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
+                    !gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
 
                     !l_x = v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
                     !l_y = v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
                     !l_z = v_z*dt + l_0*cos(theta)/gamma_z
                     !call radially_outward(phi, theta, l_x, l_y, l_z)
                 end if
+
+                ! log phase space position (if past sample point)
+                do l = 1, num_phase_log, 1
+                    if (t > t_0_0 + l*(t_max - t_0_0)/num_phase_log .and. t0 < t_0_0 + l*(t_max - t_0_0)/num_phase_log) then
+                        ! Distance from shock
+                        dist_particle_shock = d2 - r_sh2 ! In lab frame (US rest frame)
+                        gamma_v = 1.0/sqrt(1.0 - v_shock(t)**2)
+                        dist_particle_shock = gamma_v*(dist_particle_shock - v_shock(t)*t) ! Shock rest frame
+
+                        ! Momentum
+                        call radially_outward(phi_v, theta_v, x(1), x(2), x(3))
+                        cos_theta = &
+                            cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &
+                            sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
+                            cos(theta)*cos(theta_v)
+                        gamma_v = 1.0/sqrt(1.0 - v_shock(t)**2)
+                        E_srf = gamma_v*E*(1 - v_shock(t)*cos_theta) ! Energy in shock rest frame
+                        p_particle = sqrt(E_srf**2 - m_p**2)
+                        phase_space_pos(1, n_injected, l) = dist_particle_shock
+                        phase_space_pos(2, n_injected, l) = p_particle
+                    end if
+                end do
 
                 v_2 = get_v_2(v_shock(t))
                 dmax = 3.d0*l_0_0/v_2
@@ -427,9 +413,10 @@ contains
                             print *, "#############################"
                             print *, "Num shock crossings: ", num_crossings
                             print *, "Num steps taken: ", num_steps_taken
-                            print *, "Initial theta max: ", theta_max0
                             print *, "Final theta max: ", theta_max
-                            print *, "size(phase_space_dist): ", size(phase_space_dist)
+                            print *, "t-exit: ", t
+                            print *, "t-max: ", t_max
+                            print *, "t_max/100*5: ", t_max/500
                             n_in = n_in - 1
                             n_out = n_out + 1
                             return

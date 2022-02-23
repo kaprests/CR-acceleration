@@ -124,6 +124,7 @@ if __name__ == "__main__":
 
 
     plt.title("Small angle reduction factor")
+    plt.plot(theta_max_data_arr, R_L/K_arr, "o", label="DP")
     plt.plot(theta_max_arr, stepsize_analytical(theta_max_arr, D, v)/stepsize_analytical(theta_max_arr, D, v)[-1], label='analytical attempt')
     plt.plot(theta_max_arr, piecewise_poly_vectorized(theta_max_arr, l_cs.x, l_cs.c)/piecewise_poly_vectorized(theta_max_arr, l_cs.x, l_cs.c)[-1], label="qubic spline")
     plt.legend()

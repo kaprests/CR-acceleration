@@ -205,54 +205,23 @@ subroutine init_general(myid, n_proc)
     print *, "D_coef: ", D_coef(E_inj, 1.0)
 
     ! If no t_max given by user, set default exit time t_max_snr from SNR_data
-    if (t_max == -1) then
+    if (.not. shockless) then
         t_max = t_max_snr ! End of Sedov-Taylor phase
     end if
-
-!   ! For shockless random walk
-!   if (shockless) then
-!      write (num_steps_tot_str, '(I10)') num_steps_tot
-!      num_steps_tot_str = adjustl(num_steps_tot_str)
-!      !write (stepsize_exp_str, '(f10.3)') stepsize_exp
-!      !stepsize_exp_str = adjustl(stepsize_exp_str)
-!      !write (stepsize_str, '(f10.3)') cubic_spline_stepsize(theta_max)
-!      !stepsize_str = adjustl(stepsize_str)
-!      print *, "=========================="
-!      print *, "For shockless random walk:"
-!      print *, "t_max: ", t_max
-!      print *, "theta max1: ", pi*theta_max_pi_frac
-!      print *, "theta_max2: ", theta_max
-!      !print *, "Current step size: ", cubic_spline_stepsize(theta_max)
-!      !print *, "Isotropic step size (cs): ", cubic_spline_stepsize(pi)
-!      print *, "Isotropic step size RL: ", R_L(E_inj, 1.0)
-!      print *, "D_coeff: ", R_L(E_inj, 1.0)/3
-!      print *, "D_coeff2: ",  D_coef(E_inj, 1.0)
-!      print *, "stepsize exp (deprecated): ", stepsize_exp
-!      print *, "=========================="
-!   end if
 
     ! Allocate dynamic arrays
     ! Not finalized -- WORK IN PROGRESS
     !allocate (exit_energies(n_sets*n_start))
     !allocate (num_crossings_total(n_sets*n_start))
     allocate (crossing_flight_angles(n_start, num_cross_log))
-    allocate (phase_space_dist(2, n_start, num_steps_log))
-    print *, "!!!!!!!!!!!!!!!!!!!!!"
-    print *, size(phase_space_dist)
-    print *, "!!!!!!!!!!!!!!!!!!!!!"
+    allocate (phase_space_pos(2, n_start, num_phase_log))
+    phase_space_pos = -1.0 ! default value -1, time component = -1 indicates not set
     ! Works
     allocate (trajectories(4, n_start, num_steps_log))
 
     ! For shockless random walks only
     if (shockless) then
         allocate (final_positions(3, n_start))
-!      print *, "!!!!!!!!!"
-!      print *, "final_positions allocated"
-!      print *, "size final_positions(bytes): ", sizeof(final_positions)
-!      print *, "count final_positions(bytes): ", size(final_positions)
-!      print *, "n_start * 3: ", n_start * 3
-!      print *, "n_start : ", n_start
-!      print *, "!!!!!!!!!"
     end if
 
     ! initialisation for random number (NumRec):
@@ -307,6 +276,7 @@ subroutine init_inject_spec
 
     select case (inj_model)
     case (0)                     ! stationary
+        alpha_f = 1.d0
     case (1, 4)                   ! thermal / Voelk injection
         alpha_f = 0.9d0           ! close to 1
     case (2)                     ! pressure / Russian
@@ -330,9 +300,13 @@ subroutine inject !(i)
     double precision :: dNdEdt0, f0, dNdEdt
     double precision r, ran0, t_shock
 
+    print *, "inject running"
+    print *, "injmod: ", inj_model
+
     select case (inj_model)
     case (0)
         t = 1.d2            ! t_inj_init
+        t_0_0 = 1.d2        ! Don't need to set every time, but simple to do it here
         x(1) = 0.d0
         x(2) = 0.d0
         x(3) = t_shock(t)*1.01
@@ -342,6 +316,11 @@ subroutine inject !(i)
             t = t_inj_init**alpha_f1 + &
                 r*(t_inj_fin**alpha_f1 - t_inj_init**alpha_f1) ! yr
             t = t**(1.d0/alpha_f1)
+
+            ! t_0_0 (used for finding log intervals for phase space positions)
+            t_0_0 = t_inj_init**alpha_f1
+            t_0_0 = t_0_0**(1.d0/alpha_f1)
+
             dNdEdt0 = dNdEdt(t)
             f0 = K_inj*t**alpha_f
             r = ran0()
