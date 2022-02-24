@@ -357,6 +357,7 @@ contains
                 end if
 
                 ! log phase space position (if past sample point)
+                if (.not. shockless) then
                 do l = 1, num_phase_log, 1
                     if (t > t_0_0 + l*(t_max - t_0_0)/num_phase_log .and. t0 < t_0_0 + l*(t_max - t_0_0)/num_phase_log) then
                         ! Distance from shock
@@ -396,6 +397,7 @@ contains
                         print *, "========================"
                     end if
                 end do
+                end if
 
                 v_2 = get_v_2(v_shock(t))
                 dmax = 3.d0*l_0_0/v_2
