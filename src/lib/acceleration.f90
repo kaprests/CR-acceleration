@@ -91,6 +91,12 @@ contains
             end if
         end if
 
+        if (t < t_0_0) then
+            print *, "t: ", t
+            print *, "t_0_0: ", t_0_0
+            call error("t < t_0_0 (initial) -- wrong t_0_0", 0)
+        end if
+
         r = ran0()
         m = A*m_p
         f = 0.d0
@@ -128,7 +134,7 @@ contains
         print *, "initial time: ", t
 
         do
-            !t0 = t ! Time before step
+            t0 = t ! Time before step
             ! Log position
             if (num_steps_taken + 1 <= size(trajectories, 3)) then
                 trajectories(1, n_injected, num_steps_taken + 1) = x(1)
@@ -356,7 +362,13 @@ contains
                         ! Distance from shock
                         dist_particle_shock = d2 - r_sh2 ! In lab frame (US rest frame)
                         gamma_v = 1.0/sqrt(1.0 - v_shock(t)**2)
-                        dist_particle_shock = gamma_v*(dist_particle_shock - v_shock(t)*t) ! Shock rest frame
+                        !dist_particle_shock = gamma_v*(dist_particle_shock - v_shock(t)*t) ! Shock rest frame
+                        dist_particle_shock = dist_particle_shock/gamma_v
+                        if (d2 > r_sh2 .and. dist_particle_shock < 0) then
+                            call error('Negative shock distance for upstream particle', 0)
+                        else if (d2 < r_sh2 .and. dist_particle_shock > 0) then
+                            call error('Positive shock distance for downstream particle', 0)
+                        end if
 
                         ! Momentum
                         call radially_outward(phi_v, theta_v, x(1), x(2), x(3))
@@ -369,6 +381,19 @@ contains
                         p_particle = sqrt(E_srf**2 - m_p**2)
                         phase_space_pos(1, n_injected, l) = dist_particle_shock
                         phase_space_pos(2, n_injected, l) = p_particle
+                        print *, "========================"
+                        print *, "========================"
+                        print *, "storing phase space pos"
+                        print *, "l: ", l
+                        print *, "t: ", t
+                        print *, "t0: ", t0
+                        print *, "t00: ", t_0_0
+                        print *, "l1 t: ", t_0_0 + 1*(t_max - t_0_0)/num_phase_log
+                        print *, "dt - int: ", dt - (t_max - t_0_0)/num_phase_log
+                        print *, "dist from shock: ", dist_particle_shock
+                        print *, "momentum: ", p_particle
+                        print *, "========================"
+                        print *, "========================"
                     end if
                 end do
 
@@ -405,18 +430,18 @@ contains
                             else if (t > t_max .and. d0 > r_sh0) then
                                 print *, "Time exit - particle in upstream - num_cross: ", num_crossings
                             end if
-                            print *, "!!!!!!!!!!!!!!!!!"
-                            print *, "w: ", w
-                            print *, "!!!!!!!!!!!!!!!!!"
+                            !print *, "!!!!!!!!!!!!!!!!!"
+                            !print *, "w: ", w
+                            !print *, "!!!!!!!!!!!!!!!!!"
                             call store(pid, E, w, num_crossings, rel_energy_gain_sum)
-                            !call store_raw(E, set, n_injected, num_crossings)
-                            print *, "#############################"
-                            print *, "Num shock crossings: ", num_crossings
-                            print *, "Num steps taken: ", num_steps_taken
-                            print *, "Final theta max: ", theta_max
-                            print *, "t-exit: ", t
-                            print *, "t-max: ", t_max
-                            print *, "t_max/100*5: ", t_max/500
+                            !!call store_raw(E, set, n_injected, num_crossings)
+                            !print *, "#############################"
+                            print *, "Num shock crossings before exit: ", num_crossings
+                            !print *, "Num steps taken: ", num_steps_taken
+                            !print *, "Final theta max: ", theta_max
+                            !print *, "t-exit: ", t
+                            !print *, "t-max: ", t_max
+                            !print *, "t_max/100*5: ", t_max/500
                             n_in = n_in - 1
                             n_out = n_out + 1
                             return

@@ -127,10 +127,6 @@ program acceleration
             phase_space_array_bsize = sizeof(phase_space_pos)
             phase_space_offset = myid*n_sets*phase_space_array_bsize + phase_space_array_bsize*(set - 1)
             phase_space_array_count = size(phase_space_pos)
-            print *, "Hvite bord og stoler er best ikke sant?"
-            print *, "array size: ", phase_space_array_count
-            print *, "total size: ", phase_space_array_count*n_sets*n_proc
-            print *, "-----------------------"
             call MPI_FILE_WRITE_AT( &
                 phase_space_filehandle, &
                 phase_space_offset, &

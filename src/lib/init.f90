@@ -300,9 +300,6 @@ subroutine inject !(i)
     double precision :: dNdEdt0, f0, dNdEdt
     double precision r, ran0, t_shock
 
-    print *, "inject running"
-    print *, "injmod: ", inj_model
-
     select case (inj_model)
     case (0)
         t = 1.d2            ! t_inj_init
@@ -317,16 +314,15 @@ subroutine inject !(i)
                 r*(t_inj_fin**alpha_f1 - t_inj_init**alpha_f1) ! yr
             t = t**(1.d0/alpha_f1)
 
-            ! t_0_0 (used for finding log intervals for phase space positions)
-            t_0_0 = t_inj_init**alpha_f1
-            t_0_0 = t_0_0**(1.d0/alpha_f1)
-
             dNdEdt0 = dNdEdt(t)
             f0 = K_inj*t**alpha_f
             r = ran0()
             if (dNdEdt0 .gt. f0) call error('dNdEdt0 > f0', 0)
             if (dNdEdt0 .ge. r*f0) exit
         end do
+        print *, "t_0_0: ", t_0_0
+        print *, "t_0: ", t
+        t_0_0 = 1.0
         call isotropic(phi, theta)
         r = t_shock(t)                     ! delta function at shock
         x(1) = r*cos(phi)*sin(theta)
