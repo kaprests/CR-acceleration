@@ -222,6 +222,12 @@ module test_var
     integer n_injected, sec, flag, accel
 end module test_var
 
+module stepsize_powerlaw_params
+    implicit none
+    double precision, parameter :: a = 0.12771280756170844
+    double precision, parameter :: b = 2.021722029753264
+end module stepsize_powerlaw_params
+
 module stepsize_interpolated_polynom_coefficients
     ! Consider reading from a file
     implicit none

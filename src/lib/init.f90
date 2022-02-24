@@ -320,8 +320,6 @@ subroutine inject !(i)
             if (dNdEdt0 .gt. f0) call error('dNdEdt0 > f0', 0)
             if (dNdEdt0 .ge. r*f0) exit
         end do
-        print *, "t_0_0: ", t_0_0
-        print *, "t_0: ", t
         t_0_0 = 1.0
         call isotropic(phi, theta)
         r = t_shock(t)                     ! delta function at shock

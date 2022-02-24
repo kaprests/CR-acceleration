@@ -260,26 +260,24 @@ double precision function cubic_spline_small_angle_step_correction(x)
     call error("Unknown error, possibly invalid argument", 0)
 end function cubic_spline_small_angle_step_correction
 
+double precision function power_law_small_angle_step_correction(x)
+    use stepsize_powerlaw_params
+    implicit none
+    double precision, intent(in) :: x
+    power_law_small_angle_step_correction = a*(x**b)
+end function power_law_small_angle_step_correction
+
 double precision function stepsize(En, t, theta_max)
+    use constants, only: pi
+    implicit none
     double precision, intent(in) :: En, t, theta_max
-    double precision :: R_L, cubic_spline_small_angle_step_correction
-    stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
+    double precision :: R_L, cubic_spline_small_angle_step_correction, power_law_small_angle_step_correction
+    if (theta_max > 0.3*pi) then
+        stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
+    else
+        stepsize = R_L(En, t)*power_law_small_angle_step_correction(theta_max)
+    end if
 end function stepsize
-
-!double precision function cycle_energy_gain(theta_in, theta_out, v) result(e_gain)
-!   ! Computes the relative energy gain of a particle from a shock crossing cycle
-!   ! Computed in the rest frame of the SNR (v1 = 0)
-!   ! v = v2 - v1, function of v_shock
-!   ! Can use for comparison, but will probably be scrapped
-!   ! Assumed c = 1
-!   implicit none
-!   double precision, intent(in) :: theta_in, theta_out, v
-!
-!   e_gain = &
-!      (1 - v*cos(theta_in) + v*cos(theta_out) - (v**2)*cos(theta_in)*cos(theta_out)) &
-!      /(1 - v**2) - 1
-!end function cycle_energy_gain
-
 !=============================================================================!
 !                   end file functions101.f90                                 !
 !=============================================================================!

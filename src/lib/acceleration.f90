@@ -131,8 +131,6 @@ contains
         ! Both shock on and off
         num_steps_taken = 0
 
-        print *, "initial time: ", t
-
         do
             t0 = t ! Time before step
             ! Log position
@@ -408,13 +406,13 @@ contains
                 if (shockless .and. t > t_max) then
                     idx = n_injected + (set - 1)*n_start
                     if (idx == n_start*n_sets) then
-                        print *, "Particle exiting"
-                        print *, "t max: ", t_max
-                        print *, "steps taken: ", num_steps_taken
-                        print *, "num_steps_total: ", num_steps_total
-                        print *, "num_steps_log: ", num_steps_log
-                        print *, "sample_count: ", sample_count
-                        print *, "num_samples: ", num_samples
+                        !print *, "Particle exiting"
+                        !print *, "t max: ", t_max
+                        !print *, "steps taken: ", num_steps_taken
+                        !print *, "num_steps_total: ", num_steps_total
+                        !print *, "num_steps_log: ", num_steps_log
+                        !print *, "sample_count: ", sample_count
+                        !print *, "num_samples: ", num_samples
                     end if
                     call store_shockless(n_injected, x(1), x(2), x(3))
                     n_in = n_in - 1

@@ -6,15 +6,15 @@ import os.path
 
 DATA_DIR = os.path.dirname(__file__)+'/../Data/'
 OUT_DIR = './figs/'
-t_max = 150
-theta_pi_frac = 0.1
+t_max = 125
+theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
 nsets = 100
 nstart = 10
 nproc = 4
 E_inj_exp = 10
 z_ax = False
-iso_stepsize = True
+iso_stepsize = False
 
 flags = ['--theta-pi-fr', '--tmax', '--stepexp']
 
