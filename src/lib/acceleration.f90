@@ -204,7 +204,7 @@ contains
             !!!!!!!!!!!!!!!!!!
             ! Step direction !
             !!!!!!!!!!!!!!!!!!
-            r_sh0 = t_shock(t)                              ! shock position (not needed here?)
+            r_sh0 = t_shock(t)                              ! shock position 
             d0 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! particle radial position
             if (num_steps_taken == 0) then
                 if (z_axis .and. shockless) then
@@ -270,9 +270,9 @@ contains
                     v_x = v_2*cos(phi_v)*sin(theta_v)
                     v_y = v_2*sin(phi_v)*sin(theta_v)
                     v_z = v_2*cos(theta_v)
-                    gamma_x = 1.d0/sqrt(1.d0 - v_x**2)                 ! v_2 dimless (v_2 = beta = v/c)
-                    gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
-                    gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
+                    gamma_x = 1.d0/sqrt(1.d0 - v_x**2)            ! v_2 dimless (v_2 = beta = v/c)
+                    gamma_y = 1.d0/sqrt(1.d0 - v_y**2)            ! v_2 dimless (v_2 = beta = v/c)
+                    gamma_z = 1.d0/sqrt(1.d0 - v_z**2)            ! v_2 dimless (v_2 = beta = v/c)
                     x(1) = x(1) + v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
                     x(2) = x(2) + v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
                     x(3) = x(3) + v_z*dt + l_0*cos(theta)/gamma_z
@@ -302,10 +302,10 @@ contains
                         sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
                         cos(theta)*cos(theta_v)
 
-                    gamma_v = 1.d0/sqrt(1.d0 - v_2**2)                 ! v_2 dimless (v_2 = beta = v/c)
-                    E_old = E                                          ! Old energy
-                    E = gamma_v*E*(1 - v_2*cos_theta)                  ! New energy
-                    rel_energy_gain = (E - E_old)/E_old                ! rel energy gain
+                    gamma_v = 1.d0/sqrt(1.d0 - v_2**2)            ! v_2 dimless (v_2 = beta = v/c)
+                    E_old = E                                     ! Old energy
+                    E = gamma_v*E*(1 - v_2*cos_theta)             ! New energy
+                    rel_energy_gain = (E - E_old)/E_old           ! rel energy gain
                     rel_energy_gain_sum = rel_energy_gain_sum + rel_energy_gain
                     accel = 1
                     num_crossings = num_crossings + 1
@@ -363,50 +363,6 @@ contains
                     !l_y = v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
                     !l_z = v_z*dt + l_0*cos(theta)/gamma_z
                     !call radially_outward(phi, theta, l_x, l_y, l_z)
-                end if
-
-                !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                ! log phase space position ! (if past sample point)
-                !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                if (.not. shockless) then
-                do l = 1, num_phase_log, 1
-                    if (t > t_0_0 + l*(t_max - t_0_0)/num_phase_log .and. t0 < t_0_0 + l*(t_max - t_0_0)/num_phase_log) then
-                        ! Distance from shock
-                        dist_particle_shock = d2 - r_sh2 ! In lab frame (US rest frame)
-                        gamma_v = 1.0/sqrt(1.0 - v_shock(t)**2)
-                        dist_particle_shock = dist_particle_shock/gamma_v
-                        if (d2 > r_sh2 .and. dist_particle_shock < 0) then
-                            call error('Negative shock distance for upstream particle', 0)
-                        else if (d2 < r_sh2 .and. dist_particle_shock > 0) then
-                            call error('Positive shock distance for downstream particle', 0)
-                        end if
-
-                        ! Momentum
-                        call radially_outward(phi_v, theta_v, x(1), x(2), x(3))
-                        cos_theta = &
-                            cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &
-                            sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
-                            cos(theta)*cos(theta_v)
-                        gamma_v = 1.0/sqrt(1.0 - v_shock(t)**2)
-                        E_srf = gamma_v*E*(1 - v_shock(t)*cos_theta) ! Energy in shock rest frame
-                        p_particle = sqrt(E_srf**2 - m_p**2)
-                        phase_space_pos(1, n_injected, l) = dist_particle_shock
-                        phase_space_pos(2, n_injected, l) = p_particle
-                        print *, "                        "
-                        print *, "========================"
-                        print *, "storing phase space pos"
-                        print *, "l: ", l
-                        print *, "t: ", t
-                        print *, "t0: ", t0
-                        print *, "t00: ", t_0_0
-                        print *, "l1 t: ", t_0_0 + 1*(t_max - t_0_0)/num_phase_log
-                        print *, "dt - int: ", dt - (t_max - t_0_0)/num_phase_log
-                        print *, "dist from shock: ", dist_particle_shock
-                        print *, "momentum: ", p_particle
-                        print *, "========================"
-                        print *, "                        "
-                    end if
-                end do
                 end if
 
                 v_2 = get_v_2(v_shock(t))
