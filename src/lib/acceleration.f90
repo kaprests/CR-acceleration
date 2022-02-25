@@ -133,7 +133,9 @@ contains
 
         do
             t0 = t ! Time before step
-            ! Log position
+            !!!!!!!!!!!!!!!!
+            ! Log position ! (initial trajectories)
+            !!!!!!!!!!!!!!!!
             if (num_steps_taken + 1 <= size(trajectories, 3)) then
                 trajectories(1, n_injected, num_steps_taken + 1) = x(1)
                 trajectories(2, n_injected, num_steps_taken + 1) = x(2)
@@ -141,7 +143,9 @@ contains
                 trajectories(4, n_injected, num_steps_taken + 1) = t
             end if
 
-            ! Sample positions
+            !!!!!!!!!!!!!!!!!!!!
+            ! Sample positions !
+            !!!!!!!!!!!!!!!!!!!!
             if (shockless) then
                 if (modulo(num_steps_taken + 1, sample_int) == 0) then
                     if (sample_count > num_samples) then
@@ -160,29 +164,31 @@ contains
                 end if
             end if
 
-            ! Stepsize
+            !!!!!!!!!!!!
+            ! Stepsize !
+            !!!!!!!!!!!!
             df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)   ! interaction rate (1/yr)
             call scales_charged(m, Z, E, t, w, df, dt, dE)
             if (no_small_angle_corr) then
+                ! Isotropic rw stepsize
                 l_0 = R_L(E, t)
             else
+                ! Small angle stepsize 
                 l_0 = stepsize(E, t, theta_max)
             end if
             l_0_0 = l_0
-            !l_0 = analytical_stepsize(E, t, theta_max)/dble(Z)
             if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
-
             ! Number of steps
-            if (dt >= l_0) then                     ! one random step of size l_0
+            if (dt >= l_0) then                         ! one random step of size l_0
                 dE = dE*l_0/dt
                 dt = l_0
                 n_step = 1
-            else                                    ! n steps l0 in same direction
+            else                                        ! n steps l0 in same direction
                 l_0 = dt
                 if (l_0_0/dt < 1.d3) then
                     n_step = int(l_0_0/dt + 0.5d0)
-                else                                 ! fast decays lead to overflow
-                    n_step = 1000                     ! this should be enough
+                else                                    ! fast decays lead to overflow
+                    n_step = 1000                       ! this should be enough
                 end if
                 if (debug > 0) write (*, *) 'E, step number', E, n_step
             end if
@@ -195,16 +201,18 @@ contains
                 call error('wrong step number', 0)
             end if
 
-            ! Step direction
+            !!!!!!!!!!!!!!!!!!
+            ! Step direction !
+            !!!!!!!!!!!!!!!!!!
             r_sh0 = t_shock(t)                              ! shock position (not needed here?)
             d0 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! particle radial position
             if (num_steps_taken == 0) then
                 if (z_axis .and. shockless) then
                     ! First step along z-axis
                     theta = 0.0
-                    phi = 0.0 ! Can by anything
+                    phi = 0.0 ! Can be anything
                 else
-                    ! First step isotropic, always the case when shock is on
+                    ! First step isotropic, always the case when there is a shock
                     call isotropic(phi, theta)
                 end if
             else
@@ -242,9 +250,10 @@ contains
             ! Increment number of steps taken
             num_steps_taken = num_steps_taken + 1
 
-            ! Perform step(s)
+            !!!!!!!!!!!!!!!!!!!
+            ! Perform step(s) !
+            !!!!!!!!!!!!!!!!!!!
             do k = 1, n_step
-                ! distances before step
                 r_sh1 = t_shock(t)                          ! old shock position
                 d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)      ! old distance/particle radial position
 
@@ -280,7 +289,9 @@ contains
                 E = E + dE
                 r_sh2 = t_shock(t)                                  ! new shock dist
 
-                ! Check for shock crossing
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                ! Check for shock crossing !
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if (d2 < r_sh2 .and. r_sh1 < d1 .and. .not. shockless) then ! Crossed (US->DS)
                     call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! angle of v_2 at pos x
                     v_2 = get_v_2(v_shock(t)) ! US sees DS approach at velocity v_2
@@ -354,14 +365,15 @@ contains
                     !call radially_outward(phi, theta, l_x, l_y, l_z)
                 end if
 
-                ! log phase space position (if past sample point)
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                ! log phase space position ! (if past sample point)
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if (.not. shockless) then
                 do l = 1, num_phase_log, 1
                     if (t > t_0_0 + l*(t_max - t_0_0)/num_phase_log .and. t0 < t_0_0 + l*(t_max - t_0_0)/num_phase_log) then
                         ! Distance from shock
                         dist_particle_shock = d2 - r_sh2 ! In lab frame (US rest frame)
                         gamma_v = 1.0/sqrt(1.0 - v_shock(t)**2)
-                        !dist_particle_shock = gamma_v*(dist_particle_shock - v_shock(t)*t) ! Shock rest frame
                         dist_particle_shock = dist_particle_shock/gamma_v
                         if (d2 > r_sh2 .and. dist_particle_shock < 0) then
                             call error('Negative shock distance for upstream particle', 0)
@@ -380,7 +392,7 @@ contains
                         p_particle = sqrt(E_srf**2 - m_p**2)
                         phase_space_pos(1, n_injected, l) = dist_particle_shock
                         phase_space_pos(2, n_injected, l) = p_particle
-                        print *, "========================"
+                        print *, "                        "
                         print *, "========================"
                         print *, "storing phase space pos"
                         print *, "l: ", l
@@ -392,7 +404,7 @@ contains
                         print *, "dist from shock: ", dist_particle_shock
                         print *, "momentum: ", p_particle
                         print *, "========================"
-                        print *, "========================"
+                        print *, "                        "
                     end if
                 end do
                 end if
@@ -402,7 +414,9 @@ contains
                 f = f + df*dt                      ! \int dt f(t)
                 delta = exp(-f)                    ! exp(-\int dt f(t))
 
-                ! exit, if a) too late, b) too far down-stream, or c) scattering:
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                ! Exit -- Random walking particle !
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if (shockless .and. t > t_max) then
                     idx = n_injected + (set - 1)*n_start
                     if (idx == n_start*n_sets) then
@@ -419,7 +433,12 @@ contains
                     n_out = n_out + 1
                     return
                 end if
+
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                ! Exit -- accelerating particle !
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if (.not. shockless) then
+                    ! exit, if a) too late, b) too far down-stream, or c) scattering:
                     if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta) then
                         if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                             ! write(*,*) 'tired',n_in,n_out
@@ -470,7 +489,7 @@ contains
         else
             tau_eff = huge(0.d0)
         end if
-   !!!  tausyn = tau_syn(m,En,t)/dble(Z**2)                           ! synchrotron
+        ! tausyn = tau_syn(m,En,t)/dble(Z**2)                           ! synchrotron
         tausyn = huge(0.d0)
         dt = 9.d-3*min(tau_eff, tausyn)
 
@@ -506,7 +525,7 @@ contains
 
         !rel_energy_gain_avg = rel_energy_gain_sum/num_crossings
         !rel_energy_gain_total_sum = rel_energy_gain_total_sum + rel_energy_gain_sum
-        !  write(*,*) 'store: ',pid,i
+        !write(*,*) 'store: ',pid,i
     end subroutine store
 
     subroutine store_shockless(n_injected, x1, x2, x3)
@@ -521,17 +540,4 @@ contains
         final_positions(3, n_injected) = x3
     end subroutine store_shockless
 
-    !subroutine store_raw(En, set_num, n_injected, num_crossings)
-    !   ! Stores particles energies upon exit
-    !   ! Raw, unbinned energies
-    !   use result, only: exit_energies, num_crossings_total
-    !   use user_variables, only: n_start
-    !   implicit none
-    !   double precision, intent(in) :: En
-    !   integer, intent(in) :: set_num, n_injected, num_crossings
-    !   integer :: idx
-    !   !idx = n_injected + (set_num - 1)*n_start
-    !   !exit_energies(idx) = En
-    !   !num_crossings_total(idx) = num_crossings
-    !end subroutine store_raw
 end module random_walk
