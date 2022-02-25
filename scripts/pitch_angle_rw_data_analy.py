@@ -7,7 +7,7 @@ import os.path
 DATA_DIR = os.path.dirname(__file__)+'/../Data/'
 OUT_DIR = './figs/'
 t_max = 110
-theta_pi_frac = 1.0
+theta_pi_frac = 0.2
 theta = theta_pi_frac*pi
 nsets = 100
 nstart = 10

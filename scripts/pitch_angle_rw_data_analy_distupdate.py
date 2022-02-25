@@ -4,18 +4,18 @@ from math import pi
 import sys
 from scipy.stats import norm
 
-DATA_DIR = './rwk_data/'
+DATA_DIR = '../Data/'
 OUT_DIR = './figs/'
-t_max = 120
-theta_pi_frac = 0.1
+t_max = 110
+theta_pi_frac = 0.2
 theta = theta_pi_frac*pi
 nsets = 100
 nstart = 10
-nproc = 6
+nproc = 2
 E_inj_exp = 10
 #stepexp = 2.1
 #stepsize = 0
-z_ax = True
+z_ax = False
 
 D = 1.1753625473872295e-05 # For E_inj_exp = 10
 mean = 0
