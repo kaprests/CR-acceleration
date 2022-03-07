@@ -1,5 +1,4 @@
 !=============================================================================!
-!=============================================================================!
 !                         error handling                                      !
 !=============================================================================!
 subroutine error(string, s)
@@ -42,7 +41,8 @@ subroutine error(string, s)
         stop
     end if
 end subroutine error
-!=============================================================================!
+
+
 !=============================================================================!
 !          random number generator from Numerical Recipes (Fortran90)         !
 !=============================================================================!
@@ -70,8 +70,8 @@ function ran0()
     if (iy < 0) iy = iy + IM
     ran0 = am*ior(iand(IM, ieor(ix, iy)), 1)
 end function ran0
-!=============================================================================!
-!=============================================================================!
+
+
 subroutine isotropic(phi, theta)
     use constants
     implicit none
@@ -83,11 +83,10 @@ subroutine isotropic(phi, theta)
     theta = acos(x)
     r = ran0()
     phi = two_pi*r
-
 end subroutine isotropic
-!=============================================================================!
-!=============================================================================!
-subroutine scattering_angle(theta, phi, theta_max)
+
+
+subroutine scattering_angles(theta, phi, theta_max)
     ! Random small angle within a cone centered around z-axis
     use constants, only: pi, two_pi
     implicit none
@@ -101,6 +100,7 @@ subroutine scattering_angle(theta, phi, theta_max)
     phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle
 
+
 subroutine set_theta_max(theta)
     ! Sets default/user provded theta max
     use user_variables, only: theta_max, theta_max_set
@@ -109,48 +109,6 @@ subroutine set_theta_max(theta)
     theta = theta_max
 end subroutine set_theta_max
 
-subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
-    ! Computes the loss cone angle, and sets max_pitch scattering angle
-    ! to some fraction of cone angle.
-    ! Currently not is use
-    use constants, only: pi
-    use particle_data, only: m_p
-    use user_variables, only: theta_max, theta_max_set
-
-    implicit none
-    double precision, intent(out) :: theta_max_computed
-    double precision, intent(in) :: v_shock, E_particle
-    double precision :: v_particle, v_p
-    double precision :: cos_theta_cone, theta_cone
-
-    if (theta_max_set) then
-        ! Use user provided theta max
-        theta_max_computed = theta_max
-    else
-        v_p = v_particle(E_particle, m_p)
-        if (v_shock > v_p) then
-            ! isotropic -- E.g. particles injected in front of UR shock (before overtaken 1st time)
-            !theta_max_computed = pi
-            theta_max_computed = 1/(1/sqrt(1 - v_shock**2)) !approx for UR shocks from Achterberg et at.
-        else
-            ! Compute loss cone opening, theta_cone
-            ! Set max scattering, theta_max, to 100% of loss cone angle
-            cos_theta_cone = v_shock/v_p
-            if (abs(cos_theta_cone) > 1) then
-                print *, "v_shock: ", v_shock
-                print *, "E: ", E_particle
-                print *, "m: ", m_p
-                print *, "cos_theta_cone: ", cos_theta_cone
-                call error("cosine exceeds 1, max_scattering_angle", 0)
-            end if
-            theta_cone = acos(cos_theta_cone)
-            theta_max_computed = 1.0*theta_cone
-            !print *, "!!!!!!!!!!!!!!!!!"
-            !print *, "theta max computed: ", theta_max_computed
-            !print *, "!!!!!!!!!!!!!!!!!"
-        end if
-    end if
-end subroutine max_scattering_angle
 
 subroutine euler_RyRz(theta, phi, R)
     implicit none
@@ -218,3 +176,51 @@ double precision function get_v_2(v_shock) result(v)
         call error("v_shock outside of allowed range [0, 1]", 0)
     end if
 end function get_v_2
+
+
+!-----------------------------------------------------!
+!               Tentative/unfinished                  !
+!-----------------------------------------------------!
+
+subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
+    ! Computes the loss cone angle, and sets max_pitch scattering angle
+    ! to some fraction of cone angle.
+    ! Currently not is use
+    use constants, only: pi
+    use particle_data, only: m_p
+    use user_variables, only: theta_max, theta_max_set
+
+    implicit none
+    double precision, intent(out) :: theta_max_computed
+    double precision, intent(in) :: v_shock, E_particle
+    double precision :: v_particle, v_p
+    double precision :: cos_theta_cone, theta_cone
+
+    if (theta_max_set) then
+        ! Use user provided theta max
+        theta_max_computed = theta_max
+    else
+        v_p = v_particle(E_particle, m_p)
+        if (v_shock > v_p) then
+            ! isotropic -- E.g. particles injected in front of UR shock (before overtaken 1st time)
+            !theta_max_computed = pi
+            theta_max_computed = 1/(1/sqrt(1 - v_shock**2)) !approx for UR shocks from Achterberg et at.
+        else
+            ! Compute loss cone opening, theta_cone
+            ! Set max scattering, theta_max, to 100% of loss cone angle
+            cos_theta_cone = v_shock/v_p
+            if (abs(cos_theta_cone) > 1) then
+                print *, "v_shock: ", v_shock
+                print *, "E: ", E_particle
+                print *, "m: ", m_p
+                print *, "cos_theta_cone: ", cos_theta_cone
+                call error("cosine exceeds 1, max_scattering_angle", 0)
+            end if
+            theta_cone = acos(cos_theta_cone)
+            theta_max_computed = 1.0*theta_cone
+            !print *, "!!!!!!!!!!!!!!!!!"
+            !print *, "theta max computed: ", theta_max_computed
+            !print *, "!!!!!!!!!!!!!!!!!"
+        end if
+    end if
+end subroutine max_scattering_angle

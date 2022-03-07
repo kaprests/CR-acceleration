@@ -204,7 +204,7 @@ subroutine init_general(myid, n_proc)
     print *, "filename metadata: ", filename
     print *, "D_coef: ", D_coef(E_inj, 1.0)
 
-    ! If no t_max given by user, set default exit time t_max_snr from SNR_data
+    ! for acceleration program, set default exit time t_max_snr from SNR_data
     if (.not. shockless) then
         t_max = t_max_snr ! End of Sedov-Taylor phase
     end if
