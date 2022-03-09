@@ -12,7 +12,7 @@ LIB_FILES = $(LIB_DIR)/modules.f90\
 			$(LIB_DIR)/functions.f90\
 			$(LIB_DIR)/output.f90\
 			$(LIB_DIR)/aux.f90\
-			$(LIB_DIR)/acceleration.f90
+			$(LIB_DIR)/random_walk.f90
 
 # Main program -- development flags
 test: $(LIB_FILES) $(SRC_DIR)/main.f90

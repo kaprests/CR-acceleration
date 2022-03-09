@@ -228,7 +228,7 @@ double precision function cubic_spline_small_angle_step_correction(x)
     integer :: i, j, k
 
     if (x < bp(1) .or. x > bp(size(bp))) then
-        print *, x
+        print *, "x: ", x
         call error("Argument x out of range", 0)
     end if
 
@@ -273,11 +273,12 @@ double precision function stepsize(En, t, theta_max)
     double precision, intent(in) :: En, t, theta_max
     double precision :: R_L, cubic_spline_small_angle_step_correction
     double precision :: power_law_small_angle_step_correction
-    if (theta_max > 0.3*pi) then
-        stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
-    else
-        stepsize = R_L(En, t)*power_law_small_angle_step_correction(theta_max)
-    end if
+    stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
+    !if (theta_max > 0.3*pi) then
+    !    stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
+    !else
+    !    stepsize = R_L(En, t)*power_law_small_angle_step_correction(theta_max)
+    !end if
 end function stepsize
 !=============================================================================!
 !                   end file functions101.f90                                 !

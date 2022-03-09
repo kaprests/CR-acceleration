@@ -117,7 +117,11 @@ contains
                 l_0 = stepsize(E, t0, theta_max)
             end if
             dt = l_0
-            if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
+            if (l_0 <= 0.d0 .or. dt <= 0.d0) then
+                write(*, *) "SHOCKLESS"
+                write(*, *) "l_0: ", l_0
+                call error('wrong scales', 0)
+            end if
             num_steps_total = abs(t0 - t_max)/l_0 + 1
             sample_int = floor(real(num_steps_total/num_steps_log)) + 1 ! sample interval
             num_samples = floor(real(num_steps_total/sample_int))
@@ -177,7 +181,11 @@ contains
                 l_0 = stepsize(E, t, theta_max)
             end if
             l_0_0 = l_0
-            if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
+            if (l_0 <= 0.d0 .or. dt <= 0.d0) then
+                write(*, *) "SHOCKLESS: ", shockless
+                write(*, *) "l_0: ", l_0
+                call error('wrong scales', 0)
+            end if
             ! Number of steps
             if (dt >= l_0) then                         ! one random step of size l_0
                 dE = dE*l_0/dt

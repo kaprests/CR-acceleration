@@ -17,6 +17,7 @@ program print_parameters
     use particle_data, only: e_elm
     use SNR_data, only: B0_turb
     use stepsize_interpolated_polynom_coefficients
+    use user_variables
     implicit none
     integer, parameter :: n = 3
     integer i, j
@@ -28,9 +29,7 @@ program print_parameters
     double precision :: E_inj, x_val
     double precision, dimension(100) :: x
 
-    print *, "calling inject"
-    call inject
-    print *, "done calling inject"
+    write(*, *) "theta_max: ", theta_max
 !  print *, "!!!!!!!!!!!!!!!!!!!!!!!!"
 !  print *, "E_inj(eV): ", E_inj
 !  print *, "R_L(yr): ", R_L(E_inj, 1.0)
