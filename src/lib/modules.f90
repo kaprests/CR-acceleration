@@ -52,7 +52,7 @@ module user_variables
 
     ! Max scattering angle
     double precision :: theta_max_pi_frac = 1.0  ! fraction of pi
-    double precision :: theta_max
+    double precision :: theta_max = pi
     character(10) :: theta_max_str
     logical :: theta_max_set = .false.
 

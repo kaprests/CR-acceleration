@@ -1,8 +1,8 @@
-!=============================================================================!
-!=============================================================================!
-!                         error handling                                      !
-!=============================================================================!
+! File: aux.f90
+! Auxillary/utility subroutines and functions
+
 subroutine error(string, s)
+    ! error handling
     character(len=*), intent(in) :: string
     integer, intent(in) :: s
     integer, save :: n_warn
@@ -42,15 +42,15 @@ subroutine error(string, s)
         stop
     end if
 end subroutine error
-!=============================================================================!
-!=============================================================================!
-!          random number generator from Numerical Recipes (Fortran90)         !
-!=============================================================================!
+
+
 function ran0()
+    ! random number generator from Numerical Recipes (Fortran90)
     use internal, only: iseed
+
     implicit none
     integer, parameter :: K4B = selected_int_kind(9)
-!  integer(K4B), intent(inout) :: iseed
+    !integer(K4B), intent(inout) :: iseed
     double precision ran0
     integer(K4B), parameter :: IA = 16807, IM = 2147483647, IQ = 127773, IR = 2836
     real, save :: am
@@ -70,10 +70,20 @@ function ran0()
     if (iy < 0) iy = iy + IM
     ran0 = am*ior(iand(IM, ieor(ix, iy)), 1)
 end function ran0
-!=============================================================================!
-!=============================================================================!
+
+
+subroutine set_theta_max(theta)
+    ! Sets default/user provded theta max
+    use user_variables, only: theta_max, theta_max_set
+    implicit none
+    double precision, intent(inout) :: theta
+    theta = theta_max
+end subroutine set_theta_max
+
+
 subroutine isotropic(phi, theta)
     use constants
+
     implicit none
     double precision phi, theta, r, x
     double precision ran0
@@ -83,13 +93,13 @@ subroutine isotropic(phi, theta)
     theta = acos(x)
     r = ran0()
     phi = two_pi*r
-
 end subroutine isotropic
-!=============================================================================!
-!=============================================================================!
+
+
 subroutine scattering_angle(theta, phi, theta_max)
     ! Random small angle within a cone centered around z-axis
     use constants, only: pi, two_pi
+
     implicit none
     double precision, intent(inout) :: phi, theta
     double precision, intent(in) :: theta_max
@@ -101,14 +111,8 @@ subroutine scattering_angle(theta, phi, theta_max)
     phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle
 
-subroutine set_theta_max(theta)
-    ! Sets default/user provded theta max
-    use user_variables, only: theta_max, theta_max_set
-    implicit none
-    double precision, intent(inout) :: theta
-    theta = theta_max
-end subroutine set_theta_max
 
+! Not in use
 subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
     ! Computes the loss cone angle, and sets max_pitch scattering angle
     ! to some fraction of cone angle.
@@ -145,12 +149,10 @@ subroutine max_scattering_angle(theta_max_computed, v_shock, E_particle)
             end if
             theta_cone = acos(cos_theta_cone)
             theta_max_computed = 1.0*theta_cone
-            !print *, "!!!!!!!!!!!!!!!!!"
-            !print *, "theta max computed: ", theta_max_computed
-            !print *, "!!!!!!!!!!!!!!!!!"
         end if
     end if
 end subroutine max_scattering_angle
+
 
 subroutine euler_RyRz(theta, phi, R)
     implicit none
@@ -177,9 +179,11 @@ subroutine euler_RyRz(theta, phi, R)
     R(3, 3) = ct
 end subroutine euler_RyRz
 
+
 subroutine radially_outward(phi_rad, theta_rad, x1, x2, x3)
     ! Finds the angles corresponding to radially out at point x, i.e. shock normal
     use constants, only: pi, two_pi
+
     implicit none
     double precision, intent(in) :: x1, x2, x3
     double precision, intent(inout) :: phi_rad, theta_rad
@@ -198,6 +202,7 @@ subroutine radially_outward(phi_rad, theta_rad, x1, x2, x3)
     if (x1 < 0.d0 .and. x2 < 0) phi_rad = phi_rad + pi
     if (x1 > 0.d0 .and. x2 < 0) phi_rad = phi_rad + two_pi
 end subroutine radially_outward
+
 
 double precision function get_v_2(v_shock) result(v)
     ! Move to functions.f90
