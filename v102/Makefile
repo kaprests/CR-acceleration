@@ -1,0 +1,22 @@
+#FC = mpifort
+FC = gfortran
+DFLAGS = -Wall -C -g -fbacktrace
+PFLAGS = -O -w
+
+SRC_DIR = ./src
+LIB_DIR = ./src/lib
+MOD_DIR = ./Modules
+BIN_DIR = ./bin
+
+LIB_FILES = $(LIB_DIR)/modules.f90\
+			$(LIB_DIR)/init.f90\
+			$(LIB_DIR)/functions.f90\
+			$(LIB_DIR)/output.f90\
+			$(LIB_DIR)/aux.f90
+			#$(LIB_DIR)/acceleration.f90
+
+test: $(LIB_FILES) $(SRC_DIR)/main.f90
+	$(FC) -J $(MOD_DIR) $(DFLAGS) $(LIB_FILES) $(SRC_DIR)/main.f90 -o $(BIN_DIR)/$@
+
+main: $(LIB_FILES) $(SRC_DIR)/main.f90
+	$(FC) -J $(MOD_DIR) $(PFLAGS) $(LIB_FILES) $(SRC_DIR)/main.f90 -o $(BIN_DIR)/$@
