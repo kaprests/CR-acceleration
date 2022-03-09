@@ -1,5 +1,5 @@
-#FC = mpifort
-FC = gfortran
+FC = mpifort
+#FC = gfortran
 DFLAGS = -Wall -C -g -fbacktrace
 PFLAGS = -O -w
 
