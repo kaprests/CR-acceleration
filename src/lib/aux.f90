@@ -1,6 +1,7 @@
 ! File: aux.f90
 ! Auxillary/utility subroutines and functions
 
+
 subroutine error(string, s)
     ! error handling
     character(len=*), intent(in) :: string
@@ -180,7 +181,7 @@ subroutine euler_RyRz(theta, phi, R)
 end subroutine euler_RyRz
 
 
-subroutine radially_outward(phi_rad, theta_rad, x1, x2, x3)
+subroutine radially_outward(theta_rad, phi_rad, x1, x2, x3)
     ! Finds the angles corresponding to radially out at point x, i.e. shock normal
     use constants, only: pi, two_pi
 
@@ -207,6 +208,7 @@ end subroutine radially_outward
 double precision function get_v_2(v_shock) result(v)
     ! Move to functions.f90
     use user_variables, only: gamma_sh
+
     implicit none
     double precision, intent(in) :: v_shock
     if (v_shock <= 0.1 .and. 0 < v_shock) then
@@ -223,3 +225,141 @@ double precision function get_v_2(v_shock) result(v)
         call error("v_shock outside of allowed range [0, 1]", 0)
     end if
 end function get_v_2
+
+
+double precision function spacetime_interval(t, r_vec)
+    ! "norm" of four vector
+    ! metric = diag(-1, 1, 1, 1)
+    implicit none
+    double precision, intent(in) :: t
+    double precision, dimension(3), intent(in) :: r_vec
+
+    spacetime_interval = -1*t**2 + dot_product(r_vec, r_vec)
+end function spacetime_interval
+
+
+subroutine spherical_to_cartesian(r, phi, theta, x, y, z)
+    ! Convert from spherical to cartesian coordinates
+    implicit none
+    double precision, intent(in) :: r, phi, theta
+    double precision, intent(out) :: x, y, z
+
+    x = r*sin(theta)*cos(phi)
+    y = r*sin(theta)*sin(phi)
+    z = r*cos(theta)
+end subroutine spherical_to_cartesian
+
+
+subroutine parallel_projection(v, u, v_parallel)
+    implicit none
+    double precision, dimension(3), intent(in) :: v, u
+    double precision, dimension(3), intent(out) :: v_parallel
+
+    v_parallel = (dot_product(u, v) / dot_product(u, u)) * u
+end subroutine parallel_projection
+
+
+subroutine orthogonal_projection(v, u, v_ortogonal)
+    implicit none
+    double precision, dimension(3), intent(in) :: v, u
+    double precision, dimension(3), intent(out) :: v_ortogonal
+    double precision, dimension(3) :: v_parallel
+
+    call parallel_projection(v, u, v_parallel)
+    v_ortogonal = v - v_parallel
+end subroutine orthogonal_projection
+
+
+double precision function v_prime(v, v_rel)
+    ! Velocity boost transformation
+    implicit none
+    double precision, intent(in) :: v, v_rel
+
+    v_prime = (v - v_rel)/(1 - v*v_rel)
+end function v_prime
+
+
+subroutine lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
+    ! Lorentz boost
+    implicit none
+    double precision, intent(in) :: t
+    double precision, dimension(3), intent(in) :: r_vec, v_rel_vec
+    double precision, intent(out) :: t_prime
+    double precision, dimension(3), intent(out) :: r_vec_prime
+    double precision :: gamma_factor
+    double precision, dimension(3) :: r_parallel, r_orthogonal, r_parallel_prime
+    double precision, dimension(4) :: four_vec_parallel, four_vec_parallel_prime
+    double precision, dimension(4, 4) :: boost_matrix
+    integer :: i, j
+
+    gamma_factor = 1.0/sqrt(1.0 - dot_product(v_rel_vec, v_rel_vec))
+    call parallel_projection(r_vec, v_rel_vec, r_parallel)
+    call orthogonal_projection(r_vec, v_rel_vec, r_orthogonal)
+    four_vec_parallel = [t, r_parallel(1), r_parallel(2), r_parallel(3)]
+    boost_matrix = transpose(reshape([&
+        gamma_factor, -gamma_factor*v_rel_vec(1), -gamma_factor*v_rel_vec(2), -gamma_factor*v_rel_vec(3), &
+        -gamma_factor*v_rel_vec(1), gamma_factor, 0.d0, 0.d0, &
+        -gamma_factor*v_rel_vec(2), 0.d0, gamma_factor, 0.d0, &
+        -gamma_factor*v_rel_vec(3), 0.d0, 0.d0, gamma_factor  &
+        ], shape(boost_matrix)&
+    ))
+    four_vec_parallel_prime = 0.d0
+    do i = 1, 4, 1 ! column i
+    do j = 1, 4, 1 ! row j
+        four_vec_parallel_prime(i) = four_vec_parallel_prime(i) + boost_matrix(j, i) * four_vec_parallel(i)
+    end do
+    end do
+    t_prime = four_vec_parallel_prime(1)
+    r_parallel_prime = four_vec_parallel_prime(2:)
+    r_vec_prime = r_parallel_prime + r_orthogonal
+end subroutine lorentz_boost
+
+
+subroutine upstream_to_downstream_boost(t_us, r_us, t_ds, r_ds, v_shock_us, pos_vec_us)
+    ! Upstream restframe to downstream restframe
+    double precision, intent(in) :: t_us, v_shock_us
+    double precision, dimension(3), intent(in) :: r_us, pos_vec_us
+    double precision, intent(out) :: t_ds
+    double precision, dimension(3), intent(out) :: r_ds
+    double precision :: v_rel, theta, phi
+    double precision, dimension(3) :: v_rel_vec
+    double precision :: get_v_2
+
+    v_rel = get_v_2(v_shock_us)
+    call radially_outward(theta, phi, pos_vec_us(1), pos_vec_us(2), pos_vec_us(3))
+    call spherical_to_cartesian(v_rel, theta, phi, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
+    call lorentz_boost(t_us, r_us, t_ds, r_ds, v_rel_vec)
+end subroutine upstream_to_downstream_boost
+
+
+subroutine downstream_to_upstream_boost(t_ds, r_ds, t_us, r_us, v_shock_us, pos_vec_us)
+    ! Downstream restframe to upstream restframe boost
+    double precision, intent(in) :: t_ds, v_shock_us
+    double precision, dimension(3), intent(in) :: r_ds, pos_vec_us
+    double precision, intent(out) :: t_us
+    double precision, dimension(3), intent(out) :: r_us
+    double precision :: v_rel, theta, phi
+    double precision, dimension(3) :: v_rel_vec
+    double precision :: get_v_2
+
+    v_rel = get_v_2(v_shock_us)
+    call radially_outward(theta, phi, pos_vec_us(1), pos_vec_us(2), pos_vec_us(3))
+    call spherical_to_cartesian(v_rel, theta, phi, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
+    v_rel_vec = -1.d0 * v_rel_vec ! Minus sign since US flows radially inward
+    call lorentz_boost(t_ds, r_ds, t_us, r_us, v_rel_vec)
+end subroutine downstream_to_upstream_boost
+
+
+subroutine upstream_to_shockfront_boost(t_us, r_us, t_sh, r_sh, v_shock_us, pos_vec_us)
+    ! Upstream to shockfront boost
+    double precision, intent(in) :: t_us, v_shock_us
+    double precision, dimension(3), intent(in) :: r_us, pos_vec_us
+    double precision, intent(out) :: t_sh
+    double precision, dimension(3), intent(out) :: r_sh
+    double precision :: theta, phi
+    double precision, dimension(3) :: v_shock_vec
+
+    call radially_outward(theta, phi, pos_vec_us(1), pos_vec_us(2), pos_vec_us(3))
+    call spherical_to_cartesian(v_shock_us, theta, phi, v_shock_vec(1), v_shock_vec(2), v_shock_vec(3))
+    call lorentz_boost(t_us, r_us, t_sh, r_sh, v_shock_vec)
+end subroutine upstream_to_shockfront_boost
