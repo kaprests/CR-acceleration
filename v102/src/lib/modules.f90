@@ -13,21 +13,45 @@ module user_variables
     implicit none
     save
 
-    integer, parameter :: &
-        n_sets = 2, & ! number of MC set
-        n_start = 1*10**1, & ! injected particles/set
+    integer :: &
+        n_sets = 10, & ! number of MC set
+        n_start = 100, & ! injected particles/set
         debug = 0, & ! 0, no debugging info
         restart = 0, & ! 1 use old data
         iseed_shift = 0                           ! positive shift of random seed
+        inj_model = 1 ! 0: constant vel, 1, 2
 
-    character*60 ::  filename = '_test'            ! name in output
+    ! inj_model = 0: constant shock velocity
+    double precision :: v_shock_const = 3.d-2 ! Default 3.d-2
+    double precision :: gamma_shock
+    logical :: gamma_shock_set = .false. ! if inj_model = 0, use v_shock_const by default
+
+    ! Initial step in z-direction
+    logical :: init_z = .false.
+
+    ! Injection energy exponent
+    double precision :: E_inj_exp
+
+    ! Max scattering angle
+    double precision :: theta_max_pi_fraction = 1.0 ! fraction of pi theta/pi, default 1
+    double precision :: theta_max = pi ! pi as default i.e. isotropic rw
+
+    ! Filename
+    character(len=6), parameter ::  basename = '_accel'            ! name in output
+    character(len=6), parameter :: basename_rw = '_randw'
+    character(len=6), parameter :: default_outdir = './Data'
+    character(len=:), allocatable :: filename
+    character(len=:), allocatable :: outdir
+    character(len=10) :: n_start_str, n_sets_str, v_shock_str, gamma_shock_str, n_proc_str
+    character(len=2) :: E_inj_exp_str
+    character(len=5) :: theta_max_str
 end module user_variables
 
 module SNR_data
+    use user_variables, only: inj_model
     implicit none
     save
 
-    integer, parameter ::  inj_model = 2      ! stat. (0), SNR (1/2, Voelk/Russ)
     double precision, parameter :: &
         M_sun = 1.78698d54, &  ! erg
         M_ej = 4.d0*M_sun, &  ! ejected mass (erg)

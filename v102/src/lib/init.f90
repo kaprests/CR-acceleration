@@ -11,6 +11,80 @@ subroutine init(myid)
     !if (myid==0.and.restart>0) call read_old_results
 end subroutine init
 
+subroutine parse_cmd_args
+    ! naive and non flexible argument parser
+    use user_variables
+    use constants, only: pi
+    use internal, only: E_inj
+
+    implicit none
+    integer :: i, j, n_args
+    character(len=20) :: flag
+    character(len=20) :: arg
+    integer, parameter :: n_flags = 15
+    character(len=20), dimension(n_flags), parameter :: flags = [ &
+        '--nsets         ', & ! j=1
+        '--nstart        ', & ! j=2
+        '--debug         ', & ! j=3
+        '--restart       ', & ! j=4
+        '--iseed_shift   ', & ! j=5
+        '--injmod        ', & ! j=6
+        '--vshock        ', & ! j=7
+        '--gamma         ', & ! j=8
+        '--fname         ', & ! j=9
+        '--max-pi-fr     ', & ! j=10
+        '--t-max         ', & ! j=11
+        '--E-inj-exp     ', & ! j=12
+        '--shockless     ', & ! j=13
+        '--init-z-ax     ', & ! j=14
+        '--no-step-corr  '  & ! j=15
+    ]
+
+    n_args = command_argument_count()
+    if (modulo(n_args, 2) .ne. 0) then
+        call error('Argument error, odd number of provided arguments and flags', 0)
+    end if
+
+    write(*, *) "Provided parameters/settings:"
+    do i = 1, n_args, 2
+        call get_command_argument(i, flag)
+        call get_command_argument(i+1, arg)
+        if (flag(1:1) == '#') then
+            ! Comment line, skip
+            cycle
+        end if
+        write(*, *) trim(flag)//' '//trim(arg)
+        do j = 1, n_flags, 1
+            if (flag == trim(flags(j))) then
+                select case(j)
+                case(1) ! n_sets
+                    read(arg, *) n_sets
+                case(2) ! n_start
+                    read(arg, *) n_start
+                case(3) ! debug
+                    read(arg, *) debug
+                case(4) ! restart
+                    read(arg, *) restart
+                case(5) ! iseed_shift
+                    read(arg, *) iseed_shift
+                case(6) ! inj_model
+                    read(arg, *) inj_model
+                case(7) ! v_shock_const
+                    read(arg, *) v_shock_const
+                    gamma_shock_set = .false.
+                !Continue here
+                !----------------------------------!
+                case(8) ! iseed_shift
+                    read(arg, *) iseed_shift
+                end select
+                exit
+            elseif (j == n_flags) then
+                call error('Argument error, invalid flag: '//flag, 0)
+            end if
+        end do
+    end do
+end subroutine parse_cmd_arg
+
 subroutine init_general(myid)
     use internal
     use user_variables
