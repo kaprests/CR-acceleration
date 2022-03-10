@@ -33,9 +33,9 @@ contains
             t_shock, &
             v_shock, &
             get_v_2, &
-            v_particle, &
             stepsize, &
-            analytical_stepsize
+            analytical_stepsize, &
+            spacetime_interval
         integer, pointer :: pid, A, Z                   ! Integer pointers
         double precision, pointer :: E, x(:), t, w      ! DP pointers
         double precision :: &
@@ -43,23 +43,18 @@ contains
             phi, theta, &                                ! Random step angles (direction)
             phi_v, theta_v, &                            ! Shock normal angles
             d1, d2, dmax, &                              ! Radial pos of particle bef/aft step
-            v_2, v_p, &                                  ! Velocity of shock and particle
-            v_shock_rel, &                               ! Relative velocity between US/DS and shock
+            v_2, v_p, &                                  ! Relative velocity US/DS shock and particle
             dist_particle_shock, &                       ! Distance between particle and shock
             p_particle, &
             E_srf                                        ! Energy in shock rest frame
         double precision :: &
             r, m, f, df, dt, dE, delta, &
-            l_0, l_0_0
+            l_0, l_0_0, gamma_v
         double precision :: v_x, v_y, v_z               ! Cartesian comp of shock velocity
         double precision :: v_px, v_py, v_pz            ! Cartesian comp of particle velocity
         double precision :: px, py, pz                  ! Cartesian comp of particle 3-momentum
         double precision :: &
-            gamma_v, gamma_x, gamma_y, gamma_z, &        ! Lorentz factors of shock
             cos_theta                                    ! Flight angle cosine
-        double precision :: &
-            gamma_pv, gamma_px, gamma_py, gamma_pz       ! Lorentz factors of particle
-        double precision :: l_x, l_y, l_z               ! Cartesian components of random step
         double precision :: d0, r_sh0                   ! Initial particle and shock radial positions
         integer :: num_crossings, num_steps_taken
         double precision :: &
@@ -70,6 +65,9 @@ contains
         integer :: i, j, idx, l                          ! Iteration variables
         double precision :: t0
         integer :: sample_int, sample_count, num_samples, num_steps_total
+        double precision, dimension(3) :: l_vec        ! step vector -- cartesian coordinates
+        double precision :: dt_us                       ! upstream time step for a downstream particle
+        double precision, dimension(3) :: l_vec_us      ! upstream spatial step for a downstream particle
 
         pid => event(n_in)%pid
         A => event(n_in)%A
@@ -106,12 +104,13 @@ contains
 
         if (shockless) then
             ! Initiate at (0, 0, 0)
-            x(1) = 0
-            x(2) = 0
-            x(3) = 0
+            x(1) = 0.d0
+            x(2) = 0.d0
+            x(3) = 0.d0
             ! Find number of steps, sample intervals etc.
             t0 = t
             if (no_small_angle_corr) then
+                print *, "ISO"
                 l_0 = R_L(E, t0)
             else
                 l_0 = stepsize(E, t0, theta_max)
@@ -221,7 +220,7 @@ contains
                     phi = 0.0 ! Can be anything
                 else
                     ! First step isotropic, always the case when there is a shock
-                    call isotropic(phi, theta)
+                    call isotropic(theta, phi)
                 end if
             else
                 ! Following steps small angle
@@ -243,6 +242,7 @@ contains
                 g = 0.d0
                 do i = 1, 3, 1
                     do j = 1, 3, 1
+                        ! Todo: define R_euler as transposed (fortran is column major)
                         g(i) = g(i) + R_euler(i, j)*p(j)
                     end do
                 end do
@@ -255,6 +255,9 @@ contains
                 if (g(1) > 0.d0 .and. g(2) < 0) phi = phi + two_pi
             end if
 
+            ! Step vector l_vec
+            call spherical_to_cartesian(l_0, theta, phi, l_vec(1), l_vec(2), l_vec(3))
+
             ! Increment number of steps taken
             num_steps_taken = num_steps_taken + 1
 
@@ -266,34 +269,27 @@ contains
                 d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)      ! old distance/particle radial position
 
                 ! Perform random step
-                if (d1 < r_sh1 .and. .not. shockless) then ! Particle in downstream
-                    ! find direction of v_2 from position x (radially outward):
-                    call radially_outward(phi_v, theta_v, x(1), x(2), x(3))
+                if (d1 < r_sh1 .and. .not. shockless) then 
+                    ! Particle in downstream (advection)
+                    ! => generated l_0, theta, phi and dt are downstream quantities
+                    ! Need to tranform (boost) to labframe (upstream)
 
-                    ! v_2: velocity of downstream as seen in US
-                    v_2 = get_v_2(v_shock(t))
-                    if (v_2 <= 0.d0) call error('v_2<=0', 0)
+                    ! Boost the step vector to the lab (US) frame
+                    call downstream_to_upstream_boost(dt, l_vec, dt_us, l_vec_us, v_shock(t), [x(1), x(2), x(3)])
 
-                    ! Lorentz transformed random step (advection)
-                    v_x = v_2*cos(phi_v)*sin(theta_v)
-                    v_y = v_2*sin(phi_v)*sin(theta_v)
-                    v_z = v_2*cos(theta_v)
-                    gamma_x = 1.d0/sqrt(1.d0 - v_x**2)            ! v_2 dimless (v_2 = beta = v/c)
-                    gamma_y = 1.d0/sqrt(1.d0 - v_y**2)            ! v_2 dimless (v_2 = beta = v/c)
-                    gamma_z = 1.d0/sqrt(1.d0 - v_z**2)            ! v_2 dimless (v_2 = beta = v/c)
-                    x(1) = x(1) + v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
-                    x(2) = x(2) + v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
-                    x(3) = x(3) + v_z*dt + l_0*cos(theta)/gamma_z
-                else ! Particle in upstream
-                    ! random step (isotropic in current medium rest frame)
-                    x(1) = x(1) + l_0*cos(phi)*sin(theta)
-                    x(2) = x(2) + l_0*sin(phi)*sin(theta)
-                    x(3) = x(3) + l_0*cos(theta)
+                    ! Set the upstream values
+                    dt = dt_us
+                    l_vec = l_vec_us
+                    l_0 = norm2(l_vec)
+                    call radially_outward(theta, phi, l_vec(1), l_vec(2), l_vec(3))
                 end if
+                t = t + dt
+                x(1) = x(1) + l_vec(1)
+                x(2) = x(2) + l_vec(2)
+                x(3) = x(3) + l_vec(3)
 
                 ! distances after step
                 d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! new particle distance
-                t = t + dt
                 E = E + dE
                 r_sh2 = t_shock(t)                                  ! new shock dist
 
@@ -323,19 +319,7 @@ contains
                     !    crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
                     !end if
 
-                    !! Lorentz tranform three momentum
-                    !v_x = v_2*cos(phi_v)*sin(theta_v)      ! Shock velocity in x direction
-                    !v_y = v_2*sin(phi_v)*sin(theta_v)      ! Shock velocity in y direction
-                    !v_z = v_2*cos(theta_v)                 ! Shock velocity in z direction
-
-                    !gamma_x = 1.d0/sqrt(1.d0 - v_x**2)     ! v_2 dimless (v_2 = beta = v/c)
-                    !gamma_y = 1.d0/sqrt(1.d0 - v_y**2)     ! v_2 dimless (v_2 = beta = v/c)
-                    !gamma_z = 1.d0/sqrt(1.d0 - v_z**2)     ! v_2 dimless (v_2 = beta = v/c)
-
-                    !l_x = -v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
-                    !l_y = -v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
-                    !l_z = -v_z*dt + l_0*cos(theta)/gamma_z
-                    !call radially_outward(phi, theta, l_x, l_y, l_z)
+                    ! Lorentz tranform three momentum
                 else if (d2 > r_sh2 .and. r_sh1 > d1 .and. .not. shockless) then ! Cossed (DS -> US)
                     call radially_outward(phi_v, theta_v, x(1), x(2), x(3)) ! direction of v_2 and shock
                     v_2 = get_v_2(v_shock(t)) ! DS sees US approach at same velocity v_2
@@ -358,19 +342,7 @@ contains
                     !    crossing_flight_angles(n_injected, num_crossings) = acos(cos_theta)
                     !end if
 
-                    !! Lorentz tranform three momentum
-                    !v_x = v_2*cos(phi_v)*sin(theta_v)
-                    !v_y = v_2*sin(phi_v)*sin(theta_v)
-                    !v_z = v_2*cos(theta_v)
-
-                    !gamma_x = 1.d0/sqrt(1.d0 - v_x**2)                 ! v_2 dimless (v_2 = beta = v/c)
-                    !gamma_y = 1.d0/sqrt(1.d0 - v_y**2)                 ! v_2 dimless (v_2 = beta = v/c)
-                    !gamma_z = 1.d0/sqrt(1.d0 - v_z**2)                 ! v_2 dimless (v_2 = beta = v/c)
-
-                    !l_x = v_x*dt + l_0*sin(theta)*cos(phi)/gamma_x
-                    !l_y = v_y*dt + l_0*sin(theta)*sin(phi)/gamma_y
-                    !l_z = v_z*dt + l_0*cos(theta)/gamma_z
-                    !call radially_outward(phi, theta, l_x, l_y, l_z)
+                    ! Lorentz tranform three momentum
                 end if
 
                 v_2 = get_v_2(v_shock(t))

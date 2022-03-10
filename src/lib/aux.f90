@@ -82,7 +82,7 @@ subroutine set_theta_max(theta)
 end subroutine set_theta_max
 
 
-subroutine isotropic(phi, theta)
+subroutine isotropic(theta, phi)
     use constants
 
     implicit none
@@ -238,7 +238,7 @@ double precision function spacetime_interval(t, r_vec)
 end function spacetime_interval
 
 
-subroutine spherical_to_cartesian(r, phi, theta, x, y, z)
+subroutine spherical_to_cartesian(r, theta, phi, x, y, z)
     ! Convert from spherical to cartesian coordinates
     implicit none
     double precision, intent(in) :: r, phi, theta
@@ -291,6 +291,7 @@ subroutine lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     double precision, dimension(4) :: four_vec_parallel, four_vec_parallel_prime
     double precision, dimension(4, 4) :: boost_matrix
     integer :: i, j
+    double precision :: spacetime_interval
 
     gamma_factor = 1.0/sqrt(1.0 - dot_product(v_rel_vec, v_rel_vec))
     call parallel_projection(r_vec, v_rel_vec, r_parallel)
@@ -312,11 +313,21 @@ subroutine lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     t_prime = four_vec_parallel_prime(1)
     r_parallel_prime = four_vec_parallel_prime(2:)
     r_vec_prime = r_parallel_prime + r_orthogonal
+    if (spacetime_interval(t, r_vec) - spacetime_interval(t_prime, r_vec_prime) > 0.0001) then
+        print *, "-------------------------"
+        print *, "t: ", t
+        print *, "r_vec: ", r_vec
+        print *, "t_prime: ", t_prime
+        print *, "r_vec_prime: ", r_vec_prime
+        print *, "Delta ds^2: ", spacetime_interval(t, r_vec) - spacetime_interval(t_prime, r_vec_prime)
+        call error("Erroneous boost, spacetime interval not invariant.", 0)
+    end if
 end subroutine lorentz_boost
 
 
 subroutine upstream_to_downstream_boost(t_us, r_us, t_ds, r_ds, v_shock_us, pos_vec_us)
     ! Upstream restframe to downstream restframe
+    implicit none
     double precision, intent(in) :: t_us, v_shock_us
     double precision, dimension(3), intent(in) :: r_us, pos_vec_us
     double precision, intent(out) :: t_ds
@@ -334,6 +345,7 @@ end subroutine upstream_to_downstream_boost
 
 subroutine downstream_to_upstream_boost(t_ds, r_ds, t_us, r_us, v_shock_us, pos_vec_us)
     ! Downstream restframe to upstream restframe boost
+    implicit none
     double precision, intent(in) :: t_ds, v_shock_us
     double precision, dimension(3), intent(in) :: r_ds, pos_vec_us
     double precision, intent(out) :: t_us
@@ -352,6 +364,7 @@ end subroutine downstream_to_upstream_boost
 
 subroutine upstream_to_shockfront_boost(t_us, r_us, t_sh, r_sh, v_shock_us, pos_vec_us)
     ! Upstream to shockfront boost
+    implicit none
     double precision, intent(in) :: t_us, v_shock_us
     double precision, dimension(3), intent(in) :: r_us, pos_vec_us
     double precision, intent(out) :: t_sh
@@ -363,3 +376,22 @@ subroutine upstream_to_shockfront_boost(t_us, r_us, t_sh, r_sh, v_shock_us, pos_
     call spherical_to_cartesian(v_shock_us, theta, phi, v_shock_vec(1), v_shock_vec(2), v_shock_vec(3))
     call lorentz_boost(t_us, r_us, t_sh, r_sh, v_shock_vec)
 end subroutine upstream_to_shockfront_boost
+
+
+!subroutine lorentz_boost_time_component(t, t_prime, v_rel)
+!    implicit none
+!    double precision, intent(in) :: t, v_rel
+!    double precision, intent(out) :: t_prime
+!    double precision :: gamma_factor
+!    gamma_factor = 1.d0/sqrt(1.d0 - v_rel**2)
+!    t_prime = gamma_factor * ()
+!end subroutine lorentz_boost_time_component
+
+
+
+
+
+
+
+
+
