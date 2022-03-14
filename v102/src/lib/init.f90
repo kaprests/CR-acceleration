@@ -1,12 +1,12 @@
 ! File: init.f90
 
-subroutine init(myid)
-    use user_variables, only: restart
+subroutine init(myid, n_proc)
+    !use user_variables, only: restart
 
     implicit none
-    integer myid
+    integer, intent(in) :: myid, n_proc
 
-    call init_general(myid)
+    call init_general(myid, n_proc)
     call init_inject_spec
     !if (myid==0.and.restart>0) call read_old_results
 end subroutine init
@@ -72,10 +72,47 @@ subroutine parse_cmd_args
                 case(7) ! v_shock_const
                     read(arg, *) v_shock_const
                     gamma_shock_set = .false.
-                !Continue here
-                !----------------------------------!
-                case(8) ! iseed_shift
-                    read(arg, *) iseed_shift
+                case(8) ! gamma_shock
+                    read(arg, *) gamma_shock
+                case(9) ! fname
+                    read(arg, *) filename
+                    gamma_shock_set = .true.
+                case(10) ! max-pi-fr
+                    read(arg, *) theta_max_pi_fraction
+                    theta_max = pi * theta_max_pi_fraction
+                    theta_max_set = .true.
+                case(11) ! t-max
+                    read(arg, *) shockless_t_max
+                case(12) ! E_inj_exp
+                    read(arg, *) E_inj_exp
+                    E_inj = 10**E_inj_exp
+                case(13) ! shockless
+                    if (arg == "true") then
+                        shockless = .true.
+                    else if (arg == "false") then
+                        shockless = .false.
+                    else
+                        print *, "Invalid argument '", arg, "' for flag '", flag, "'."
+                        call error("Invalid argument error", 0)
+                    end if
+                case(14) ! init-z-ax
+                    if (arg == "true") then
+                        init_z = .true.
+                    else if (arg == "false") then
+                        init_z = .false.
+                    else
+                        print *, "Invalid argument '", arg, "' for flag '", flag, "'."
+                        call error("Invalid argument error", 0)
+                    end if
+                case(15) ! no_stepsize_corr
+                    if (arg == "true") then
+                        no_stepsize_corr = .true.
+                    else if (arg == "false") then
+                        no_stepsize_corr = .false.
+                    else
+                        print *, "Invalid argument", arg, " for flag '--shockless'."
+                        call error("Invalid argument error", 0)
+                    end if
                 end select
                 exit
             elseif (j == n_flags) then
@@ -83,16 +120,64 @@ subroutine parse_cmd_args
             end if
         end do
     end do
-end subroutine parse_cmd_arg
+end subroutine parse_cmd_args
 
-subroutine init_general(myid)
+subroutine init_general(myid, n_proc)
     use internal
     use user_variables
     use SNR_data
 
     implicit none
-    integer myid
-    double precision v_EDST
+    integer, intent(in) :: myid, n_proc
+    double precision :: v_EDST, v_shock
+
+    ! Parse command line arguments and apply given settings/configuration
+    call parse_cmd_args
+
+    ! Add config metadata to the filename
+    if (shockless) then
+        filename = trim(basename_rw)
+        if (no_stepsize_corr) then
+            filename = filename // "_iso-stepsize"
+        end if
+        if (init_z) then
+            filename = filename // "_init-z-ax"
+        end if
+        write (shockless_t_max_str, '(f10.3)') shockless_t_max
+        filename = filename // "_t-max" // trim(adjustl(shockless_t_max_str))
+    else
+        if (inj_model == 0) then
+            if (gamma_shock_set) then
+                write (gamma_shock_str, '(f10.3)') gamma_shock
+                filename = filename // "_gamma" // trim(adjustl(gamma_shock_str))
+            else 
+                write (v_shock_str, '(f10.3)') v_shock(0)
+                filename = filename // "_vshock" // trim(adjustl(v_shock_str))
+            end if
+        else if (inj_model == 1) then
+            filename = filename // "_injmod1"
+        else if (inj_model == 2) then
+            filename = filename // "_injmod2"
+        end if
+    end if
+    if (theta_max_set .or. shockless) then
+        write (theta_max_str, '(f10.3)') pi * theta_max_pi_fraction
+        filename = filename // '_theta-max' // trim(adjustl(theta_max_str))
+    end if
+    write (n_sets_str, '(I10)') n_sets
+    write (n_start_str, '(I10)') n_start
+    write (n_proc_str, '(I10)') n_proc
+    write (n_proc_str, '(I10)') n_proc
+    write (E_inj_exp_str, '(f10.3)') log10(E_inj)
+    filename = filename // "_nsets" // trim(adjustl(n_sets_str))
+    filename = filename // "_nstart" // trim(adjustl(n_start_str))
+    filename = filename // "_E-inj-exp" // trim(adjustl(E_inj_exp_str))
+    filename = filename // "_nproc" // trim(adjustl(n_proc_str))
+
+    ! Print the filename with added metadata
+    write (*, *) "Filename metadata: ", filename
+
+    ! Allocate dynamic arrays
 
     !initialisation for random number (NumRec):
     iseed = 15321 + 2*(1 + iseed_shift)*(myid + 1)

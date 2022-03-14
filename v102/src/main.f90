@@ -6,8 +6,8 @@ program acceleration
     use result; use user_variables, only: n_sets
 
     implicit none
-    integer myid, n_proc ,ierr, n_array
-    integer set
+    integer :: myid, n_proc ,ierr, n_array
+    integer :: set
 
     ! non-MPI values
     !myid = 0
@@ -19,7 +19,7 @@ program acceleration
     call MPI_COMM_SIZE(MPI_COMM_WORLD, n_proc, ierr)
 
     ! Initialize simulation
-    call init(myid)
+    call init(myid, n_proc)
 
     do set = 1, n_sets
         call start_particle(set, myid, n_proc)
@@ -27,6 +27,7 @@ program acceleration
         ! non-MPI values
         !En_f_tot = En_f
 
+        n_array = (2*pid_max+1)*n_enbin
         call MPI_REDUCE(&
             En_f,En_f_tot,n_array,MPI_DOUBLE_PRECISION,MPI_SUM,0, &
             MPI_COMM_WORLD,ierr &
@@ -34,12 +35,14 @@ program acceleration
 
         if (myid == 0) call output(set, n_proc)
     end do
-    close (99)
+    if (myid==0) then
+        close (99)
+    end if
     call MPI_FINALIZE(ierr)
 end program acceleration
 
 subroutine start_particle(set, myid, n_proc)
-    use user_variables, only: n_start, debug
+    use user_variables, only: n_start!, debug
     use internal, only: n_in
     use test_var, only: n_injected, sec
 

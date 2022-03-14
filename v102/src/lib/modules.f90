@@ -10,6 +10,8 @@ module constants
 end module constants
 
 module user_variables
+    use constants, only: pi
+
     implicit none
     save
 
@@ -18,7 +20,7 @@ module user_variables
         n_start = 100, & ! injected particles/set
         debug = 0, & ! 0, no debugging info
         restart = 0, & ! 1 use old data
-        iseed_shift = 0                           ! positive shift of random seed
+        iseed_shift = 0, & ! positive shift of random seed,
         inj_model = 1 ! 0: constant vel, 1, 2
 
     ! inj_model = 0: constant shock velocity
@@ -26,15 +28,23 @@ module user_variables
     double precision :: gamma_shock
     logical :: gamma_shock_set = .false. ! if inj_model = 0, use v_shock_const by default
 
+    ! Shockless simulation
+    logical :: shockless = .false.
+    double precision :: shockless_t_max = 120
+
     ! Initial step in z-direction
     logical :: init_z = .false.
 
-    ! Injection energy exponent
+    ! Injection energy xponent
     double precision :: E_inj_exp
 
     ! Max scattering angle
     double precision :: theta_max_pi_fraction = 1.0 ! fraction of pi theta/pi, default 1
     double precision :: theta_max = pi ! pi as default i.e. isotropic rw
+    logical :: theta_max_set
+
+    ! Turn on/off small angle stepsize correction
+    logical :: no_stepsize_corr
 
     ! Filename
     character(len=6), parameter ::  basename = '_accel'            ! name in output
@@ -43,8 +53,9 @@ module user_variables
     character(len=:), allocatable :: filename
     character(len=:), allocatable :: outdir
     character(len=10) :: n_start_str, n_sets_str, v_shock_str, gamma_shock_str, n_proc_str
-    character(len=2) :: E_inj_exp_str
+    character(len=10) :: E_inj_exp_str
     character(len=5) :: theta_max_str
+    character(len=3) :: shockless_t_max_str
 end module user_variables
 
 module SNR_data
@@ -135,9 +146,9 @@ module internal
     implicit none
     save
 
-    integer iseed, n_in, n_out
+    integer :: iseed, n_in, n_out
+    double precision :: E_inj = 1.0d10 ! initial energy
     double precision, parameter :: & ! all energies in eV
-        E_inj = 1.0d10, & ! initial energy
         E_min = 1d10, & ! minimal energy for bining
         E_min_em = 1.d8                            ! minimal em energy to be stored
 

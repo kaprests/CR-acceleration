@@ -113,6 +113,7 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
                 if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                     !              write(*,*) 'tired',n_in,n_out
                     call store(pid, E, w)
+                    print *, "Exit energy: ", E
                     n_in = n_in - 1
                     n_out = n_out + 1
                     return
@@ -171,7 +172,7 @@ subroutine store(pid, En, w)
         i = n_enbin
     end if
     En_f(pid, i) = En_f(pid, i) + w*En
-    !write(*,*) 'store: ',pid,i
+    write(*,*) 'store: ',pid,i
 end subroutine store
 
 

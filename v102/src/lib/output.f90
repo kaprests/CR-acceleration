@@ -24,16 +24,22 @@ subroutine output(set, n_proc)
     !open (50, file='Data/spec_nu'//filename)
     do j = 1, n_enbin
         nu_tot = 0.d0
-        do i = 1, n_stable
-            pid = stable_pid(i)
-            l = dble(j)*dn + d_f
-            E = 10.d0**l
-            m = En_f_tot(pid, j)/(dble(n_tot)*log(10.d0)*dn)
-            if (m > 0.d0) write (19 + i, 23) E, m, log10(E), log10(m)
-            !if (m>0.d0) write(20+i,23) E,m,log10(E),log10(m)
-            if (abs(pid) == 4 .or. abs(pid) == 5) nu_tot = nu_tot + m
-        end do
-        write (50, 23) E, nu_tot
+        pid = stable_pid(10) ! Proton id
+        l = dble(j)*dn + d_f
+        E = 10.d0**l
+        m = En_f_tot(pid, j)/(dble(n_tot)*log(10.d0)*dn)
+        if (m > 0.d0) write (19 + 10, 23) E, m, log10(E), log10(m)
+        ! With interactions on:
+        !do i = 1, n_stable
+        !    pid = stable_pid(i)
+        !    l = dble(j)*dn + d_f
+        !    E = 10.d0**l
+        !    m = En_f_tot(pid, j)/(dble(n_tot)*log(10.d0)*dn)
+        !    if (m > 0.d0) write (19 + i, 23) E, m, log10(E), log10(m)
+        !    !if (m>0.d0) write(20+i,23) E,m,log10(E),log10(m)
+        !    if (abs(pid) == 4 .or. abs(pid) == 5) nu_tot = nu_tot + m
+        !end do
+        !write (50, 23) E, nu_tot
     end do
     !close (20); close (21); close (22); close (23); close (24); close (25); 
     !close (26); close (27); close (28); close (29); close (30); close (50); 

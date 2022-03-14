@@ -74,6 +74,7 @@ end function dNdEdt
 
 double precision function v_shock(t)   ! dimensionless
     use SNR_data
+    use user_variables
 
     implicit none
     double precision t, x, v
@@ -81,7 +82,7 @@ double precision function v_shock(t)   ! dimensionless
 
     select case (inj_model)
     case (0)
-        v_shock = 3.d-2
+        v_shock = v_shock_const
     case (1, 2)
         x = t/t_EDST
         t_star = t/t_ch
