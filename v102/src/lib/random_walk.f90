@@ -22,11 +22,12 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
     integer k, n_step
     double precision r, m, f, df, dt, dE, delta, l_0, l_0_0
     double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_rel
-    double precision :: gamma_factor, cos_theta
+    double precision :: gamma_factor, cos_theta, dt_us
     double precision, dimension(3) :: l_vec, l_vec_us, v_rel_vec
     double precision ran0, R_L, t_shock, v_shock, get_v_rel
     integer, pointer :: pid, A, Z
     double precision, pointer :: E, x(:), t, w
+    double precision, dimension(4, 4) :: boost_matrix
 
     pid => event(n_in)%pid
     A => event(n_in)%A
@@ -95,11 +96,21 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
                 call spherical_to_cartesian(v_rel, theta_v, phi_v, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
 
                 ! Advection -- add downstream flow velocity to the step (Gallilean boost)
-                l_vec(1) = l_vec(1) + v_rel_vec(1)*dt !v_rel*cos(phi_v)*sin(theta_v)*dt
-                l_vec(2) = l_vec(2) + v_rel_vec(2)*dt !v_rel*sin(phi_v)*sin(theta_v)*dt
-                l_vec(3) = l_vec(3) + v_rel_vec(3)*dt !v_rel*cos(theta_v)*dt
+                !l_vec(1) = l_vec(1) + v_rel_vec(1)*dt !v_rel*cos(phi_v)*sin(theta_v)*dt
+                !l_vec(2) = l_vec(2) + v_rel_vec(2)*dt !v_rel*sin(phi_v)*sin(theta_v)*dt
+                !l_vec(3) = l_vec(3) + v_rel_vec(3)*dt !v_rel*cos(theta_v)*dt
 
                 ! Advection -- account for downstream velocity -- Lorentz transform
+                ! TODO: Switch with subroutine call
+                call lorentz_boost_matrix(-v_rel_vec, boost_matrix)
+                dt_us = dt*boost_matrix(1,1)+l_vec(1)*boost_matrix(1,2)+l_vec(2)*boost_matrix(1,3)+l_vec(3)*boost_matrix(1,4)
+                l_vec_us(1) = dt*boost_matrix(2,1)+l_vec(1)*boost_matrix(2,2)+l_vec(2)*boost_matrix(2,3)+l_vec(3)*boost_matrix(2,4)
+                l_vec_us(2) = dt*boost_matrix(3,1)+l_vec(1)*boost_matrix(3,2)+l_vec(2)*boost_matrix(3,3)+l_vec(3)*boost_matrix(3,4)
+                l_vec_us(3) = dt*boost_matrix(4,1)+l_vec(1)*boost_matrix(4,2)+l_vec(2)*boost_matrix(4,3)+l_vec(3)*boost_matrix(4,4)
+                dt = dt_us
+                l_vec(1) = l_vec_us(1)
+                l_vec(2) = l_vec_us(2)
+                l_vec(3) = l_vec_us(3)
             end if
             x(1) = x(1) + l_vec(1)
             x(2) = x(2) + l_vec(2)
