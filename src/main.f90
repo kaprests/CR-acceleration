@@ -6,7 +6,7 @@ program acceleration
     use result; use user_variables, only: n_sets
 
     implicit none
-    integer :: myid, n_proc ,ierr, n_array
+    integer :: myid, n_proc, ierr, n_array
     integer :: set
 
     ! non-MPI values
@@ -27,15 +27,15 @@ program acceleration
         ! non-MPI values
         !En_f_tot = En_f
 
-        n_array = (2*pid_max+1)*n_enbin
-        call MPI_REDUCE(&
-            En_f,En_f_tot,n_array,MPI_DOUBLE_PRECISION,MPI_SUM,0, &
-            MPI_COMM_WORLD,ierr &
-        )
+        n_array = (2*pid_max + 1)*n_enbin
+        call MPI_REDUCE( &
+            En_f, En_f_tot, n_array, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
+            MPI_COMM_WORLD, ierr &
+            )
 
         if (myid == 0) call output(set, n_proc)
     end do
-    if (myid==0) then
+    if (myid == 0) then
         close (99)
     end if
     call MPI_FINALIZE(ierr)
@@ -72,7 +72,7 @@ end subroutine start_particle
 subroutine tracer(set, n_injected)
     use event_internal; use internal, only: n_in
     use random_walk
-    
+
     implicit none
     integer, intent(in) :: set, n_injected
     integer id
@@ -86,7 +86,7 @@ subroutine tracer(set, n_injected)
         id = abs(pid)
     end if
     select case (id)
-    !case (102:108)                                       ! discard low A nuclei
+        !case (102:108)                                       ! discard low A nuclei
     case (102:144)                                        ! discard low A nuclei
         n_in = n_in - 1
         return

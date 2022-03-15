@@ -23,71 +23,71 @@ subroutine parse_cmd_args
     character(len=20) :: arg
     integer, parameter :: n_flags = 15
     character(len=20), dimension(n_flags), parameter :: flags = [ &
-        '--nsets         ', & ! j=1
-        '--nstart        ', & ! j=2
-        '--debug         ', & ! j=3
-        '--restart       ', & ! j=4
-        '--iseed_shift   ', & ! j=5
-        '--injmod        ', & ! j=6
-        '--vshock        ', & ! j=7
-        '--gamma         ', & ! j=8
-        '--fname         ', & ! j=9
-        '--max-pi-fr     ', & ! j=10
-        '--t-max         ', & ! j=11
-        '--E-inj-exp     ', & ! j=12
-        '--shockless     ', & ! j=13
-        '--init-z-ax     ', & ! j=14
-        '--no-step-corr  '  & ! j=15
-    ]
+                                                        '--nsets         ', & ! j=1
+                                                        '--nstart        ', & ! j=2
+                                                        '--debug         ', & ! j=3
+                                                        '--restart       ', & ! j=4
+                                                        '--iseed_shift   ', & ! j=5
+                                                        '--injmod        ', & ! j=6
+                                                        '--vshock        ', & ! j=7
+                                                        '--gamma         ', & ! j=8
+                                                        '--fname         ', & ! j=9
+                                                        '--max-pi-fr     ', & ! j=10
+                                                        '--t-max         ', & ! j=11
+                                                        '--E-inj-exp     ', & ! j=12
+                                                        '--shockless     ', & ! j=13
+                                                        '--init-z-ax     ', & ! j=14
+                                                        '--no-step-corr  ' & ! j=15
+                                                        ]
 
     n_args = command_argument_count()
     if (modulo(n_args, 2) .ne. 0) then
         call error('Argument error, odd number of provided arguments and flags', 0)
     end if
 
-    write(*, *) "Provided parameters/settings:"
+    write (*, *) "Provided parameters/settings:"
     do i = 1, n_args, 2
         call get_command_argument(i, flag)
-        call get_command_argument(i+1, arg)
+        call get_command_argument(i + 1, arg)
         if (flag(1:1) == '#') then
             ! Comment line, skip
             cycle
         end if
-        write(*, *) trim(flag)//' '//trim(arg)
+        write (*, *) trim(flag)//' '//trim(arg)
         do j = 1, n_flags, 1
             if (flag == trim(flags(j))) then
-                select case(j)
-                case(1) ! n_sets
-                    read(arg, *) n_sets
-                case(2) ! n_start
-                    read(arg, *) n_start
-                case(3) ! debug
-                    read(arg, *) debug
-                case(4) ! restart
-                    read(arg, *) restart
-                case(5) ! iseed_shift
-                    read(arg, *) iseed_shift
-                case(6) ! inj_model
-                    read(arg, *) inj_model
-                case(7) ! v_shock_const
-                    read(arg, *) v_shock_const
+                select case (j)
+                case (1) ! n_sets
+                    read (arg, *) n_sets
+                case (2) ! n_start
+                    read (arg, *) n_start
+                case (3) ! debug
+                    read (arg, *) debug
+                case (4) ! restart
+                    read (arg, *) restart
+                case (5) ! iseed_shift
+                    read (arg, *) iseed_shift
+                case (6) ! inj_model
+                    read (arg, *) inj_model
+                case (7) ! v_shock_const
+                    read (arg, *) v_shock_const
                     gamma_shock_set = .false.
                     inj_model = 0
-                case(8) ! gamma_shock
-                    read(arg, *) gamma_shock
+                case (8) ! gamma_shock
+                    read (arg, *) gamma_shock
                     gamma_shock_set = .true.
                     inj_model = 0
-                case(9) ! fname
-                    read(arg, *) filename
-                case(10) ! max-pi-fr
-                    read(arg, *) theta_max_pi_fraction
-                    theta_max = pi * theta_max_pi_fraction
-                case(11) ! t-max
-                    read(arg, *) shockless_t_max
-                case(12) ! E_inj_exp
-                    read(arg, *) E_inj_exp
+                case (9) ! fname
+                    read (arg, *) filename
+                case (10) ! max-pi-fr
+                    read (arg, *) theta_max_pi_fraction
+                    theta_max = pi*theta_max_pi_fraction
+                case (11) ! t-max
+                    read (arg, *) shockless_t_max
+                case (12) ! E_inj_exp
+                    read (arg, *) E_inj_exp
                     E_inj = 10**E_inj_exp
-                case(13) ! shockless
+                case (13) ! shockless
                     if (arg == "true") then
                         shockless = .true.
                     else if (arg == "false") then
@@ -96,7 +96,7 @@ subroutine parse_cmd_args
                         print *, "Invalid argument '", arg, "' for flag '", flag, "'."
                         call error("Invalid argument error", 0)
                     end if
-                case(14) ! init-z-ax
+                case (14) ! init-z-ax
                     if (arg == "true") then
                         init_z = .true.
                     else if (arg == "false") then
@@ -105,7 +105,7 @@ subroutine parse_cmd_args
                         print *, "Invalid argument '", arg, "' for flag '", flag, "'."
                         call error("Invalid argument error", 0)
                     end if
-                case(15) ! no_stepsize_corr
+                case (15) ! no_stepsize_corr
                     if (arg == "true") then
                         no_stepsize_corr = .true.
                     else if (arg == "false") then
@@ -139,39 +139,39 @@ subroutine init_general(myid, n_proc)
     if (shockless) then
         filename = trim(basename_rw)
         if (no_stepsize_corr) then
-            filename = filename // "_iso-stepsize"
+            filename = filename//"_iso-stepsize"
         end if
         if (init_z) then
-            filename = filename // "_init-z-ax"
+            filename = filename//"_init-z-ax"
         end if
         write (shockless_t_max_str, '(f10.3)') shockless_t_max
-        filename = filename // "_t-max" // trim(adjustl(shockless_t_max_str))
+        filename = filename//"_t-max"//trim(adjustl(shockless_t_max_str))
     else
         if (inj_model == 0) then
             if (gamma_shock_set) then
                 write (gamma_shock_str, '(f10.3)') gamma_shock
-                filename = filename // "_gamma" // trim(adjustl(gamma_shock_str))
-            else 
+                filename = filename//"_gamma"//trim(adjustl(gamma_shock_str))
+            else
                 write (v_shock_str, '(f10.3)') v_shock(0)
-                filename = filename // "_vshock" // trim(adjustl(v_shock_str))
+                filename = filename//"_vshock"//trim(adjustl(v_shock_str))
             end if
         else if (inj_model == 1) then
-            filename = filename // "_injmod1"
+            filename = filename//"_injmod1"
         else if (inj_model == 2) then
-            filename = filename // "_injmod2"
+            filename = filename//"_injmod2"
         end if
     end if
-    write (theta_max_str, '(f10.3)') pi * theta_max_pi_fraction
+    write (theta_max_str, '(f10.3)') pi*theta_max_pi_fraction
     write (n_sets_str, '(I10)') n_sets
     write (n_start_str, '(I10)') n_start
     write (n_proc_str, '(I10)') n_proc
     write (n_proc_str, '(I10)') n_proc
     write (E_inj_exp_str, '(f10.3)') log10(E_inj)
-    filename = filename // '_theta-max' // trim(adjustl(theta_max_str))
-    filename = filename // "_nsets" // trim(adjustl(n_sets_str))
-    filename = filename // "_nstart" // trim(adjustl(n_start_str))
-    filename = filename // "_E-inj-exp" // trim(adjustl(E_inj_exp_str))
-    filename = filename // "_nproc" // trim(adjustl(n_proc_str))
+    filename = filename//'_theta-max'//trim(adjustl(theta_max_str))
+    filename = filename//"_nsets"//trim(adjustl(n_sets_str))
+    filename = filename//"_nstart"//trim(adjustl(n_start_str))
+    filename = filename//"_E-inj-exp"//trim(adjustl(E_inj_exp_str))
+    filename = filename//"_nproc"//trim(adjustl(n_proc_str))
 
     ! Print the filename with added metadata
     write (*, *) "Filename metadata: ", filename

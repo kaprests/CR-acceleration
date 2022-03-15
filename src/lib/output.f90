@@ -41,9 +41,9 @@ subroutine output(set, n_proc)
         !end do
         !write (50, 23) E, nu_tot
     end do
-    !close (20); close (21); close (22); close (23); close (24); close (25); 
-    !close (26); close (27); close (28); close (29); close (30); close (50); 
-    close(29)
+    !close (20); close (21); close (22); close (23); close (24); close (25);
+    !close (26); close (27); close (28); close (29); close (30); close (50);
+    close (29)
 23  format(24E16.6)
     En_f_tot = 0.d0
 end subroutine output

@@ -15,12 +15,12 @@ double precision function R_p(r, t)
     end if
 end function R_p
 
-double precision function D_coef(En,t) ! yr
+double precision function D_coef(En, t) ! yr
     !Diffusion coefficient: Bohm diffusion
     implicit none
-    double precision En,t     ! eV, yr
+    double precision En, t     ! eV, yr
     double precision R_L      ! yr
-    D_coef = R_L(En,t)/3.d0   ! yr
+    D_coef = R_L(En, t)/3.d0   ! yr
 end function D_coef
 
 double precision function R_L(En, t) ! yr
