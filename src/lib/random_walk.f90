@@ -275,7 +275,7 @@ contains
                     ! Need to tranform (boost) to labframe (upstream)
 
                     ! Boost the step vector to the lab (US) frame
-                    call downstream_to_upstream_boost(dt, l_vec, dt_us, l_vec_us, v_shock(t), [x(1), x(2), x(3)])
+                    call downstream_to_upstream_boost(dt, l_vec, dt_us, l_vec_us, v_shock(t), t, [x(1), x(2), x(3)])
 
                     ! Set the upstream values
                     dt = dt_us

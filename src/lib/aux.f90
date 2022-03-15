@@ -343,19 +343,23 @@ subroutine upstream_to_downstream_boost(t_us, r_us, t_ds, r_ds, v_shock_us, pos_
 end subroutine upstream_to_downstream_boost
 
 
-subroutine downstream_to_upstream_boost(t_ds, r_ds, t_us, r_us, v_shock_us, pos_vec_us)
+subroutine downstream_to_upstream_boost(t_ds, r_ds, t_us, r_us, v_shock_us, time_us, pos_vec_us)
     ! Downstream restframe to upstream restframe boost
     implicit none
-    double precision, intent(in) :: t_ds, v_shock_us
+    double precision, intent(in) :: t_ds, v_shock_us, time_us
     double precision, dimension(3), intent(in) :: r_ds, pos_vec_us
     double precision, intent(out) :: t_us
     double precision, dimension(3), intent(out) :: r_us
     double precision :: v_rel, theta, phi
     double precision, dimension(3) :: v_rel_vec
     double precision :: get_v_2
+    double precision :: time_ds
+    double precision, dimension(3) :: pos_vec_ds
 
+    ! Transform pos_vec_us to pos_vec_ds
+    call upstream_to_downstream_boost(time_us, pos_vec_us, time_ds, pos_vec_ds, v_shock_us, pos_vec_us)
     v_rel = get_v_2(v_shock_us)
-    call radially_outward(theta, phi, pos_vec_us(1), pos_vec_us(2), pos_vec_us(3))
+    call radially_outward(theta, phi, pos_vec_ds(1), pos_vec_ds(2), pos_vec_ds(3))
     call spherical_to_cartesian(v_rel, theta, phi, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
     v_rel_vec = -1.d0 * v_rel_vec ! Minus sign since US flows radially inward
     call lorentz_boost(t_ds, r_ds, t_us, r_us, v_rel_vec)

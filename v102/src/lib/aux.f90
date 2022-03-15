@@ -1,6 +1,7 @@
 ! File: aux.f90
 ! Auxillary/utility subroutines and functions
 
+
 subroutine error(string, s)
     !Error handling
     implicit none
@@ -44,6 +45,7 @@ subroutine error(string, s)
     end if
 end subroutine error
 
+
 function ran0()
     !random number generator from Numerical Recipes (Fortran90)
     use internal, only: iseed
@@ -71,6 +73,7 @@ function ran0()
     ran0 = am*ior(iand(IM, ieor(ix, iy)), 1)
 end function ran0
 
+
 subroutine isotropic(phi, theta)
     use constants
 
@@ -86,64 +89,61 @@ subroutine isotropic(phi, theta)
 end subroutine isotropic
 
 
-subroutine cartesian_to_spherical_vec(x_vec, r_vec)
-    ! Converts from cartesian to spheical coordinates
-    ! The angles are then defining the radially outward direction
-    ! at the given position
+double precision function get_v_rel(v_shock)
+    implicit none    
+    double precision, intent(in) :: v_shock    
+    double precision :: gamma_sh
+
+    if (v_shock <= 0.1 .and. 0 < v_shock) then    
+        ! Non relativistic regime    
+        get_v_rel = 0.75d0*v_shock    
+    else if (0.9 <= v_shock .and. v_shock < 1) then    
+        ! (Ultra) relativistic regime    
+        gamma_sh = 1.d0/sqrt(1.d0 - v_shock**2)
+        get_v_rel = 1.d0 - 1.d0/(gamma_sh**2)    
+    else if (0.1 < v_shock .and. v_shock < 0.9) then    
+        ! In between regimes    
+        get_v_rel = 0.75d0*v_shock    
+        call error("v_shock in between regimes 0.1 < v_shock < 0.9", 1)    
+    else    
+        call error("v_shock outside of allowed range [0, 1]", 0)    
+    end if
+end function get_v_rel
+
+
+subroutine cartesian_to_spherical(x, y, z, r, theta, phi)
     use constants, only: pi, two_pi
 
     implicit none
-    double precision, dimension(3), intent(in) :: x_vec
-    double precision, dimension(3), intent(out) :: r_vec
-    double precision :: r, theta, phi
+    double precision, intent(in) :: x, y, z
+    double precision, intent(out) :: r, theta, phi
 
-    r = sqrt(x_vec(1)**2 + x_vec(2)**2 + x_vec(3)**2)
-    theta = atan2(sqrt(x_vec(1)**2 + x_vec(2)**2), x_vec(3))
-    phi = atan(x_vec(2)/x_vec(1))
-    if (x_vec(1) == 0) then
-        if (x_vec(2) > 0) then
+    r = sqrt(x**2 + y**2 + z**2)
+    theta = atan2(sqrt(x**2 + y**2), z)
+    phi = atan(y/x)
+    if (x == 0) then
+        if (y > 0) then
             phi = pi/4
-        else if (x_vec(2) < 0) then
+        else if (y < 0) then
+            phi = 3*pi/4
+        else
             phi = pi
         end if
     end if
-    if (x_vec(1) < 0.d0 .and. x_vec(2) > 0) phi = phi + pi
-    if (x_vec(1) < 0.d0 .and. x_vec(2) < 0) phi = phi + pi
-    if (x_vec(1) > 0.d0 .and. x_vec(2) < 0) phi = phi + two_pi
-    r(1) = r
-    r(2) = theta
-    r(3) = phi
-end subroutine cartesian_to_spherical_vec
-
-
-subroutine cartesian_pos_to_spherical_angles(x_vec, theta, phi)
-    implicit none
-    double precision, dimension(3), intent(in) :: x_vec
-    double precision, intent(out) :: theta, phi
-    double precision, dimension(3) :: r_vec
-    
-    call cartesian_to_spherical(x_vec, r_vec)
-    theta = r_vec(2)
-    phi = r_vec(3)
-end subroutine cartesian_pos_to_spherical_angles
-
-
-subroutine spherical_to_cartesian_vec(r_vec, x_vec)
-    ! Converts from spherical to cartesian coordinates
-    implicit none
-    double precision, dimension(3), intent(in) :: r_vec
-    double precision, dimension(3), intent(out) :: x_vec
-
-    x(1) = r_vec(1) * sin(r_vec(2)) * cos(r_vec(3))
-    x(2) = r_vec(1) * sin(r_vec(2)) * sin(r_vec(3))
-    x(3) = r_vec(1) * cos(r_vec(2))
-end subroutine spherical_to_cartesian_vec
+    if (x < 0.d0 .and. y > 0) phi = phi + pi
+    if (x < 0.d0 .and. y < 0) phi = phi + pi
+    if (x > 0.d0 .and. y < 0) phi = phi + two_pi
+end subroutine cartesian_to_spherical
 
 
 subroutine spherical_to_cartesian(r, theta, phi, x, y, z)
     implicit none
-    double precision, dimension(3), intent(in) :: r_vec
+    double precision, intent(in) :: r, theta, phi
     double precision, intent(out) :: x, y, z
+
+    x = r*sin(theta)*cos(phi)
+    y = r*sin(theta)*sin(phi)
+    z = r*cos(theta)
 end subroutine spherical_to_cartesian
 
 
@@ -177,7 +177,18 @@ double precision function v_prime(v, v_rel)
 end function v_prime
 
 
-subroutine lortentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
+double precision function spacetime_interval(t, r_vec)    
+    ! "norm" of four vector    
+    ! metric = diag(-1, 1, 1, 1)    
+    implicit none    
+    double precision, intent(in) :: t    
+    double precision, dimension(3), intent(in) :: r_vec    
+    
+    spacetime_interval = -1*t**2 + dot_product(r_vec, r_vec)    
+end function spacetime_interval
+
+
+subroutine lorentz_boost0(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     ! Lorentz boost
     ! Parameters:
     !   t: time component in original frame
@@ -197,7 +208,7 @@ subroutine lortentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     integer :: i, j    
     double precision :: spacetime_interval    
     
-    gamma_factor = 1.0/sqrt(1.0 - dot_product(v_rel_vec, v_rel_vec))    
+    gamma_factor = 1.d0/sqrt(1.d0 - dot_product(v_rel_vec, v_rel_vec))    
     call parallel_projection(r_vec, v_rel_vec, r_parallel)    
     call orthogonal_projection(r_vec, v_rel_vec, r_orthogonal)    
     four_vec_parallel = [t, r_parallel(1), r_parallel(2), r_parallel(3)]    
@@ -223,7 +234,7 @@ subroutine lortentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     t_prime = four_vec_parallel_prime(1)    
     r_parallel_prime = four_vec_parallel_prime(2:)    
     r_vec_prime = r_parallel_prime + r_orthogonal    
-    if (spacetime_interval(t, r_vec) - spacetime_interval(t_prime, r_vec_prime) > 0.0001) then    
+    if (spacetime_interval(t, r_vec) - spacetime_interval(t_prime, r_vec_prime) > 0.0001) then
         print *, "-------------------------"    
         print *, "t: ", t    
         print *, "r_vec: ", r_vec    
@@ -232,26 +243,139 @@ subroutine lortentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
         print *,"Delta ds^2: ",spacetime_interval(t, r_vec)-spacetime_interval(t_prime, r_vec_prime)
         call error("Erroneous boost, spacetime interval not invariant.", 0)
     end if
-end subroutine lortentz_boost
+end subroutine lorentz_boost0
 
 
+subroutine lorentz_boost_matrix(v_rel_vec, boost_matrix)
+    implicit none
+    double precision, dimension(3), intent(in) :: v_rel_vec
+    double precision, dimension(4, 4), intent(out) :: boost_matrix
+    double precision :: gamma_factor, v_squared, vx, vy, vz
+    
+    vx = v_rel_vec(1)
+    vy = v_rel_vec(2)
+    vz = v_rel_vec(3)
+    v_squared = dot_product(v_rel_vec, v_rel_vec)
+    gamma_factor = 1.d0 / sqrt(1.d0 - v_squared)
+    boost_matrix = 0.d0
+    boost_matrix = transpose(reshape([&
+        ! row1
+        gamma_factor, &                         ! (1, 1)
+        -gamma_factor * vx, &                   ! (1, 2)
+        -gamma_factor * vy, &                   ! (1, 3)
+        -gamma_factor * vz, &                   ! (1, 4)
+
+        ! row2
+        -gamma_factor*vx, &                                         ! (2, 1)
+        1.d0 + (gamma_factor - 1.d0) * ((vx*vx)/(v_squared)), &       ! (2, 2)
+        (gamma_factor - 1.d0) * ((vx*vy)/(v_squared)), &              ! (2, 3)
+        (gamma_factor - 1.d0) * ((vx*vz)/(v_squared)), &              ! (2, 4)
+
+        ! row3
+        -gamma_factor*vy, &                                         ! (3, 1)
+        (gamma_factor - 1.d0) * ((vy*vx)/(v_squared)), &              ! (3, 2)
+        1.d0 + (gamma_factor - 1.d0) * ((vy*vy)/(v_squared)), &       ! (3, 3)
+        (gamma_factor - 1.d0) * ((vy*vz)/(v_squared)), &              ! (3, 4)
+
+        ! row4
+        -gamma_factor*vz, &                                         ! (4, 1)
+        (gamma_factor - 1.d0) * ((vz*vx)/(v_squared)), &              ! (4, 2)
+        (gamma_factor - 1.d0) * ((vz*vy)/(v_squared)), &              ! (3, 2)
+        1.d0 + (gamma_factor - 1.d0) * ((vz*vz)/(v_squared)) &        ! (4, 4)
+    ], shape(boost_matrix)))
+    !print *, "---------------------------------"
+    !print *, v_rel_vec
+    !print *, boost_matrix(1, :)
+    !print *, boost_matrix(2, :)
+    !print *, boost_matrix(3, :)
+    !print *, boost_matrix(4, :)
+    !print *, "---------------------------------"
+end subroutine lorentz_boost_matrix
 
 
+subroutine lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
+    implicit none
+    double precision, intent(in) :: t
+    double precision, dimension(3), intent(in) :: r_vec, v_rel_vec
+    double precision, intent(out) :: t_prime
+    double precision, dimension(3), intent(out) :: r_vec_prime
+    double precision :: gamma_factor
+    double precision, dimension(4) :: four_vec, four_vec_prime
+    double precision, dimension(4, 4) :: boost_matrix
+    integer :: i, j
+    double precision :: spacetime_interval
+    double precision :: vrel_squared
+
+    call lorentz_boost_matrix(v_rel_vec, boost_matrix)
+    four_vec = [t, r_vec(1), r_vec(2), r_vec(3)]
+    four_vec_prime = 0.d0
+    do i = 1, 4, 1
+    do j = 1, 4, 1
+        four_vec_prime(i) = four_vec_prime(i) + boost_matrix(j, i) * four_vec(i)
+    end do
+    end do
+    !four_vec_prime = & 
+    !    four_vec(1) * boost_matrix(1, :) + &
+    !    four_vec(2) * boost_matrix(2, :) + &
+    !    four_vec(3) * boost_matrix(3, :) + &
+    !    four_vec(4) * boost_matrix(4, :)
+    t_prime = four_vec_prime(1)
+    r_vec_prime = four_vec_prime(2:)
+end subroutine lorentz_boost
 
 
+subroutine upstream_to_downstream_boost(t_us, r_us, t_ds, r_ds, v_shock_us, pos_vec_us)
+    ! Upstream restframe to downstream restframe
+    implicit none
+    double precision, intent(in) :: t_us, v_shock_us
+    double precision, dimension(3), intent(in) :: r_us, pos_vec_us
+    double precision, intent(out) :: t_ds
+    double precision, dimension(3), intent(out) :: r_ds
+    double precision :: v_rel, r, theta, phi
+    double precision, dimension(3) :: v_rel_vec
+    double precision :: get_v_rel
+
+    v_rel = get_v_rel(v_shock_us)
+    call cartesian_to_spherical(pos_vec_us(1), pos_vec_us(2), pos_vec_us(3), r, theta, phi)
+    call spherical_to_cartesian(v_rel, theta, phi, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
+    call lorentz_boost(t_us, r_us, t_ds, r_ds, v_rel_vec)
+end subroutine upstream_to_downstream_boost
 
 
+subroutine downstream_to_upstream_boost(t_ds, r_ds, t_us, r_us, v_shock_us, time_us, pos_vec_us)
+    ! Downstream restframe to upstream restframe boost
+    implicit none
+    double precision, intent(in) :: t_ds, v_shock_us, time_us
+    double precision, dimension(3), intent(in) :: r_ds, pos_vec_us
+    double precision, intent(out) :: t_us
+    double precision, dimension(3), intent(out) :: r_us
+    double precision :: v_rel, r, theta, phi
+    double precision, dimension(3) :: v_rel_vec
+    double precision :: get_v_rel
+    double precision :: time_ds
+    double precision, dimension(3) :: pos_vec_ds
+
+    ! Transform pos_vec_us to pos_vec_ds
+    call upstream_to_downstream_boost(time_us, pos_vec_us, time_ds, pos_vec_ds, v_shock_us, pos_vec_us)
+    v_rel = get_v_rel(v_shock_us)
+    call cartesian_to_spherical(pos_vec_ds(1), pos_vec_ds(2), pos_vec_ds(3), r, theta, phi)
+    call spherical_to_cartesian(v_rel, theta, phi, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
+    v_rel_vec = -1.d0 * v_rel_vec ! Minus sign since US flows radially inward
+    call lorentz_boost(t_ds, r_ds, t_us, r_us, v_rel_vec)
+end subroutine downstream_to_upstream_boost
 
 
+subroutine upstream_to_shockfront_boost(t_us, r_us, t_sh, r_sh, v_shock_us, pos_vec_us)
+    ! Upstream to shockfront boost
+    implicit none
+    double precision, intent(in) :: t_us, v_shock_us
+    double precision, dimension(3), intent(in) :: r_us, pos_vec_us
+    double precision, intent(out) :: t_sh
+    double precision, dimension(3), intent(out) :: r_sh
+    double precision :: r, theta, phi
+    double precision, dimension(3) :: v_shock_vec
 
-
-
-
-
-
-
-
-
-
-
-
+    call cartesian_to_spherical(pos_vec_us(1), pos_vec_us(2), pos_vec_us(3), r, theta, phi)
+    call spherical_to_cartesian(v_shock_us, theta, phi, v_shock_vec(1), v_shock_vec(2), v_shock_vec(3))
+    call lorentz_boost(t_us, r_us, t_sh, r_sh, v_shock_vec)
+end subroutine upstream_to_shockfront_boost
