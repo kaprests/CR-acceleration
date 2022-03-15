@@ -41,7 +41,6 @@ module user_variables
     ! Max scattering angle
     double precision :: theta_max_pi_fraction = 1.0 ! fraction of pi theta/pi, default 1
     double precision :: theta_max = pi ! pi as default i.e. isotropic rw
-    logical :: theta_max_set
 
     ! Turn on/off small angle stepsize correction
     logical :: no_stepsize_corr
@@ -54,7 +53,7 @@ module user_variables
     character(len=:), allocatable :: outdir
     character(len=10) :: n_start_str, n_sets_str, v_shock_str, gamma_shock_str, n_proc_str
     character(len=10) :: E_inj_exp_str
-    character(len=5) :: theta_max_str
+    character(len=10) :: theta_max_str
     character(len=3) :: shockless_t_max_str
 end module user_variables
 

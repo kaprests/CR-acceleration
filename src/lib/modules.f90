@@ -54,7 +54,6 @@ module user_variables
     double precision :: theta_max_pi_frac = 1.0  ! fraction of pi
     double precision :: theta_max = pi
     character(10) :: theta_max_str
-    logical :: theta_max_set = .false.
 
     ! Strings
     character(10) :: n_start_str, n_sets_str, v_shock_str, gamma_str, n_proc_str

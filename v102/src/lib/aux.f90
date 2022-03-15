@@ -89,6 +89,48 @@ subroutine isotropic(phi, theta)
 end subroutine isotropic
 
 
+subroutine scattering_angle(theta, phi, theta_max)
+    ! Random small angle within a cone centered around z-axis
+    use constants, only: pi, two_pi
+
+    implicit none
+    double precision, intent(inout) :: phi, theta
+    double precision, intent(in) :: theta_max
+    double precision :: ran0, z
+
+    ! Random angle within the max scattering cone
+    z = cos(theta_max) + (1 - cos(theta_max))*ran0()
+    theta = acos(z) ! Theta within max
+    phi = two_pi*ran0() ! Azimuthal angle phi isotropic
+end subroutine scattering_angle
+
+
+subroutine euler_RyRz(theta, phi, R)
+    implicit none
+    double precision, intent(in) :: theta, phi
+    double precision, intent(inout) :: R(3, 3)
+    double precision :: ct, cp, st, sp
+
+    ct = cos(theta)
+    cp = cos(phi)
+    st = sin(theta)
+    sp = sin(phi)
+
+    ! R(column, row)
+    R(1, 1) = ct*cp
+    R(1, 2) = sp
+    R(1, 3) = -st*cp
+
+    R(2, 1) = -ct*sp
+    R(2, 2) = cp
+    R(2, 3) = st*sp
+
+    R(3, 1) = st
+    R(3, 2) = 0.d0
+    R(3, 3) = ct
+end subroutine euler_RyRz
+
+
 double precision function get_v_rel(v_shock)
     implicit none    
     double precision, intent(in) :: v_shock    

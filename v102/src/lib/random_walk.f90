@@ -10,7 +10,7 @@ public pitch_angle_random_walk
 
 contains
 subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping phase
-    use user_variables, only: debug
+    use user_variables, only: debug, theta_max
     use SNR_data, only: t_max; 
     use constants; use particle_data, only: m_p
     use event_internal; use result
@@ -28,6 +28,12 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
     integer, pointer :: pid, A, Z
     double precision, pointer :: E, x(:), t, w
     double precision, dimension(4, 4) :: boost_matrix
+    double precision, dimension(3) :: p, g
+    double precision, dimension(3, 3) :: R_euler
+    double precision :: theta_e, phi_e
+    double precision :: r_dummy
+    integer :: i, j
+    integer :: num_steps_taken
 
     pid => event(n_in)%pid
     A => event(n_in)%A
@@ -54,7 +60,33 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
         if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
         ! Step direction
-        call isotropic(phi, theta)
+        if (num_steps_taken == 0) then
+            ! First step isotropic
+            call isotropic(phi, theta)
+        else
+            ! Following steps are small angle
+            ! g: initial momentum vector
+            call spherical_to_cartesian(1.d0, theta, phi, g(1), g(2), g(3))
+
+            ! Random scattering angles within scattering cone in rotated frame
+            call scattering_angle(theta_e, phi_e, theta_max)
+
+            ! Scattered momentum vector in rotated frame
+            call spherical_to_cartesian(1.d0, theta_e, phi_e, p(1), p(2), p(3))
+
+            ! Rotate p back to lab frame and update momentum vector
+            call euler_RyRz(-theta, -phi, R_euler)
+            g = 0.d0
+            do i = 1, 3, 1
+                do j = 1, 3, 1
+                    ! Todo: define R_euler as transposed (fortran is column major)
+                    g(i) = g(i) + R_euler(i, j)*p(j)
+                end do
+            end do
+
+            ! New angles
+            call cartesian_to_spherical(g(1), g(2), g(3), r_dummy, theta, phi)
+        end if
         if (dt >= l_0) then                       ! one random step of size l_0
             dE = dE*l_0/dt
             dt = l_0
@@ -77,6 +109,7 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
             write (*, *) l_0_0/dt, n_step
             call error('wrong step number', 0)
         end if
+        num_steps_taken = num_steps_taken + 1
 
         ! Convert step from spherical to cartesian coordinates
         ! l_vec: cartesian step in the particle's local region's restframe

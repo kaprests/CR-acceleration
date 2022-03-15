@@ -72,15 +72,16 @@ subroutine parse_cmd_args
                 case(7) ! v_shock_const
                     read(arg, *) v_shock_const
                     gamma_shock_set = .false.
+                    inj_model = 0
                 case(8) ! gamma_shock
                     read(arg, *) gamma_shock
+                    gamma_shock_set = .true.
+                    inj_model = 0
                 case(9) ! fname
                     read(arg, *) filename
-                    gamma_shock_set = .true.
                 case(10) ! max-pi-fr
                     read(arg, *) theta_max_pi_fraction
                     theta_max = pi * theta_max_pi_fraction
-                    theta_max_set = .true.
                 case(11) ! t-max
                     read(arg, *) shockless_t_max
                 case(12) ! E_inj_exp
@@ -160,15 +161,13 @@ subroutine init_general(myid, n_proc)
             filename = filename // "_injmod2"
         end if
     end if
-    if (theta_max_set .or. shockless) then
-        write (theta_max_str, '(f10.3)') pi * theta_max_pi_fraction
-        filename = filename // '_theta-max' // trim(adjustl(theta_max_str))
-    end if
+    write (theta_max_str, '(f10.3)') pi * theta_max_pi_fraction
     write (n_sets_str, '(I10)') n_sets
     write (n_start_str, '(I10)') n_start
     write (n_proc_str, '(I10)') n_proc
     write (n_proc_str, '(I10)') n_proc
     write (E_inj_exp_str, '(f10.3)') log10(E_inj)
+    filename = filename // '_theta-max' // trim(adjustl(theta_max_str))
     filename = filename // "_nsets" // trim(adjustl(n_sets_str))
     filename = filename // "_nstart" // trim(adjustl(n_start_str))
     filename = filename // "_E-inj-exp" // trim(adjustl(E_inj_exp_str))
