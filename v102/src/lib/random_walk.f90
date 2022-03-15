@@ -23,7 +23,7 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
     double precision r, m, f, df, dt, dE, delta, l_0, l_0_0
     double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_rel
     double precision :: gamma_factor, cos_theta
-    double precision, dimension(3) :: l_vec
+    double precision, dimension(3) :: l_vec, l_vec_us, v_rel_vec
     double precision ran0, R_L, t_shock, v_shock, get_v_rel
     integer, pointer :: pid, A, Z
     double precision, pointer :: E, x(:), t, w
@@ -92,11 +92,14 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
                 call cartesian_to_spherical(x(1), x(2), x(3), v_rel, theta_v, phi_v)
                 v_rel = get_v_rel(v_shock(t))
                 if (v_rel <= 0.d0) call error('v_rel<=0', 0)
+                call spherical_to_cartesian(v_rel, theta_v, phi_v, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
 
-                ! Advection -- add downstream flow velocity to the step
-                l_vec(1) = l_vec(1) + v_rel*cos(phi_v)*sin(theta_v)*dt
-                l_vec(2) = l_vec(2) + v_rel*sin(phi_v)*sin(theta_v)*dt
-                l_vec(3) = l_vec(3) + v_rel*cos(theta_v)*dt
+                ! Advection -- add downstream flow velocity to the step (Gallilean boost)
+                l_vec(1) = l_vec(1) + v_rel_vec(1)*dt !v_rel*cos(phi_v)*sin(theta_v)*dt
+                l_vec(2) = l_vec(2) + v_rel_vec(2)*dt !v_rel*sin(phi_v)*sin(theta_v)*dt
+                l_vec(3) = l_vec(3) + v_rel_vec(3)*dt !v_rel*cos(theta_v)*dt
+
+                ! Advection -- account for downstream velocity -- Lorentz transform
             end if
             x(1) = x(1) + l_vec(1)
             x(2) = x(2) + l_vec(2)
