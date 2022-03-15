@@ -21,8 +21,10 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
     integer, intent(in) :: set, n_injected
     integer k, n_step
     double precision r, m, f, df, dt, dE, delta, l_0, l_0_0
-    double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_2
-    double precision ran0, R_L, t_shock, v_shock
+    double precision r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_rel
+    double precision :: gamma_factor, cos_theta
+    double precision, dimension(3) :: l_vec
+    double precision ran0, R_L, t_shock, v_shock, get_v_rel
     integer, pointer :: pid, A, Z
     double precision, pointer :: E, x(:), t, w
 
@@ -77,17 +79,17 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
             r_sh1 = t_shock(t)
             d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! old distance
 
-            if (d1 < r_sh1) then  ! find direction of v_2 from position x:
+            if (d1 < r_sh1) then  ! find direction of v_rel from position x:
                 theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3))
                 phi_v = atan(x(2)/x(1))
                 if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
                 if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
                 if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
-                v_2 = 0.75d0*v_shock(t)
-                if (v_2 <= 0.d0) call error('v_2<=0', 0)
-                x(1) = x(1) + v_2*cos(phi_v)*sin(theta_v)*dt       ! advection
-                x(2) = x(2) + v_2*sin(phi_v)*sin(theta_v)*dt
-                x(3) = x(3) + v_2*cos(theta_v)*dt
+                v_rel = 0.75d0*v_shock(t)
+                if (v_rel <= 0.d0) call error('v_rel<=0', 0)
+                x(1) = x(1) + v_rel*cos(phi_v)*sin(theta_v)*dt       ! advection
+                x(2) = x(2) + v_rel*sin(phi_v)*sin(theta_v)*dt
+                x(3) = x(3) + v_rel*cos(theta_v)*dt
             end if
             x(1) = x(1) + l_0*cos(phi)*sin(theta)             ! random step
             x(2) = x(2) + l_0*sin(phi)*sin(theta)
@@ -98,13 +100,34 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
             E = E + dE
             r_sh2 = t_shock(t)
 
-            if (d2 > r_sh2 .and. r_sh1 > d1) then         ! we have crossed to the right
-                E = E*(1.d0 + v_shock(t))
+            if (d2 < r_sh2 .and. d1 > r_sh1) then    
+                ! we have crossed to the left: US -> DS
+                call cartesian_to_spherical(x(1), x(2), x(3), v_rel, theta_v, phi_v)
+                v_rel = get_v_rel(v_shock(t))
+                if (v_rel <= 0.d0) call error("v_rel <= 0", 0)
+                gamma_factor = 1.d0 / (1.d0 - v_rel**2)
+                cos_theta = &        
+                    cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &    
+                    sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &    
+                    cos(theta)*cos(theta_v)
+                E = gamma_factor * E * (1.d0 - v_rel*cos_theta)
+                accel = 1
+            else if (d2 > r_sh2 .and. d1 < r_sh1) then         
+                ! we have crossed to the right: DS -> US
+                call cartesian_to_spherical(x(1), x(2), x(3), v_rel, theta_v, phi_v)
+                v_rel = get_v_rel(v_shock(t))
+                if (v_rel <= 0.d0) call error("v_rel <= 0", 0)
+                gamma_factor = 1.d0 / (1.d0 - v_rel**2)
+                cos_theta = &        
+                    cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &    
+                    sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &    
+                    cos(theta)*cos(theta_v)
+                E = gamma_factor * E * (1.d0 + v_rel*cos_theta)
                 accel = 1
             end if
 
-            v_2 = 0.75d0*v_shock(t)
-            dmax = 3.d0*l_0_0/v_2
+            v_rel = 0.75d0*v_shock(t)
+            dmax = 3.d0*l_0_0/v_rel
             f = f + df*dt                      ! \int dt f(t)
             delta = exp(-f)                    ! exp(-\int dt f(t))
 

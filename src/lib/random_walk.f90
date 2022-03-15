@@ -281,7 +281,7 @@ contains
                     dt = dt_us
                     l_vec = l_vec_us
                     l_0 = norm2(l_vec)
-                    call radially_outward(theta, phi, l_vec(1), l_vec(2), l_vec(3))
+                    !call radially_outward(theta, phi, l_vec(1), l_vec(2), l_vec(3))
                 end if
                 t = t + dt
                 x(1) = x(1) + l_vec(1)
