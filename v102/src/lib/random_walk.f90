@@ -45,19 +45,21 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
     f = 0.d0
 
     do
+        ! Stepsize
         df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
         call scales_charged(m, Z, E, t, w, df, dt, dE)
         l_0 = R_L(E, t)/dble(Z)
         l_0_0 = l_0
         if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
-        ! find step size and new position:
+        ! Step direction
         call isotropic(phi, theta)
         if (dt >= l_0) then                       ! one random step of size l_0
             dE = dE*l_0/dt
             dt = l_0
             n_step = 1
         else                                    ! n steps l0 in same direction
+            ! Only relevant with interactions turned on
             l_0 = dt
             if (l_0_0/dt < 1.d3) then
                 n_step = int(l_0_0/dt + 0.5d0)
@@ -75,25 +77,30 @@ subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping
             call error('wrong step number', 0)
         end if
 
-        do k = 1, n_step
-            r_sh1 = t_shock(t)
-            d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! old distance
+        ! Convert step from spherical to cartesian coordinates
+        ! l_vec: cartesian step in the particle's local region's restframe
+        ! l_0: stepsize in particle's local region's frame
+        ! theta, phi: particle flight anlges in the local frame
+        call spherical_to_cartesian(l_0, theta, phi, l_vec(1), l_vec(2), l_vec(3))
 
-            if (d1 < r_sh1) then  ! find direction of v_rel from position x:
-                theta_v = atan2(sqrt(x(1)**2 + x(2)**2), x(3))
-                phi_v = atan(x(2)/x(1))
-                if (x(1) < 0.d0 .and. x(2) > 0) phi_v = phi_v + pi
-                if (x(1) < 0.d0 .and. x(2) < 0) phi_v = phi_v + pi
-                if (x(1) > 0.d0 .and. x(2) < 0) phi_v = phi_v + two_pi
-                v_rel = 0.75d0*v_shock(t)
+        do k = 1, n_step
+            r_sh1 = t_shock(t)                              ! Radial position of shock before step
+            d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! Radial position of particle before step
+
+            if (d1 < r_sh1) then
+                ! Particle is in the downstream region
+                call cartesian_to_spherical(x(1), x(2), x(3), v_rel, theta_v, phi_v)
+                v_rel = get_v_rel(v_shock(t))
                 if (v_rel <= 0.d0) call error('v_rel<=0', 0)
-                x(1) = x(1) + v_rel*cos(phi_v)*sin(theta_v)*dt       ! advection
-                x(2) = x(2) + v_rel*sin(phi_v)*sin(theta_v)*dt
-                x(3) = x(3) + v_rel*cos(theta_v)*dt
+
+                ! Advection -- add downstream flow velocity to the step
+                l_vec(1) = l_vec(1) + v_rel*cos(phi_v)*sin(theta_v)*dt
+                l_vec(2) = l_vec(2) + v_rel*sin(phi_v)*sin(theta_v)*dt
+                l_vec(3) = l_vec(3) + v_rel*cos(theta_v)*dt
             end if
-            x(1) = x(1) + l_0*cos(phi)*sin(theta)             ! random step
-            x(2) = x(2) + l_0*sin(phi)*sin(theta)
-            x(3) = x(3) + l_0*cos(theta)
+            x(1) = x(1) + l_vec(1)
+            x(2) = x(2) + l_vec(2)
+            x(3) = x(3) + l_vec(3)
 
             d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! new distance
             t = t + dt
