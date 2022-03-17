@@ -23,22 +23,22 @@ subroutine parse_cmd_args
     character(len=20) :: arg
     integer, parameter :: n_flags = 15
     character(len=20), dimension(n_flags), parameter :: flags = [ &
-                                                        '--nsets         ', & ! j=1
-                                                        '--nstart        ', & ! j=2
-                                                        '--debug         ', & ! j=3
-                                                        '--restart       ', & ! j=4
-                                                        '--iseed_shift   ', & ! j=5
-                                                        '--injmod        ', & ! j=6
-                                                        '--vshock        ', & ! j=7
-                                                        '--gamma         ', & ! j=8
-                                                        '--fname         ', & ! j=9
-                                                        '--max-pi-fr     ', & ! j=10
-                                                        '--t-max         ', & ! j=11
-                                                        '--E-inj-exp     ', & ! j=12
-                                                        '--shockless     ', & ! j=13
-                                                        '--init-z-ax     ', & ! j=14
-                                                        '--no-step-corr  ' & ! j=15
-                                                        ]
+        '--nsets         ', & ! j=1
+        '--nstart        ', & ! j=2
+        '--debug         ', & ! j=3
+        '--restart       ', & ! j=4
+        '--iseed_shift   ', & ! j=5
+        '--injmod        ', & ! j=6
+        '--vshock        ', & ! j=7
+        '--gamma         ', & ! j=8
+        '--fname         ', & ! j=9
+        '--max-pi-fr     ', & ! j=10
+        '--t-max         ', & ! j=11
+        '--E-inj-exp     ', & ! j=12
+        '--shockless     ', & ! j=13
+        '--init-z-ax     ', & ! j=14
+        '--no-step-corr  ' & ! j=15
+        ]
 
     n_args = command_argument_count()
     if (modulo(n_args, 2) .ne. 0) then

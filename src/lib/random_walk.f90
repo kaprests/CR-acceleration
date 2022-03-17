@@ -31,7 +31,7 @@ contains
         double precision, dimension(3) :: p, g
         double precision, dimension(3, 3) :: R_euler
         double precision :: theta_e, phi_e
-        double precision :: r_dummy
+        double precision :: r_dummy, stepsize
         integer :: i, j
         integer :: num_steps_taken
 
@@ -55,7 +55,8 @@ contains
             ! Stepsize
             df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
             call scales_charged(m, Z, E, t, w, df, dt, dE)
-            l_0 = R_L(E, t)/dble(Z)
+            !l_0 = R_L(E, t)/dble(Z)
+            l_0 = stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
             l_0_0 = l_0
             if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
@@ -75,7 +76,10 @@ contains
                 call spherical_to_cartesian(1.d0, theta_e, phi_e, p(1), p(2), p(3))
 
                 ! Rotate p back to lab frame and update momentum vector
-                call euler_RyRz(-theta, -phi, R_euler)
+                print *, "1"
+                call euler_RyRz2(-theta, -phi, R_euler)
+                !g = matmul(transpose(R_euler), p)
+                print *, "2"
                 g = 0.d0
                 do i = 1, 3, 1
                     do j = 1, 3, 1
@@ -83,6 +87,14 @@ contains
                         g(i) = g(i) + R_euler(i, j)*p(j)
                     end do
                 end do
+                print *, "3"
+                !print *, "---------------------"
+                !print *, "orig: ", g
+                !print *, "matmul transpose: ", matmul(transpose(R_euler), p)
+                !print *, "matmul: ", matmul(R_euler, p)
+                !call euler_RyRz2(-theta, -phi, R_euler)
+                !print *, "matmul R2: ", matmul(R_euler, p)
+                !print *, "---------------------"
 
                 ! New angles
                 call cartesian_to_spherical(g(1), g(2), g(3), r_dummy, theta, phi)
@@ -205,7 +217,7 @@ contains
                     if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                         !              write(*,*) 'tired',n_in,n_out
                         call store(pid, E, w)
-                        print *, "Exit energy: ", E
+                        !print *, "Exit energy: ", E
                         n_in = n_in - 1
                         n_out = n_out + 1
                         return
@@ -264,7 +276,6 @@ contains
             i = n_enbin
         end if
         En_f(pid, i) = En_f(pid, i) + w*En
-        write (*, *) 'store: ', pid, i
     end subroutine store
 
 end module random_walk

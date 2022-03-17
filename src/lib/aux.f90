@@ -125,6 +125,31 @@ subroutine euler_RyRz(theta, phi, R)
     R(3, 3) = ct
 end subroutine euler_RyRz
 
+subroutine euler_RyRz2(theta, phi, R)
+    implicit none
+    double precision, intent(in) :: theta, phi
+    double precision, intent(inout) :: R(3, 3)
+    double precision :: ct, cp, st, sp
+
+    ct = cos(theta)
+    cp = cos(phi)
+    st = sin(theta)
+    sp = sin(phi)
+
+    ! R(column, row)
+    R(1, 1) = ct*cp
+    R(2, 1) = sp
+    R(3, 1) = -st*cp
+
+    R(1, 2) = -ct*sp
+    R(2, 2) = cp
+    R(3, 2) = st*sp
+
+    R(1, 3) = st
+    R(2, 3) = 0.d0
+    R(3, 3) = ct
+end subroutine euler_RyRz2
+
 double precision function get_v_rel(v_shock)
     implicit none
     double precision, intent(in) :: v_shock
@@ -287,27 +312,27 @@ subroutine lorentz_boost_matrix(v_rel_vec, boost_matrix)
     gamma_factor = 1.d0/sqrt(1.d0 - v_squared)
     boost_matrix = 0.d0
     boost_matrix = transpose(reshape([ &
-                                     ! row1
-                                     gamma_factor, &                         ! (1, 1)
-                                     -gamma_factor*vx, &                   ! (1, 2)
-                                     -gamma_factor*vy, &                   ! (1, 3)
-                                     -gamma_factor*vz, &                   ! (1, 4)
-                                     ! row2
-                                     -gamma_factor*vx, &                                         ! (2, 1)
-                                     1.d0 + (gamma_factor - 1.d0)*((vx*vx)/(v_squared)), &       ! (2, 2)
-                                     (gamma_factor - 1.d0)*((vx*vy)/(v_squared)), &              ! (2, 3)
-                                     (gamma_factor - 1.d0)*((vx*vz)/(v_squared)), &              ! (2, 4)
-                                     ! row3
-                                     -gamma_factor*vy, &                                         ! (3, 1)
-                                     (gamma_factor - 1.d0)*((vy*vx)/(v_squared)), &              ! (3, 2)
-                                     1.d0 + (gamma_factor - 1.d0)*((vy*vy)/(v_squared)), &       ! (3, 3)
-                                     (gamma_factor - 1.d0)*((vy*vz)/(v_squared)), &              ! (3, 4)
-                                     ! row4
-                                     -gamma_factor*vz, &                                         ! (4, 1)
-                                     (gamma_factor - 1.d0)*((vz*vx)/(v_squared)), &              ! (4, 2)
-                                     (gamma_factor - 1.d0)*((vz*vy)/(v_squared)), &              ! (3, 2)
-                                     1.d0 + (gamma_factor - 1.d0)*((vz*vz)/(v_squared)) &        ! (4, 4)
-                                     ], shape(boost_matrix)))
+        ! row1
+        gamma_factor, &                         ! (1, 1)
+        -gamma_factor*vx, &                   ! (1, 2)
+        -gamma_factor*vy, &                   ! (1, 3)
+        -gamma_factor*vz, &                   ! (1, 4)
+        ! row2
+        -gamma_factor*vx, &                                         ! (2, 1)
+        1.d0 + (gamma_factor - 1.d0)*((vx*vx)/(v_squared)), &       ! (2, 2)
+        (gamma_factor - 1.d0)*((vx*vy)/(v_squared)), &              ! (2, 3)
+        (gamma_factor - 1.d0)*((vx*vz)/(v_squared)), &              ! (2, 4)
+        ! row3
+        -gamma_factor*vy, &                                         ! (3, 1)
+        (gamma_factor - 1.d0)*((vy*vx)/(v_squared)), &              ! (3, 2)
+        1.d0 + (gamma_factor - 1.d0)*((vy*vy)/(v_squared)), &       ! (3, 3)
+        (gamma_factor - 1.d0)*((vy*vz)/(v_squared)), &              ! (3, 4)
+        ! row4
+        -gamma_factor*vz, &                                         ! (4, 1)
+        (gamma_factor - 1.d0)*((vz*vx)/(v_squared)), &              ! (4, 2)
+        (gamma_factor - 1.d0)*((vz*vy)/(v_squared)), &              ! (3, 2)
+        1.d0 + (gamma_factor - 1.d0)*((vz*vz)/(v_squared)) &        ! (4, 4)
+        ], shape(boost_matrix)))
     !print *, "---------------------------------"
     !print *, v_rel_vec
     !print *, boost_matrix(1, :)

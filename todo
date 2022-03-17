@@ -1,0 +1,4 @@
+Small angle testing
+Implement rotation matrix correctly (fortran is column major)
+RE-implement shockless random walk
+find diffusion stepsize stuff again

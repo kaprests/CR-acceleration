@@ -192,3 +192,75 @@ double precision function tau_syn(m, E, t)     ! pc
     Psynch = Psynch/(1.d0 + 4.8d0*(1.d0 + chi)*log(1.d0 + 1.7d0*chi) + 3.44d0*chi**2)**(2./3.d0)
     tau_syn = E/Psynch  ! eV/(eV/yr) = yr
 end function tau_syn
+
+!double precision function analytical_stepsize(En, t, theta_max)
+!    use particle_data, only: m_p
+!    implicit none
+!    double precision En, t, theta_max
+!    double precision D_coef, v_particle
+!    analytical_stepsize = (3*D_coef(En, t)/v_particle(En, m_p))*(1 - cos(theta_max))/2
+!end function analytical_stepsize
+
+double precision function cubic_spline_small_angle_step_correction(x)
+    use stepsize_interpolated_polynom_coefficients, only: bp, coeffs
+    use constants, only: pi
+    implicit none
+    double precision, intent(in) :: x
+    !double precision, dimension(:), intent(in) :: bp
+    !double precision, dimension(:, :), intent(in) :: coeffs
+    double precision :: output
+    integer :: i, j, k
+
+    if (x < bp(1) .or. x > bp(size(bp))) then
+        print *, "x: ", x
+        call error("Argument x out of range", 0)
+    end if
+
+    do i = 2, size(bp), 1
+    if (x <= bp(i)) then
+        k = 3
+        output = 0
+        do j = 1, k + 1, 1
+            output = output + coeffs(i, j)*(x - bp(i))**(k - j + 1)
+        end do
+        !output = &
+        !   coeffs(i, 1)*(x-bp(i))**3 + &
+        !   coeffs(i, 2)*(x-bp(i))**2 + &
+        !   coeffs(i, 3)*(x-bp(i)) + &
+        !   coeffs(i, 4)
+        if (x > bp(size(bp) - 1)) then
+            ! Something strange happens when x > 0.9pi
+            ! Temporary hard code of the right cubic spline
+            output = &
+                -8.27279487e-06*(x - 0.9*pi)**3 &
+                - 1.43409581e-05*(x - 0.9*pi)**2 &
+                + 1.05892290e-05*(x - 0.9*pi) &
+                + 3.33890695e-05
+        end if
+        cubic_spline_small_angle_step_correction = (output/3.504386947787479d-05)
+        return
+    end if
+    end do
+    call error("Unknown error, possibly invalid argument", 0)
+end function cubic_spline_small_angle_step_correction
+
+double precision function power_law_small_angle_step_correction(x)
+    use stepsize_powerlaw_params
+    implicit none
+    double precision, intent(in) :: x
+    power_law_small_angle_step_correction = a*(x**b)
+end function power_law_small_angle_step_correction
+
+double precision function stepsize(En, t, theta_max)
+    use constants, only: pi
+    implicit none
+    double precision, intent(in) :: En, t, theta_max
+    double precision :: R_L, cubic_spline_small_angle_step_correction
+    double precision :: power_law_small_angle_step_correction
+    stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
+    !if (theta_max > 0.3*pi) then
+    !    stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
+    !else
+    !    stepsize = R_L(En, t)*power_law_small_angle_step_correction(theta_max)
+    !end if
+end function stepsize
