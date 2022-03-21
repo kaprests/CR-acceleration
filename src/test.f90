@@ -1,3 +1,7 @@
+module tests
+    public
+contains
+
 subroutine test_spherical_cartesian_coord_change(num_tests_run, num_tests_failed)
     use constants
 
@@ -24,6 +28,7 @@ subroutine test_spherical_cartesian_coord_change(num_tests_run, num_tests_failed
         if (abs(y - y2) > 1e-6) then
             print *, "Failed: test_spherical_cartesian_coord_change, line 23"
             num_tests_failed = num_tests_failed + 1
+
             exit
         end if
         if (abs(z - z2) > 1e-6) then
@@ -56,21 +61,26 @@ subroutine test_lorentz_boost(num_tests_run, num_tests_failed)
     call lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     call lorentz_boost(t_prime, r_vec_prime, t2, r_vec2, -v_rel_vec)
 
-    print *, "BOOST x-ax: "
-    print *, "---------------------------"
-    print *, "v_rel: ", v_rel_vec
-    print *, "Original frame: "
-    print *, "t: ", t
-    print *, "r_vec: ", r_vec
-    print *, ""
-    print *, "Boosted frame: "
-    print *, "t_prime: ", t_prime
-    print *, "r_vec_prime: ", r_vec_prime
-    print *, ""
-    print *, "t2: ", t2
-    print *, "r_vec2: ", r_vec2
-    print *, "---------------------------"
-    print *, ""
+    if (abs(t - t2) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, x-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(1) - r_vec2(1)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, x-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(2) - r_vec2(2)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, x-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(3) - r_vec2(3)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, x-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
 
     ! Boost along y-axis
     v_rel_vec(1) = 0.0d0
@@ -79,30 +89,32 @@ subroutine test_lorentz_boost(num_tests_run, num_tests_failed)
     call lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     call lorentz_boost(t_prime, r_vec_prime, t2, r_vec2, -v_rel_vec)
 
-    print *, "BOOST y-ax: "
-    print *, "---------------------------"
-    print *, "v_rel: ", v_rel_vec
-    print *, "Original frame: "
-    print *, "t: ", t
-    print *, "r_vec: ", r_vec
-    print *, ""
-    print *, "Boosted frame: "
-    print *, "t_prime: ", t_prime
-    print *, "r_vec_prime: ", r_vec_prime
-    print *, ""
-    print *, "t2: ", t2
-    print *, "r_vec2: ", r_vec2
-    print *, "---------------------------"
-    print *, ""
+    if (abs(t - t2) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, y-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(1) - r_vec2(1)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, y-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(2) - r_vec2(2)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, y-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(3) - r_vec2(3)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, y-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
 
-    ! Boost along oblique-axis
+    ! Boost along z-axis
     t = 1.d0
-    r_vec(1) = 1.d0
-    r_vec(2) = 1.d0
-    r_vec(3) = 1.d0
-    v_rel_vec(1) = 0.1d0
-    v_rel_vec(2) = 0.2d0
-    v_rel_vec(3) = 0.3d0
+    v_rel_vec(1) = 0.0d0
+    v_rel_vec(2) = 0.0d0
+    v_rel_vec(3) = 0.9d0
     t_prime = 0.d0
     r_vec_prime = 0.d0
     t2 = 0.d0
@@ -110,21 +122,26 @@ subroutine test_lorentz_boost(num_tests_run, num_tests_failed)
     call lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     call lorentz_boost(t_prime, r_vec_prime, t2, r_vec2, -v_rel_vec)
 
-    print *, "BOOST oblique-ax: "
-    print *, "---------------------------"
-    print *, "v_rel: ", v_rel_vec
-    print *, "Original frame: "
-    print *, "t: ", t
-    print *, "r_vec: ", r_vec
-    print *, ""
-    print *, "Boosted frame: "
-    print *, "t_prime: ", t_prime
-    print *, "r_vec_prime: ", r_vec_prime
-    print *, ""
-    print *, "t2: ", t2
-    print *, "r_vec2: ", r_vec2
-    print *, "---------------------------"
-    print *, ""
+    if (abs(t - t2) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, z-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(1) - r_vec2(1)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, z-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(2) - r_vec2(2)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, z-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(3) - r_vec2(3)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, z-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
 
     ! Boost along oblique-axis
     t = 1.d0
@@ -141,44 +158,60 @@ subroutine test_lorentz_boost(num_tests_run, num_tests_failed)
     call lorentz_boost0(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     call lorentz_boost0(t_prime, r_vec_prime, t2, r_vec2, -v_rel_vec)
 
-    print *, "BOOST oblique-ax: "
-    print *, "---------------------------"
-    print *, "v_rel: ", v_rel_vec
-    print *, "Original frame: "
-    print *, "t: ", t
-    print *, "r_vec: ", r_vec
-    print *, ""
-    print *, "Boosted frame: "
-    print *, "t_prime: ", t_prime
-    print *, "r_vec_prime: ", r_vec_prime
-    print *, ""
-    print *, "t2: ", t2
-    print *, "r_vec2: ", r_vec2
-    print *, "---------------------------"
-    print *, ""
-
-    ! Low boost velocity check (vs gallilean)
-    print *, "LOW VELOCITY CHECK: "
-    v_rel_vec(1) = 0.01d0
-    v_rel_vec(2) = 0.0d0
-    v_rel_vec(3) = 0.0d0
-    t_prime = 0.d0
-    r_vec_prime = 0.d0
-    t2 = 0.d0
-    r_vec2 = 0.d0
-    call lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
-    print *, "Lorentz boosted: "
-    print *, "t_prime: ", t_prime
-    print *, "r_vec_prime: ", r_vec_prime
-    print *, ""
-    print *, "Gallilean boosted: "
-    print *, "t_prime_gal = t: ", t
-    print *, "r_vec_prime_gal: ", [r_vec(1) + v_rel_vec(1)*t, r_vec(2) + v_rel_vec(2)*t, r_vec(3) + v_rel_vec(3)*t]
+    if (abs(t - t2) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, z-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(1) - r_vec2(1)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, z-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(2) - r_vec2(2)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, z-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    if (abs(r_vec(3) - r_vec2(3)) > 1e-6) then
+        print *, "Failed: test_lorentz_boost, z-axis"
+        num_tests_failed = num_tests_failed + 1
+        return
+    end if
+    num_tests_run = num_tests_run + 1
 end subroutine test_lorentz_boost
+
+subroutine test_rotations(num_tests_run, num_tests_failed)
+    use constants
+
+    implicit none
+    integer, intent(inout) :: num_tests_run, num_tests_failed
+    double precision, dimension(3, 3) :: Ry, Rz, RyRz, RzRy
+    double precision, dimension(3) :: z_hat, vec
+    double precision :: theta, phi
+
+    z_hat = [0.d0, 0.d0, 1.d0]
+    vec = [1.d0/sqrt(3.d0), 1.d0/sqrt(3.d0), 1.d0/sqrt(3.d0)]
+    theta = pi/2
+    phi = pi/2
+    call euler_Ry(theta, Ry)
+    call euler_Rz(phi, Rz)
+    
+    print *, "Unfinnished test"
+    print *, z_hat
+    print *, matmul(Ry,z_hat)
+    print *, matmul(matmul(Rz, Ry), z_hat)
+    print *, matmul(Rz, matmul(Ry, z_hat))
+
+    num_tests_run = num_tests_run + 1
+end subroutine test_rotations
+
+end module tests
 
 program test
     use constants
     use user_variables
+    use tests
 
     implicit none
     integer :: num_tests_run, num_tests_failed
@@ -187,6 +220,7 @@ program test
     num_tests_failed = 0
     call test_spherical_cartesian_coord_change(num_tests_run, num_tests_failed)
     call test_lorentz_boost(num_tests_run, num_tests_failed)
+    call test_rotations(num_tests_run, num_tests_failed)
 
     print *, " "
     print *, "TESTS FINISHED"

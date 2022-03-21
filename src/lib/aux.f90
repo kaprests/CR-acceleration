@@ -100,29 +100,65 @@ subroutine scattering_angle(theta, phi, theta_max)
     phi = two_pi*ran0() ! Azimuthal angle phi isotropic
 end subroutine scattering_angle
 
-subroutine euler_RyRz(theta, phi, R)
+subroutine euler_Ry(theta, R)
     implicit none
-    double precision, intent(in) :: theta, phi
-    double precision, intent(inout) :: R(3, 3)
-    double precision :: ct, cp, st, sp
+    double precision, intent(in) :: theta
+    double precision, dimension(3,3), intent(out) :: R
+    double precision :: ct, st
 
     ct = cos(theta)
-    cp = cos(phi)
     st = sin(theta)
-    sp = sin(phi)
 
-    ! R(column, row)
-    R(1, 1) = ct*cp
-    R(1, 2) = sp
-    R(1, 3) = -st*cp
+    ! First column
+    R(1, 1) = ct
+    R(2, 1) = 0
+    R(3, 1) = -st
 
-    R(2, 1) = -ct*sp
-    R(2, 2) = cp
-    R(2, 3) = st*sp
-
-    R(3, 1) = st
-    R(3, 2) = 0.d0
+    ! Second column
+    R(1, 2) = 0
+    R(2, 2) = 1
+    R(3, 2) = 0
+    
+    ! Third column
+    R(1, 3) = st
+    R(2, 3) = 0
     R(3, 3) = ct
+end subroutine euler_Ry
+
+subroutine euler_Rz(theta, R)
+    implicit none
+    double precision, intent(in) :: theta
+    double precision, dimension(3,3), intent(out) :: R
+    double precision :: ct, st
+
+    ct = cos(theta)
+    st = sin(theta)
+
+    ! First column
+    R(1, 1) = ct
+    R(2, 1) = st
+    R(3, 1) = 0
+
+    ! Second column
+    R(1, 2) = -st
+    R(2, 2) = ct
+    R(3, 2) = 0
+    
+    ! Third column
+    R(1, 3) = 0
+    R(2, 3) = 0
+    R(3, 3) = 1
+end subroutine euler_Rz
+
+subroutine euler_RyRz(theta, phi, RyRz)
+    implicit none
+    double precision, intent(in) :: theta, phi
+    double precision, dimension(3, 3), intent(inout) :: RyRz
+    double precision, dimension(3, 3) :: Ry, Rz
+
+    call euler_Ry(theta, Ry)
+    call euler_Rz(theta, Rz)
+    RyRz = matmul(Ry, Rz)
 end subroutine euler_RyRz
 
 subroutine euler_RyRz2(theta, phi, R)
@@ -267,24 +303,18 @@ subroutine lorentz_boost0(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     call orthogonal_projection(r_vec, v_rel_vec, r_orthogonal)
     four_vec_parallel = [t, r_parallel(1), r_parallel(2), r_parallel(3)]
     boost_matrix = transpose(reshape([ &
-                                     ! Row1
-                                     gamma_factor, -gamma_factor*v_rel_vec(1), &
-                                     -gamma_factor*v_rel_vec(2), -gamma_factor*v_rel_vec(3), &
-                                     ! Row2
-                                     -gamma_factor*v_rel_vec(1), gamma_factor, 0.d0, 0.d0, &
-                                     ! Row3
-                                     -gamma_factor*v_rel_vec(2), 0.d0, gamma_factor, 0.d0, &
-                                     ! Row4
-                                     -gamma_factor*v_rel_vec(3), 0.d0, 0.d0, gamma_factor &
-                                     ], shape(boost_matrix) &
-                                     ))
-    four_vec_parallel_prime = 0.d0
-    do i = 1, 4, 1 ! column i
-    do j = 1, 4, 1 ! row j
-        four_vec_parallel_prime(i) = &
-            four_vec_parallel_prime(i) + boost_matrix(j, i)*four_vec_parallel(i)
-    end do
-    end do
+        ! Row1
+        gamma_factor, -gamma_factor*v_rel_vec(1), &
+        -gamma_factor*v_rel_vec(2), -gamma_factor*v_rel_vec(3), &
+        ! Row2
+        -gamma_factor*v_rel_vec(1), gamma_factor, 0.d0, 0.d0, &
+        ! Row3
+        -gamma_factor*v_rel_vec(2), 0.d0, gamma_factor, 0.d0, &
+        ! Row4
+        -gamma_factor*v_rel_vec(3), 0.d0, 0.d0, gamma_factor &
+        ], shape(boost_matrix) &
+        ))
+    four_vec_parallel_prime = matmul(boost_matrix, four_vec_parallel)
     t_prime = four_vec_parallel_prime(1)
     r_parallel_prime = four_vec_parallel_prime(2:)
     r_vec_prime = r_parallel_prime + r_orthogonal
@@ -294,7 +324,7 @@ subroutine lorentz_boost0(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
         print *, "r_vec: ", r_vec
         print *, "t_prime: ", t_prime
         print *, "r_vec_prime: ", r_vec_prime
-        print *, "Delta ds^2: ", spacetime_interval(t, r_vec) - spacetime_interval(t_prime, r_vec_prime)
+        print *, "Delta ds^2: ", spacetime_interval(t, r_vec)-spacetime_interval(t_prime, r_vec_prime)
         call error("Erroneous boost, spacetime interval not invariant.", 0)
     end if
 end subroutine lorentz_boost0
@@ -357,12 +387,12 @@ subroutine lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
 
     call lorentz_boost_matrix(v_rel_vec, boost_matrix)
     four_vec = [t, r_vec(1), r_vec(2), r_vec(3)]
-    four_vec_prime = 0.d0
-    do i = 1, 4, 1
-    do j = 1, 4, 1
-        four_vec_prime(i) = four_vec_prime(i) + boost_matrix(j, i)*four_vec(i)
-    end do
-    end do
+    four_vec_prime = matmul(boost_matrix, four_vec)
+    !do i = 1, 4, 1
+    !do j = 1, 4, 1
+    !    four_vec_prime(i) = four_vec_prime(i) + boost_matrix(j, i)*four_vec(i)
+    !end do
+    !end do
     !four_vec_prime = &
     !    four_vec(1) * boost_matrix(1, :) + &
     !    four_vec(2) * boost_matrix(2, :) + &

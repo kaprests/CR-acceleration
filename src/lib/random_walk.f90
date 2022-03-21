@@ -55,8 +55,8 @@ contains
             ! Stepsize
             df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
             call scales_charged(m, Z, E, t, w, df, dt, dE)
-            !l_0 = R_L(E, t)/dble(Z)
-            l_0 = stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
+            l_0 = R_L(E, t)/dble(Z)
+            !l_0 = stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
             l_0_0 = l_0
             if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
 
@@ -76,18 +76,15 @@ contains
                 call spherical_to_cartesian(1.d0, theta_e, phi_e, p(1), p(2), p(3))
 
                 ! Rotate p back to lab frame and update momentum vector
-                print *, "1"
-                call euler_RyRz2(-theta, -phi, R_euler)
-                !g = matmul(transpose(R_euler), p)
-                print *, "2"
-                g = 0.d0
-                do i = 1, 3, 1
-                    do j = 1, 3, 1
-                        ! Todo: define R_euler as transposed (fortran is column major)
-                        g(i) = g(i) + R_euler(i, j)*p(j)
-                    end do
-                end do
-                print *, "3"
+                call euler_RyRz(-theta, -phi, R_euler)
+                g = matmul(R_euler, p)
+                !g = 0.d0
+                !do i = 1, 3, 1
+                !    do j = 1, 3, 1
+                !        ! Todo: define R_euler as transposed (fortran is column major)
+                !        g(i) = g(i) + R_euler(i, j)*p(j)
+                !    end do
+                !end do
                 !print *, "---------------------"
                 !print *, "orig: ", g
                 !print *, "matmul transpose: ", matmul(transpose(R_euler), p)
@@ -122,6 +119,7 @@ contains
                 call error('wrong step number', 0)
             end if
             num_steps_taken = num_steps_taken + 1
+            print *, x(1), x(2), x(3)
 
             ! Convert step from spherical to cartesian coordinates
             ! l_vec: cartesian step in the particle's local region's restframe
