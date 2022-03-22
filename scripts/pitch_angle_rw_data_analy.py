@@ -6,12 +6,12 @@ import os.path
 
 DATA_DIR = os.path.dirname(__file__)+'/../Data/'
 OUT_DIR = '../figs/'
-t_max = 120
+t_max = 20
 theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
-nsets = 100
+nsets = 10
 nstart = 10
-nproc = 1
+nproc = 3
 E_inj_exp = 10
 z_ax = False
 iso_stepsize = True

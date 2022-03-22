@@ -243,7 +243,7 @@ contains
                     n_out = n_out + 1
                     return
                 ! acceleration exit
-                else if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta) then
+                else if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta .and. .not. shockless) then
                     ! exit accel particle, if a) too late, b) too far down-stream, or c) scattering:
                     if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                         !              write(*,*) 'tired',n_in,n_out
