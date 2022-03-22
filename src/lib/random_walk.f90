@@ -9,7 +9,7 @@ module random_walk
     public pitch_angle_random_walk
 
 contains
-    subroutine pitch_angle_random_walk(set, n_injected) ! w/wo diffusion in trapping phase
+    subroutine pitch_angle_random_walk(set, n_injected, n_proc) ! w/wo diffusion in trapping phase
         use user_variables, only: &
             debug, &
             theta_max, &
@@ -18,7 +18,8 @@ contains
             num_sample_pos_target, &
             init_z, &
             no_stepsize_corr, &
-            n_start
+            n_start, &
+            n_sets
         use SNR_data, only: t_max; 
         use constants; use particle_data, only: m_p
         use event_internal; use result
@@ -26,7 +27,7 @@ contains
         use test_var, only: sec, accel
 
         implicit none
-        integer, intent(in) :: set, n_injected
+        integer, intent(in) :: set, n_injected, n_proc
         integer :: k, n_step
         double precision :: r, m, f, df, dt, dE, delta, l_0, l_0_0
         double precision :: r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_rel
@@ -151,7 +152,9 @@ contains
                 call error('wrong step number', 0)
             end if
             num_steps_taken = num_steps_taken + 1
-            !print *, x(1), x(2), x(3)
+            if (n_sets * n_start * n_proc == 1) then
+                print *, x(1), x(2), x(3)
+            end if
 
             ! Convert step from spherical to cartesian coordinates
             ! l_vec: cartesian step in the particle's local region's restframe
@@ -208,6 +211,7 @@ contains
                         cos(theta)*cos(theta_v)
                     E = gamma_factor*E*(1.d0 - v_rel*cos_theta)
                     accel = 1
+                    num_crossings = num_crossings + 1
                 else if (d2 > r_sh2 .and. d1 < r_sh1) then
                     ! we have crossed to the right: DS -> US
                     call cartesian_to_spherical(x(1), x(2), x(3), v_rel, theta_v, phi_v)
@@ -220,6 +224,7 @@ contains
                         cos(theta)*cos(theta_v)
                     E = gamma_factor*E*(1.d0 + v_rel*cos_theta)
                     accel = 1
+                    num_crossings = num_crossings + 1
                 end if
                 end if
 
@@ -242,6 +247,9 @@ contains
                     ! exit accel particle, if a) too late, b) too far down-stream, or c) scattering:
                     if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                         !              write(*,*) 'tired',n_in,n_out
+                        if (n_start * n_sets * n_proc == 1) then
+                            print *, "num crossings: ", num_crossings
+                        end if
                         call store(pid, E, w)
                         !print *, "Exit energy: ", E
                         n_in = n_in - 1

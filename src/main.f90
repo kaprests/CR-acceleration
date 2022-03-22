@@ -133,18 +133,18 @@ subroutine start_particle(set, myid, n_proc)
             sec = 1
             !write(*,*) 'secondary'
         end if
-        call tracer(set, n_injected)
+        call tracer(set, n_injected, n_proc)
         if (myid == 0 .and. mod(n_injected*100, n_start) == 0 .and. sec == 0) &
             write (*, *) set, n_injected*n_proc
     end do
 end subroutine start_particle
 
-subroutine tracer(set, n_injected)
+subroutine tracer(set, n_injected, n_proc)
     use event_internal; use internal, only: n_in
     use random_walk
 
     implicit none
-    integer, intent(in) :: set, n_injected
+    integer, intent(in) :: set, n_injected, n_proc
     integer id
     integer, pointer :: A, pid
 
@@ -161,7 +161,7 @@ subroutine tracer(set, n_injected)
         n_in = n_in - 1
         return
     case (7, 145:159)
-        call pitch_angle_random_walk(set, n_injected)
+        call pitch_angle_random_walk(set, n_injected, n_proc)
     case default
         write (*, *) 'A,pid', A, pid
         call error('wrong particle typ in tracer', 0)
