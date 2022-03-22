@@ -267,7 +267,7 @@ subroutine inject !(i)
             if (dNdEdt0 .gt. f0) call error('dNdEdt0 > f0', 0)
             if (dNdEdt0 .ge. r*f0) exit
         end do
-        call isotropic(phi, theta)
+        call isotropic_scatter(phi, theta)
         r = t_shock(t)                     ! delta function at shock
         x(1) = r*cos(phi)*sin(theta)
         x(2) = r*sin(phi)*sin(theta)

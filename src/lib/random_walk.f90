@@ -28,11 +28,8 @@ contains
         integer, pointer :: pid, A, Z
         double precision, pointer :: E, x(:), t, w
         double precision, dimension(4, 4) :: boost_matrix
-        double precision, dimension(3) :: p, g
-        double precision, dimension(3, 3) :: R_euler
-        double precision :: theta_e, phi_e
-        double precision :: r_dummy, stepsize
-        integer :: i, j
+        double precision, dimension(4) :: l_four_vec
+        double precision :: stepsize
         integer :: num_steps_taken
 
         pid => event(n_in)%pid
@@ -63,38 +60,10 @@ contains
             ! Step direction
             if (num_steps_taken == 0) then
                 ! First step isotropic
-                call isotropic(phi, theta)
+                call isotropic_scatter(theta, phi)
             else
                 ! Following steps are small angle
-                ! g: initial momentum vector
-                call spherical_to_cartesian(1.d0, theta, phi, g(1), g(2), g(3))
-
-                ! Random scattering angles within scattering cone in rotated frame
-                call scattering_angle(theta_e, phi_e, theta_max)
-
-                ! Scattered momentum vector in rotated frame
-                call spherical_to_cartesian(1.d0, theta_e, phi_e, p(1), p(2), p(3))
-
-                ! Rotate p back to lab frame and update momentum vector
-                call euler_RyRz(-theta, -phi, R_euler)
-                g = matmul(R_euler, p)
-                !g = 0.d0
-                !do i = 1, 3, 1
-                !    do j = 1, 3, 1
-                !        ! Todo: define R_euler as transposed (fortran is column major)
-                !        g(i) = g(i) + R_euler(i, j)*p(j)
-                !    end do
-                !end do
-                !print *, "---------------------"
-                !print *, "orig: ", g
-                !print *, "matmul transpose: ", matmul(transpose(R_euler), p)
-                !print *, "matmul: ", matmul(R_euler, p)
-                !call euler_RyRz2(-theta, -phi, R_euler)
-                !print *, "matmul R2: ", matmul(R_euler, p)
-                !print *, "---------------------"
-
-                ! New angles
-                call cartesian_to_spherical(g(1), g(2), g(3), r_dummy, theta, phi)
+                call small_angle_scatter(theta, phi, theta_max)
             end if
             if (dt >= l_0) then                       ! one random step of size l_0
                 dE = dE*l_0/dt
@@ -119,7 +88,7 @@ contains
                 call error('wrong step number', 0)
             end if
             num_steps_taken = num_steps_taken + 1
-            print *, x(1), x(2), x(3)
+            !print *, x(1), x(2), x(3)
 
             ! Convert step from spherical to cartesian coordinates
             ! l_vec: cartesian step in the particle's local region's restframe
@@ -144,27 +113,32 @@ contains
                     !l_vec(3) = l_vec(3) + v_rel_vec(3)*dt !v_rel*cos(theta_v)*dt
 
                     ! Advection -- account for downstream velocity -- Lorentz transform
-                    ! TODO: Switch with subroutine call
+
                     call lorentz_boost_matrix(-v_rel_vec, boost_matrix)
-                    dt_us = &
-                        dt*boost_matrix(1, 1) + &
-                        l_vec(1)*boost_matrix(1, 2) + &
-                        l_vec(2)*boost_matrix(1, 3) + &
-                        l_vec(3)*boost_matrix(1, 4)
-                    l_vec_us(1) = &
-                        dt*boost_matrix(2, 1) + &
-                        l_vec(1)*boost_matrix(2, 2) + &
-                        l_vec(2)*boost_matrix(2, 3) + &
-                        l_vec(3)*boost_matrix(2, 4)
-                    l_vec_us(2) = &
-                        dt*boost_matrix(3, 1) + &
-                        l_vec(1)*boost_matrix(3, 2) + &
-                        l_vec(2)*boost_matrix(3, 3) + &
-                        l_vec(3)*boost_matrix(3, 4)
-                    l_vec_us(3) = dt*boost_matrix(4, 1) + &
-                        l_vec(1)*boost_matrix(4, 2) + &
-                        l_vec(2)*boost_matrix(4, 3) + &
-                        l_vec(3)*boost_matrix(4, 4)
+                    l_four_vec = matmul(boost_matrix, [dt, l_vec(1), l_vec(2), l_vec(3)])
+                    dt_us = l_four_vec(1)
+                    l_vec_us = l_four_vec(2:)
+
+                    !dt_us = &
+                    !    dt*boost_matrix(1, 1) + &
+                    !    l_vec(1)*boost_matrix(1, 2) + &
+                    !    l_vec(2)*boost_matrix(1, 3) + &
+                    !    l_vec(3)*boost_matrix(1, 4)
+                    !l_vec_us(1) = &
+                    !    dt*boost_matrix(2, 1) + &
+                    !    l_vec(1)*boost_matrix(2, 2) + &
+                    !    l_vec(2)*boost_matrix(2, 3) + &
+                    !    l_vec(3)*boost_matrix(2, 4)
+                    !l_vec_us(2) = &
+                    !    dt*boost_matrix(3, 1) + &
+                    !    l_vec(1)*boost_matrix(3, 2) + &
+                    !    l_vec(2)*boost_matrix(3, 3) + &
+                    !    l_vec(3)*boost_matrix(3, 4)
+                    !l_vec_us(3) = dt*boost_matrix(4, 1) + &
+                    !    l_vec(1)*boost_matrix(4, 2) + &
+                    !    l_vec(2)*boost_matrix(4, 3) + &
+                    !    l_vec(3)*boost_matrix(4, 4)
+
                     dt = dt_us
                     l_vec(1) = l_vec_us(1)
                     l_vec(2) = l_vec_us(2)
@@ -174,8 +148,8 @@ contains
                 x(2) = x(2) + l_vec(2)
                 x(3) = x(3) + l_vec(3)
 
-                d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! new distance
                 t = t + dt
+                d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! new distance
                 E = E + dE
                 r_sh2 = t_shock(t)
 

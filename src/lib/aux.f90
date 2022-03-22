@@ -71,7 +71,7 @@ function ran0()
     ran0 = am*ior(iand(IM, ieor(ix, iy)), 1)
 end function ran0
 
-subroutine isotropic(phi, theta)
+subroutine isotropic_scatter(theta, phi)
     use constants
 
     implicit none
@@ -83,9 +83,9 @@ subroutine isotropic(phi, theta)
     theta = acos(x)
     r = ran0()
     phi = two_pi*r
-end subroutine isotropic
+end subroutine isotropic_scatter
 
-subroutine scattering_angle(theta, phi, theta_max)
+subroutine small_angles(theta, phi, theta_max)
     ! Random small angle within a cone centered around z-axis
     use constants, only: pi, two_pi
 
@@ -98,7 +98,7 @@ subroutine scattering_angle(theta, phi, theta_max)
     z = cos(theta_max) + (1 - cos(theta_max))*ran0()
     theta = acos(z) ! Theta within max
     phi = two_pi*ran0() ! Azimuthal angle phi isotropic
-end subroutine scattering_angle
+end subroutine small_angles
 
 subroutine euler_Ry(theta, R)
     implicit none
@@ -150,41 +150,55 @@ subroutine euler_Rz(theta, R)
     R(3, 3) = 1
 end subroutine euler_Rz
 
-subroutine euler_RyRz(theta, phi, RyRz)
+subroutine small_angle_scatter(theta, phi, theta_max)
+    ! Scattered flight angles within max scattering cone
     implicit none
-    double precision, intent(in) :: theta, phi
-    double precision, dimension(3, 3), intent(inout) :: RyRz
-    double precision, dimension(3, 3) :: Ry, Rz
+    double precision, intent(inout) :: theta, phi
+    double precision, intent(in) :: theta_max
+    double precision, dimension(3) :: p_init, p_scat_rot, p_scat_lab
+    double precision, dimension(3, 3) :: Rz, Ry
+    double precision :: theta_scat, phi_scat, r_unity
+    double precision :: cos_scatter_rot, cos_scatter_lab
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! First generate random scattered direction in rotated frame !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! theta_scatter, phi_scatter: spherical angles of scattered momentum vector in rotated frame
+    call small_angles(theta_scat, phi_scat, theta_max)
+
+    ! p: unit vector along scattered particle momentum direction in rotated frame
+    call spherical_to_cartesian(1.d0, theta_scat, phi_scat, p_scat_rot(1), p_scat_rot(2), p_scat_rot(3))
+
+    ! cos of scattering angle in rotated frame
+    cos_scatter_rot = dot_product([0.d0, 0.d0, 1.d0], p_scat_rot)
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Find the scattered direction vector in the lab frame !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! p_init: unit vector along initial momentum direction before scattering (lab frame)
+    call spherical_to_cartesian(1.d0, theta, phi, p_init(1), p_init(2), p_init(3))
+
+    ! Rotation matrices
+    call euler_Rz(phi, Rz)
     call euler_Ry(theta, Ry)
-    call euler_Rz(theta, Rz)
-    RyRz = matmul(Ry, Rz)
-end subroutine euler_RyRz
 
-subroutine euler_RyRz2(theta, phi, R)
-    implicit none
-    double precision, intent(in) :: theta, phi
-    double precision, intent(inout) :: R(3, 3)
-    double precision :: ct, cp, st, sp
+    ! p_scat_lab: unit vector along scattered momentum direction in lab frame
+    p_scat_lab = matmul(Rz, matmul(Ry, p_scat_rot))
 
-    ct = cos(theta)
-    cp = cos(phi)
-    st = sin(theta)
-    sp = sin(phi)
+    ! cos of scattering angle in lab frame
+    cos_scatter_lab = dot_product(p_init, p_scat_lab)
 
-    ! R(column, row)
-    R(1, 1) = ct*cp
-    R(2, 1) = sp
-    R(3, 1) = -st*cp
-
-    R(1, 2) = -ct*sp
-    R(2, 2) = cp
-    R(3, 2) = st*sp
-
-    R(1, 3) = st
-    R(2, 3) = 0.d0
-    R(3, 3) = ct
-end subroutine euler_RyRz2
+    if (abs(cos_scatter_rot - cos_scatter_lab) > 1e-6) then
+        print *, cos_scatter_rot
+        print *, cos_scatter_lab
+        call error("Cosine of scattering not conserved in back rotation.", 0)
+    end if
+    
+    ! set new angles (output)
+    call cartesian_to_spherical(p_scat_lab(1), p_scat_lab(2), p_scat_lab(3), r_unity, theta, phi)
+end subroutine small_angle_scatter
 
 double precision function get_v_rel(v_shock)
     implicit none
@@ -219,9 +233,9 @@ subroutine cartesian_to_spherical(x, y, z, r, theta, phi)
     phi = atan(y/x)
     if (x == 0) then
         if (y > 0) then
-            phi = pi/4
+            phi = pi/2
         else if (y < 0) then
-            phi = 3*pi/4
+            phi = 3*pi/2
         else
             phi = pi
         end if
@@ -388,16 +402,6 @@ subroutine lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
     call lorentz_boost_matrix(v_rel_vec, boost_matrix)
     four_vec = [t, r_vec(1), r_vec(2), r_vec(3)]
     four_vec_prime = matmul(boost_matrix, four_vec)
-    !do i = 1, 4, 1
-    !do j = 1, 4, 1
-    !    four_vec_prime(i) = four_vec_prime(i) + boost_matrix(j, i)*four_vec(i)
-    !end do
-    !end do
-    !four_vec_prime = &
-    !    four_vec(1) * boost_matrix(1, :) + &
-    !    four_vec(2) * boost_matrix(2, :) + &
-    !    four_vec(3) * boost_matrix(3, :) + &
-    !    four_vec(4) * boost_matrix(4, :)
     t_prime = four_vec_prime(1)
     r_vec_prime = four_vec_prime(2:)
 end subroutine lorentz_boost
