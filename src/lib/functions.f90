@@ -193,13 +193,22 @@ double precision function tau_syn(m, E, t)     ! pc
     tau_syn = E/Psynch  ! eV/(eV/yr) = yr
 end function tau_syn
 
-!double precision function analytical_stepsize(En, t, theta_max)
-!    use particle_data, only: m_p
-!    implicit none
-!    double precision En, t, theta_max
-!    double precision D_coef, v_particle
-!    analytical_stepsize = (3*D_coef(En, t)/v_particle(En, m_p))*(1 - cos(theta_max))/2
-!end function analytical_stepsize
+function v_particle(E, m) result(v)
+    ! Maybe move to functions.f90?
+    implicit none
+    double precision, intent(in) :: E, m
+    double precision :: v
+    v = sqrt(E**2 - m**2)/E
+    if (v < 0) call error("Negative particle velocity invalid E, m combo", 0)
+end function v_particle
+
+double precision function analytical_stepsize(En, t, theta_max)
+    use particle_data, only: m_p
+    implicit none
+    double precision En, t, theta_max
+    double precision D_coef, v_particle
+    analytical_stepsize = (3*D_coef(En, t)/v_particle(En, m_p))*(1 - cos(theta_max))/2
+end function analytical_stepsize
 
 double precision function cubic_spline_small_angle_step_correction(x)
     use stepsize_interpolated_polynom_coefficients, only: bp, coeffs

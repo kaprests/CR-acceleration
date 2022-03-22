@@ -19,7 +19,7 @@ subroutine output(set, n_proc)
     !open (26, file='Data/spec_ele'//filename)
     !open (27, file='Data/spec_nue'//filename)
     !open (28, file='Data/spec_num'//filename)
-    open (29, file='Data/spec_prot'//filename)
+    open (29, file=trim(outdir)//'/spec_prot'//filename)
     !open (30, file='Data/spec_neut'//filename)
     !open (50, file='Data/spec_nu'//filename)
     do j = 1, n_enbin
@@ -75,3 +75,38 @@ subroutine banner(n_proc, i)
     end if
     write (*, *) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 end subroutine banner
+
+subroutine init_mpi_io(comm_world, file_handle, fname, ierr)
+    ! Opens mpi file for concurrent I/O
+    implicit none
+    type(MPI_COMM), intent(in) :: comm_world
+    type(MPI_FILE), intent(out) :: file_handle
+    character(len=*), intent(in) :: fname
+    integer, intent(out) :: ierr
+
+    call MPI_FILE_OPEN( &
+        MPI_COMM_WORLD, &
+        fname, &
+        MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
+        MPI_INFO_NULL, &
+        file_handle, &
+        ierr &
+        )
+
+    if (ierr > 0) then
+        call MPI_FILE_DELETE( &
+            fname, &
+            MPI_INFO_NULL, &
+            ierr &
+            )
+
+        call MPI_FILE_OPEN( &
+            MPI_COMM_WORLD, &
+            fname, &
+            MPI_MODE_WRONLY + MPI_MODE_CREATE + MPI_MODE_EXCL, &
+            MPI_INFO_NULL, &
+            file_handle, &
+            ierr &
+            )
+    end if
+end subroutine init_mpi_io

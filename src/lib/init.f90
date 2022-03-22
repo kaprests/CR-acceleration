@@ -90,6 +90,7 @@ subroutine parse_cmd_args
                 case (13) ! shockless
                     if (arg == "true") then
                         shockless = .true.
+                        inj_model = 0
                     else if (arg == "false") then
                         shockless = .false.
                     else
@@ -111,7 +112,7 @@ subroutine parse_cmd_args
                     else if (arg == "false") then
                         no_stepsize_corr = .false.
                     else
-                        print *, "Invalid argument", arg, " for flag '--shockless'."
+                        print *, "Invalid argument '", arg, "' for flag '", flag, "'."
                         call error("Invalid argument error", 0)
                     end if
                 end select
@@ -127,6 +128,7 @@ subroutine init_general(myid, n_proc)
     use internal
     use user_variables
     use SNR_data
+    use result
 
     implicit none
     integer, intent(in) :: myid, n_proc
@@ -134,6 +136,9 @@ subroutine init_general(myid, n_proc)
 
     ! Parse command line arguments and apply given settings/configuration
     call parse_cmd_args
+
+    ! default outdir
+    outdir = default_outdir
 
     ! Add config metadata to the filename
     if (shockless) then
@@ -144,6 +149,7 @@ subroutine init_general(myid, n_proc)
         if (init_z) then
             filename = filename//"_init-z-ax"
         end if
+        print *, "shockless_t_max: ", shockless_t_max
         write (shockless_t_max_str, '(f10.3)') shockless_t_max
         filename = filename//"_t-max"//trim(adjustl(shockless_t_max_str))
     else
@@ -177,6 +183,10 @@ subroutine init_general(myid, n_proc)
     write (*, *) "Filename metadata: ", filename
 
     ! Allocate dynamic arrays
+    allocate(initial_trajectories(4, n_start, num_traj_pos))
+    if (shockless) then
+        allocate(final_positions(3, n_start))
+    end if
 
     !initialisation for random number (NumRec):
     iseed = 15321 + 2*(1 + iseed_shift)*(myid + 1)
@@ -239,6 +249,7 @@ subroutine init_inject_spec
 end subroutine init_inject_spec
 
 subroutine inject !(i)
+    use user_variables, only: shockless
     use internal
     use event_internal
     use SNR_data
@@ -252,6 +263,9 @@ subroutine inject !(i)
     select case (inj_model)
     case (0)
         t = 1.d2            ! t_inj_init
+        if (shockless) then
+            t = 0.d0
+        end if
         x(1) = 0.d0
         x(2) = 0.d0
         x(3) = t_shock(t)

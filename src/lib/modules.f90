@@ -21,7 +21,9 @@ module user_variables
         debug = 0, & ! 0, no debugging info
         restart = 0, & ! 1 use old data
         iseed_shift = 0, & ! positive shift of random seed,
-        inj_model = 1 ! 0: constant vel, 1, 2
+        inj_model = 1, & ! 0: constant vel, 1, 2
+        num_sample_pos_target = 500, & ! May have to reduce for large n_start
+        num_traj_pos = 500 ! May also have to reduce for large n_start
 
     ! inj_model = 0: constant shock velocity
     double precision :: v_shock_const = 3.d-2 ! Default 3.d-2
@@ -54,7 +56,7 @@ module user_variables
     character(len=10) :: n_start_str, n_sets_str, v_shock_str, gamma_shock_str, n_proc_str
     character(len=10) :: E_inj_exp_str
     character(len=10) :: theta_max_str
-    character(len=3) :: shockless_t_max_str
+    character(len=10) :: shockless_t_max_str
 end module user_variables
 
 module SNR_data
@@ -171,6 +173,10 @@ module result
     double precision :: N_i(2, n_tbin_in), E2N_i(2, n_tbin_in), &
         En_f(-pid_max:pid_max, n_enbin), &
         En_f_tot(-pid_max:pid_max, n_enbin)
+
+    ! For shockless simulation only:
+    double precision, dimension(:, :), allocatable :: final_positions
+    double precision, dimension(:, :, :), allocatable :: sample_positions, initial_trajectories
 end module result
 
 module test_var

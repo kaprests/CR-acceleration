@@ -2,13 +2,24 @@
 ! Cosmic ray acceleration
 
 program acceleration
-    use mpi
+    use mpi_f08
+    use user_variables
     use result; use user_variables, only: n_sets
 
     implicit none
     integer :: myid, n_proc, ierr, n_array
     integer :: set
-
+    type(MPI_FILE) ::  &
+        traj_filehandle, &
+        fpos_filehandle, &
+        samplepos_filehandle
+    integer :: traj_array_count, traj_array_bsize
+    integer :: fpos_array_count, fpos_array_bsize
+    integer :: samplepos_array_count, samplepos_array_bsize
+    integer(kind=MPI_OFFSET_KIND) :: &
+        traj_offset, &
+        fpos_offset, &
+        samplepos_offset
     ! non-MPI values
     !myid = 0
     !n_proc = 1
@@ -21,20 +32,79 @@ program acceleration
     ! Initialize simulation
     call init(myid, n_proc)
 
+    ! MPI data files
+    call init_mpi_io(MPI_COMM_WORLD, traj_filehandle, &
+        trim(outdir)//'/trajectories'//filename, ierr)
+    if (shockless) then
+        call init_mpi_io(MPI_COMM_WORLD, fpos_filehandle, &
+            trim(outdir)//'/fpos'//filename, ierr)
+        call init_mpi_io(MPI_COMM_WORLD, samplepos_filehandle, &
+            trim(outdir)//'/samplepos'//filename, ierr)
+    end if
+
     do set = 1, n_sets
         call start_particle(set, myid, n_proc)
 
         ! non-MPI values
         !En_f_tot = En_f
 
-        n_array = (2*pid_max + 1)*n_enbin
-        call MPI_REDUCE( &
-            En_f, En_f_tot, n_array, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
-            MPI_COMM_WORLD, ierr &
+        ! Write trajectory data
+        traj_array_bsize = sizeof(initial_trajectories)
+        traj_offset = myid*n_sets*traj_array_bsize + traj_array_bsize*(set - 1)
+        traj_array_count = size(initial_trajectories)
+        call MPI_FILE_WRITE_AT( &
+            traj_filehandle, &
+            traj_offset, &
+            initial_trajectories, &
+            traj_array_count, &
+            MPI_DOUBLE_PRECISION, &
+            MPI_STATUS_IGNORE, &
+            ierr &
             )
-
-        if (myid == 0) call output(set, n_proc)
+        if (shockless) then
+            ! Write fpos data
+            fpos_array_bsize = sizeof(final_positions)
+            fpos_offset = myid*n_sets*fpos_array_bsize + fpos_array_bsize*(set - 1)
+            fpos_array_count = size(final_positions)
+            call MPI_FILE_WRITE_AT( &
+                fpos_filehandle, &
+                fpos_offset, &
+                final_positions, &
+                fpos_array_count, &
+                MPI_DOUBLE_PRECISION, &
+                MPI_STATUS_IGNORE, &
+                ierr &
+                )
+            ! Write sample_positions
+            samplepos_array_bsize = sizeof(sample_positions)
+            samplepos_offset = &
+                myid*n_sets*samplepos_array_bsize + samplepos_array_bsize*(set - 1)
+            samplepos_array_count = size(sample_positions)
+            call MPI_FILE_WRITE_AT( &
+                samplepos_filehandle, &
+                samplepos_offset, &
+                sample_positions, &
+                samplepos_array_count, &
+                MPI_DOUBLE_PRECISION, &
+                MPI_STATUS_IGNORE, &
+                ierr &
+                )
+        else
+            ! Collect data from the procs
+            n_array = (2*pid_max + 1)*n_enbin
+            call MPI_REDUCE( &
+                En_f, En_f_tot, n_array, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
+                MPI_COMM_WORLD, ierr &
+                )
+            if (myid == 0) call output(set, n_proc)
+        end if
     end do
+    ! close outputs and finalize
+    call MPI_FILE_CLOSE(traj_filehandle, ierr)
+    if (shockless) then
+        call MPI_FILE_CLOSE(fpos_filehandle, ierr)
+        call MPI_FILE_CLOSE(samplepos_filehandle, ierr)
+    end if
     if (myid == 0) then
         close (99)
     end if
