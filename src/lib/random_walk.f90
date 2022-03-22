@@ -65,9 +65,7 @@ contains
 
             ! Find number of steps, sample interval etc. 
             t0 = t
-            print *, "t0: ", t0
             if (no_stepsize_corr) then
-                print *, "Isotropic stepsize (R_larmor)"
                 l_0 =  R_L(E, t0)
             else
                 l_0 = stepsize(E, t0, theta_max)
@@ -234,12 +232,7 @@ contains
                 if (shockless) then
                     if (t > shockless_t_max) then
                         ! exit random walking particle when max time exceeded
-                        print *, "shockless_t_max: ", shockless_t_max
-                        print *, "t: ", t
                         call store_shockless(n_injected, x(1), x(2), x(3))
-                        print *, "t-max: ", shockless_t_max
-                        print *, "num steps tot: ", num_steps_total
-                        print *, "num steps taken: ", num_steps_taken
                         n_in = n_in - 1
                         n_out = n_out + 1
                         return
