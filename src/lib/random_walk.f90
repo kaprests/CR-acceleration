@@ -231,19 +231,21 @@ contains
                 delta = exp(-f)                    ! exp(-\int dt f(t))
 
                 ! shockless exit
-                if (shockless .and. t > shockless_t_max) then
-                    ! exit random walking particle when max time exceeded
-                    print *, "shockless_t_max: ", shockless_t_max
-                    print *, "t: ", t
-                    call store_shockless(n_injected, x(1), x(2), x(3))
-                    print *, "t-max: ", shockless_t_max
-                    print *, "num steps tot: ", num_steps_total
-                    print *, "num steps taken: ", num_steps_taken
-                    n_in = n_in - 1
-                    n_out = n_out + 1
-                    return
+                if (shockless) then
+                    if (t > shockless_t_max) then
+                        ! exit random walking particle when max time exceeded
+                        print *, "shockless_t_max: ", shockless_t_max
+                        print *, "t: ", t
+                        call store_shockless(n_injected, x(1), x(2), x(3))
+                        print *, "t-max: ", shockless_t_max
+                        print *, "num steps tot: ", num_steps_total
+                        print *, "num steps taken: ", num_steps_taken
+                        n_in = n_in - 1
+                        n_out = n_out + 1
+                        return
+                    end if
                 ! acceleration exit
-                else if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta .and. .not. shockless) then
+                else if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta) then
                     ! exit accel particle, if a) too late, b) too far down-stream, or c) scattering:
                     if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                         !              write(*,*) 'tired',n_in,n_out
