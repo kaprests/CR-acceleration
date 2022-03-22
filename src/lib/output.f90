@@ -78,6 +78,7 @@ end subroutine banner
 
 subroutine init_mpi_io(comm_world, file_handle, fname, ierr)
     ! Opens mpi file for concurrent I/O
+    use mpi_f08
     implicit none
     type(MPI_COMM), intent(in) :: comm_world
     type(MPI_FILE), intent(out) :: file_handle
