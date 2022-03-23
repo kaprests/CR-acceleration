@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 fracs = [i*0.1 for i in range(1, 11)]
 for idx, frac in enumerate(fracs):
-    data = np.genfromtxt(f"out{frac:.1f}")
+    data = np.genfromtxt(f"./data/out{frac:.1f}")
     x = data.T[0]
     y = data.T[1]
     z = data.T[2]
