@@ -5,3 +5,5 @@
 /bin/*
 !/bin/README.md
 /figs/*.pdf
+cluster_dump
+/cluster_dump/*

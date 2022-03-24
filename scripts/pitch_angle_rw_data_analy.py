@@ -1,20 +1,27 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from math import pi
 import sys
 import os.path
+from math import pi
+from scipy.stats import norm
 
-DATA_DIR = os.path.dirname(__file__)+'/../Data/'
+#DATA_DIR = os.path.dirname(__file__)+'/../Data/'
+DATA_DIR = os.path.dirname(__file__)+'/../cluster_dump/22-03-2022/'
 OUT_DIR = '../figs/'
 t_max = 20
 theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
-nsets = 10
-nstart = 10
-nproc = 3
+nsets = 100
+nstart = 100
+nproc = 6
 E_inj_exp = 10
 z_ax = False
-iso_stepsize = True
+iso_stepsize = False
+
+D = 1.1753625473872295e-05
+mean = 0
+stddev = np.sqrt(D*t_max)
+pdf = lambda x: norm.pdf(x, mean, stddev)
 
 flags = ['--theta-pi-fr', '--tmax', '--stepexp']
 
@@ -135,6 +142,7 @@ if __name__ == "__main__":
     # Drift z-direction
     zbins = np.linspace(min(z_final), max(z_final), n_bins)
     zbins_iso = np.linspace(min(z_final_iso), max(z_final_iso), n_bins)
+    z_arr = np.linspace(min(z_final), max(z_final), 1000)
     plt.title("Distribution along z-axis")
     plt.hist(
         z_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
@@ -144,12 +152,14 @@ if __name__ == "__main__":
         z_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
         histtype=u'step', color='red', bins=zbins_iso, density=True
     )
-    plt.legend()
+    plt.plot(z_arr, pdf(z_arr), color="green", label="Analytical")    
+    plt.legend()    
     plt.show()
 
     # Drift x-direction
     xbins = np.linspace(min(x_final), max(x_final), n_bins)
     xbins_iso = np.linspace(min(x_final_iso), max(x_final_iso), n_bins)
+    x_arr = np.linspace(min(x_final), max(x_final), 1000)
     plt.title("Distribution along x-axis")
     plt.hist(
         x_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
@@ -159,12 +169,14 @@ if __name__ == "__main__":
         x_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
         histtype=u'step', color='red', bins=xbins_iso, density=True
     )
+    plt.plot(x_arr, pdf(x_arr), color="green", label="Analytical")    
     plt.legend()
     plt.show()
 
     # Drift y-direction
     ybins = np.linspace(min(y_final), max(y_final), n_bins)
     ybins_iso = np.linspace(min(y_final_iso), max(y_final_iso), n_bins)
+    y_arr = np.linspace(min(y_final), max(y_final), 1000)
     plt.title("Distribution along y-axis")
     plt.hist(
         y_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
@@ -174,6 +186,7 @@ if __name__ == "__main__":
         y_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
         histtype=u'step', color='red', bins=ybins_iso, density=True
     )
+    plt.plot(y_arr, pdf(y_arr), color="green", label="Analytical")    
     plt.legend()
     plt.show()
 
@@ -243,10 +256,10 @@ if __name__ == "__main__":
             z_samples[seti*len(z_samples_seti):(seti+1)*len(z_samples_seti)] = z_samples_seti
         avg_drifts_sampled_iso[sample] = np.average(x_samples**2 + y_samples**2 + z_samples**2)
 
-    #plt.plot(t_sampled, avg_drifts_sampled, label=f"theta: {theta}")
-    #plt.plot(t_sampled_iso, avg_drifts_sampled_iso, label="isotropic")
-    #plt.legend()
-    #plt.show()
+    plt.plot(t_sampled, avg_drifts_sampled, label=f"theta: {theta}")
+    plt.plot(t_sampled_iso, avg_drifts_sampled_iso, label="isotropic")
+    plt.legend()
+    plt.show()
 
     print("D': ", (avg_drifts_sampled[-1]-avg_drifts_sampled[0])/(t_sampled[-1] - t_sampled[0])/3)
     print("D'(iso): ", (avg_drifts_sampled_iso[-1]-avg_drifts_sampled_iso[0])/(t_sampled_iso[-1] - t_sampled_iso[0])/3)
