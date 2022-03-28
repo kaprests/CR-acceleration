@@ -69,52 +69,63 @@ piecewise_poly_vectorized.excluded.add(2)
 if __name__ == "__main__":
     v = 0.99558849759333801 # Proton of energy 1GeV
     R_L = 3.5230000000000007E-005 # Larmor radius (isotropic stepsize)
-    D = R_L/3 # Target diffusion coeficient
+    D = R_L/3
 
-    # Data
     theta_max_data_arr, D_coeff_arr = np.genfromtxt("rw_dcoeff.csv", delimiter=",").T
     theta_max_data_arr *= np.pi
-    # 'theory' values
-    theta_max_arr = np.linspace(0.001, theta_max_data_arr[-1], 100)
-    theta_max_arr *= np.pi
+    theta_max_arr = np.linspace(theta_max_data_arr[0], theta_max_data_arr[-1], 100)
 
-    corr_arr = R_L*v/(3*D_coeff_arr)
-    #D_target = 1.1750165596133696e-05
-    #print("Target D_coeff: ", D_target)
+    corr_arr = (R_L*v)/(3*D_coeff_arr)
+    D_target = 1.1687289275261758e-05 # Replace with theoretical
+    print("Target D_coeff: ", D_target)
 
-    # Fitting power law (seems valid for small enough angles):
-    pars, cov = curve_fit(f=power_law, xdata=theta_max_data_arr, ydata=corr_arr, p0=[0, 0], bounds=(-np.inf, np.inf))
-    stdevs = np.sqrt(np.diag(cov))
+    # Fitting power law
+    pars, cov = curve_fit(
+        f=power_law, xdata=theta_max_data_arr[0:-10], ydata=corr_arr[0:-10], p0=[0,0], 
+        bounds=(-np.inf, np.inf)
+    )
     a, b = pars
-    print("##################")
-    print("Powerlaw: f(x) = a*x^b")
-    print("a, b: ", a, b)
-    print("##################")
+    print("###############")
+    print("Power Law: f(x) = a*x^b")
+    print("a: ", a)
+    print("b: ", b)
+    print("###############")
 
-    # Simple slope calculation to compare
-    ln_theta_max_data_arr = np.log(theta_max_data_arr)
-    ln_corr_arr = np.log(corr_arr)
-    power = (ln_corr_arr[-1]-ln_corr_arr[0])/(ln_theta_max_data_arr[-1]-ln_theta_max_data_arr[0])
-    print(f"power_cf - power_slope: {b - power}")
+    # Interpolation of stepsize (linear and cubic splines)
+    l_ls = interp1d(theta_max_data_arr, corr_arr) # linear interpolation
+    l_cs = CubicSpline(theta_max_data_arr, corr_arr) # Cubic splines
 
-    plt.title("Small angle stepsize correction factor -- powerlaw fit (log scale)")
-    plt.plot(theta_max_data_arr, corr_arr, "o", label="Data points")
-    plt.plot(theta_max_data_arr, power_law(theta_max_data_arr, a, b), 'x', label="Fitted disc")
-    plt.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Fitted cont.")
-    plt.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label="analytical attempt")
+    plt.title("stepsize asf. theta_max")
+    plt.xlabel("theta_max")
+    plt.ylabel("stepsize")
+    plt.plot(theta_max_data_arr, corr_arr, "o", label="DP")
+    #plt.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
+    plt.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
+    plt.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Fitted power law")
+    plt.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label='analytical attempt')
     plt.xscale("log")
     plt.yscale("log")
     plt.legend()
-    plt.xlabel("theta max (largest scattering angle)")
-    plt.ylabel("stepsize correction f(theta_max)")
     plt.show()
 
-    plt.title("Small angle stepsize correction factor -- powerlaw fit (normal scale)")
-    plt.plot(theta_max_data_arr, corr_arr, "o", label="Data points")
-    plt.plot(theta_max_data_arr, power_law(theta_max_data_arr, a, b), 'x', label="Fitted disc")
-    plt.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Fitted cont.")
-    plt.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label="analytical attempt")
+    plt.title("stepsize asf. theta_max")
+    plt.xlabel("theta_max")
+    plt.ylabel("stepsize")
+    plt.plot(theta_max_data_arr, corr_arr, "o", label="DP")
+    #plt.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
+    plt.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
+    plt.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label='analytical attempt')
     plt.legend()
-    plt.xlabel("theta max (largest scattering angle)")
-    plt.ylabel("stepsize correction f(theta_max)")
     plt.show()
+
+
+    # Print l_cs breakpoints and coeffs
+    print("l_cs breakpoints: ", l_cs.x)
+    print("l_cs breakpoints shape: ", l_cs.x.shape)
+    print("l_cs coeffs: ", l_cs.c)
+    print("l_cs coeffs shape: ", l_cs.c.shape)
+
+#    # Write function/subroutine in Fortran to construct callable from list of breakpoints and coeffs
+    #print(piecewise_poly_vectorized(0.005*np.pi, l_cs.x, l_cs.c))
+    #print(piecewise_poly_vectorized(0.1*np.pi, l_cs.x, l_cs.c))
+    #print(piecewise_poly_vectorized(1.0*np.pi, l_cs.x, l_cs.c))

@@ -6,19 +6,23 @@ from math import pi
 from scipy.stats import norm
 
 #DATA_DIR = os.path.dirname(__file__)+'/../Data/'
-DATA_DIR = os.path.dirname(__file__)+'/../cluster_dump/22-03-2022/'
+DATA_DIR = os.path.dirname(__file__)+'/../cluster_dump/rw-data/'
 OUT_DIR = '../figs/'
 t_max = 20
-theta_pi_frac = 1.0
+theta_pi_frac = 0.1
 theta = theta_pi_frac*pi
 nsets = 100
 nstart = 100
 nproc = 6
-E_inj_exp = 10
+E_inj_exp = 12
 z_ax = False
 iso_stepsize = False
 
-D = 1.1753625473872295e-05
+#D = 1.1753625473872295e-05 # E-inj-exp = 10
+#D = 1.1687289275261758e-05 # E-inj-exp = 10
+#D = 0.11758733574069284 # E-inj-exp = 14
+D = 0.0011752490186288554 # E-inj-exp = 12
+
 mean = 0
 stddev = np.sqrt(D*t_max)
 pdf = lambda x: norm.pdf(x, mean, stddev)
@@ -125,7 +129,7 @@ if __name__ == "__main__":
     # Total drift distance
     final_drift_distances = np.sqrt(x_final**2 + y_final**2 + z_final**2)
     final_drift_distances_iso = np.sqrt(x_final_iso**2 + y_final_iso**2 + z_final_iso**2)
-    n_bins = 20
+    n_bins = 50
     bins = np.linspace(min(final_drift_distances), max(final_drift_distances), n_bins)
     bins_iso = np.linspace(min(final_drift_distances_iso), max(final_drift_distances_iso), n_bins)
     plt.title("Total drift")
@@ -214,7 +218,7 @@ if __name__ == "__main__":
             z_samples_seti = np.zeros(nstart*nproc)
             for proc in range(nproc):
                 data = samplepos_data[proc, seti, sample]
-                x, y, z, t = data.T
+                t, x, y, z = data.T
                 x_samples_seti[proc*nstart:(proc+1)*nstart] = x
                 y_samples_seti[proc*nstart:(proc+1)*nstart] = y
                 z_samples_seti[proc*nstart:(proc+1)*nstart] = z
@@ -245,7 +249,7 @@ if __name__ == "__main__":
             z_samples_seti = np.zeros(nstart*nproc)
             for proc in range(nproc):
                 data = samplepos_data_iso[proc, seti, sample]
-                x, y, z, t = data.T
+                t, x, y, z = data.T
                 x_samples_seti[proc*nstart:(proc+1)*nstart] = x
                 y_samples_seti[proc*nstart:(proc+1)*nstart] = y
                 z_samples_seti[proc*nstart:(proc+1)*nstart] = z

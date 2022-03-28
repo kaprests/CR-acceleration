@@ -115,9 +115,10 @@ contains
                 df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
                 call scales_charged(m, Z, E, t, w, df, dt, dE)
                 !l_0 = R_L(E, t)/dble(Z)
-                !l_0 = stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
-                l_0 = analytical_stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
+                l_0 = stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
+                !l_0 = analytical_stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
                 l_0_0 = l_0
+                dt = l_0
                 if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
             end if
 

@@ -1,2 +1,6 @@
-find diffusion stepsize stuff again
+==find diffusion stepsize stuff again
 RE-attempt analytical calculation with proper rotation 
+Investigate trajectories
+Read
+think/read about frames (especially for shock crossing)
+eventually implement shock frame crossing

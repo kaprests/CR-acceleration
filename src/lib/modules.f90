@@ -187,8 +187,8 @@ end module test_var
 
 module stepsize_powerlaw_params
     implicit none
-    double precision, parameter :: a = 0.12771280756170844
-    double precision, parameter :: b = 2.021722029753264
+    double precision, parameter :: a = 0.12428921964268118
+    double precision, parameter :: b = 1.9975134247506923
 end module stepsize_powerlaw_params
 
 module stepsize_interpolated_polynom_coefficients
