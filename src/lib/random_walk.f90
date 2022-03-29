@@ -38,7 +38,7 @@ contains
         double precision, pointer :: E, x(:), t, w
         double precision, dimension(4, 4) :: boost_matrix
         double precision, dimension(4) :: l_four_vec
-        double precision :: stepsize, analytical_stepsize, t0
+        double precision :: stepsize, analytical_stepsize, t0, v_particle
         integer :: num_steps_taken, num_steps_total, sample_int, num_sample_pos, sample_count
         integer :: num_crossings
 
@@ -71,7 +71,7 @@ contains
             else
                 l_0 = stepsize(E, t0, theta_max)
             end if
-            dt = l_0
+            dt = l_0/v_particle(E, m_p)
             if (l_0 <= 0.d0 .or. dt <= 0.d0) then
                 print *, "Shockless: true"
                 print *, "l_0: ", l_0
@@ -115,10 +115,10 @@ contains
                 df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
                 call scales_charged(m, Z, E, t, w, df, dt, dE)
                 !l_0 = R_L(E, t)/dble(Z)
-                l_0 = stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
                 !l_0 = analytical_stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
+                l_0 = stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
                 l_0_0 = l_0
-                dt = l_0
+                dt = l_0/v_particle(E, m_p)
                 if (l_0 <= 0.d0 .or. dt <= 0.d0) call error('wrong scales', 0)
             end if
 
@@ -126,17 +126,21 @@ contains
             if (num_steps_taken == 0) then
                 ! First step isotropic
                 call isotropic_scatter(theta, phi)
+                if (init_z) then
+                    ! First step along z-axis
+                    theta = 0.d0
+                end if
             else
                 ! Following steps are small angle
                 call small_angle_scatter(theta, phi, theta_max)
             end if
             if (dt >= l_0) then                       ! one random step of size l_0
                 dE = dE*l_0/dt
-                dt = l_0
+                dt = l_0/v_particle(E, m_p)
                 n_step = 1
             else                                    ! n steps l0 in same direction
                 ! Only relevant with interactions turned on
-                l_0 = dt
+                l_0 = dt * v_particle(E, m_p)
                 if (l_0_0/dt < 1.d3) then
                     n_step = int(l_0_0/dt + 0.5d0)
                 else                                 ! fast decays lead to overflow

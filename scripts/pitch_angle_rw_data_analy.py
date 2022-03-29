@@ -117,13 +117,13 @@ if __name__ == "__main__":
     fpos_data_iso = fpos_data_iso.reshape((nproc*nsets*nstart, 3))
     x_final_iso, y_final_iso, z_final_iso = fpos_data_iso.T
 
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    ax.set_title("Final positions")
-    ax.scatter(x_final, y_final, z_final, marker='o', label=f'theta-max = {theta:.3f}')
-    ax.scatter(x_final_iso, y_final_iso, z_final_iso, marker='^', label=f'theta-max = {np.pi:.3f}')
-    ax.legend()
-    plt.show()
+    #fig = plt.figure()
+    #ax = fig.add_subplot(projection='3d')
+    #ax.set_title("Final positions")
+    #ax.scatter(x_final, y_final, z_final, marker='o', label=f'theta-max = {theta:.3f}')
+    #ax.scatter(x_final_iso, y_final_iso, z_final_iso, marker='^', label=f'theta-max = {np.pi:.3f}')
+    #ax.legend()
+    #plt.show()
 
     #############################################
     ###  Final drift distribution (histogram) ###
