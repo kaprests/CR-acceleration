@@ -6,7 +6,7 @@ from math import pi
 from scipy.stats import norm
 
 #DATA_DIR = os.path.dirname(__file__)+'/../Data/'
-DATA_DIR = os.path.dirname(__file__)+'/../cluster_dump/rw-data/'
+DATA_DIR = os.path.dirname(__file__)+'/../cluster_dump/randomwalk-data/'
 OUT_DIR = '../figs/'
 t_max = 20
 theta_pi_frac = 0.1
@@ -14,14 +14,17 @@ theta = theta_pi_frac*pi
 nsets = 100
 nstart = 100
 nproc = 6
-E_inj_exp = 12
+E_inj_exp = 10
 z_ax = False
 iso_stepsize = False
 
-#D = 1.1753625473872295e-05 # E-inj-exp = 10
-#D = 1.1687289275261758e-05 # E-inj-exp = 10
-#D = 0.11758733574069284 # E-inj-exp = 14
-D = 0.0011752490186288554 # E-inj-exp = 12
+#D10 = 1.1753625473872295e-05 # E-inj-exp = 10
+D10 = 1.1687289275261758e-05 # E-inj-exp = 10
+D14 = 0.11758733574069284 # E-inj-exp = 14
+D12 = 0.0011752490186288554 # E-inj-exp = 12
+
+D_dict = {10: D10, 12: D12, 14: D14}
+D = D_dict[E_inj_exp]
 
 mean = 0
 stddev = np.sqrt(D*t_max)
