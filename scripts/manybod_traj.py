@@ -21,6 +21,7 @@ iso_stepsize = False
 # Trajectory specific
 n_traj_plot = 100
 n_steps_plot = 10
+check_small_angle_validity = False
 
 D10 = 1.1687289275261758e-05 # E-inj-exp = 10
 D14 = 0.11758733574069284 # E-inj-exp = 14
@@ -119,7 +120,6 @@ if __name__ == "__main__":
     plt.title(f"theta_max/pi: {theta_pi_frac}, first {len(x)+1} step positions")
     plt.show()
 
-
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     
@@ -133,3 +133,33 @@ if __name__ == "__main__":
         ax.plot(x, y, z, ".")
     plt.title(f"theta_max/pi: {theta_pi_frac}, first {len(x)+1} step positions, for {n_traj_plot} particles")
     plt.show()
+
+    # Check validity of scattering
+    if check_small_angle_validity:
+        print("Checking validity of small angle scattering")
+        valid = True
+        for i in range(n_traj_plot):
+            traj_data_proc1_set1_particlei = traj_data_proc1_set1[:, i, :]
+            t_arr, x_arr, y_arr, z_arr = traj_data_proc1_set1_particlei.T
+            for (step, t) in enumerate(t_arr[0:-2]):
+                r0 = np.array([x_arr[step], y_arr[step], z_arr[step]])
+                r1 = np.array([x_arr[step+1], y_arr[step+1], z_arr[step+1]])
+                r2 = np.array([x_arr[step+2], y_arr[step+2], z_arr[step+2]])
+                
+                vec1 = r1 - r0
+                vec2 = r2 - r1
+
+                print("vec1: ", vec1)
+                print("vec2: ", vec2)
+                print("r0: ", r0)
+                print("r1: ", r1)
+                print("r2: ", r2)
+                angle = np.arccos(np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2)))
+                print(angle)
+                if angle > theta:
+                    print("Too large scattering angle")
+                    print("angle: ", angle)
+                    print("theta: ", theta)
+                    valid = False
+        if valid:
+            print("Small angle scattering is valid")
