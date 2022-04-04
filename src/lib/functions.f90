@@ -210,43 +210,38 @@ double precision function analytical_stepsize(En, t, theta_max)
     analytical_stepsize = (3*D_coef(En, t)/v_particle(En, m_p))*(1 - cos(theta_max))/2
 end function analytical_stepsize
 
+double precision function cs_test(x)
+    use stepsize_interpolated_polynom_coefficients, only: bp, coeffs
+    implicit none
+    double precision, intent(in) :: x
+    
+    cs_test = x
+end function cs_test
+
 double precision function cubic_spline_small_angle_step_correction(x)
     use stepsize_interpolated_polynom_coefficients, only: bp, coeffs
     use constants, only: pi
     implicit none
     double precision, intent(in) :: x
-    !double precision, dimension(:), intent(in) :: bp
-    !double precision, dimension(:, :), intent(in) :: coeffs
     double precision :: output
-    integer :: i, j, k
+    integer :: i
 
-    if (x < bp(1) .or. x > bp(size(bp))) then
-        print *, "x: ", x
+    if (x == 0.d0) then
+        cubic_spline_small_angle_step_correction = 0.d0
+        return
+    else if (x < bp(1) .or. x > bp(size(bp))) then
+        print *, x
         call error("Argument x out of range", 0)
     end if
 
-    do i = 2, size(bp), 1
-    if (x <= bp(i)) then
-        k = 3
-        output = 0
-        do j = 1, k + 1, 1
-            output = output + coeffs(i, j)*(x - bp(i))**(k - j + 1)
-        end do
-        !output = &
-        !   coeffs(i, 1)*(x-bp(i))**3 + &
-        !   coeffs(i, 2)*(x-bp(i))**2 + &
-        !   coeffs(i, 3)*(x-bp(i)) + &
-        !   coeffs(i, 4)
-        if (x > bp(size(bp) - 1)) then
-            ! Something strange happens when x > 0.9pi
-            ! Temporary hard code of the right cubic spline
-            output = &
-                -8.27279487e-06*(x - 0.9*pi)**3 &
-                - 1.43409581e-05*(x - 0.9*pi)**2 &
-                + 1.05892290e-05*(x - 0.9*pi) &
-                + 3.33890695e-05
-        end if
-        cubic_spline_small_angle_step_correction = (output/3.504386947787479d-05)
+    do i = 1, size(bp)-1, 1
+    if (x <= bp(i+1)) then
+        output = &
+           coeffs(i, 1)*(x-bp(i))**3 + &
+           coeffs(i, 2)*(x-bp(i))**2 + &
+           coeffs(i, 3)*(x-bp(i)) + &
+           coeffs(i, 4)
+        cubic_spline_small_angle_step_correction = output !(output/3.504386947787479d-05)
         return
     end if
     end do

@@ -305,6 +305,27 @@ subroutine test_small_angle_scattering(num_tests_run, num_tests_failed)
     num_tests_run = num_tests_run + 1
 end subroutine test_small_angle_scattering
 
+subroutine test_cubic_spline_small_angle_step_correction(num_tests_run, num_tests_failed)
+    use constants, only: pi
+
+    implicit none
+    integer, intent(inout) :: num_tests_run, num_tests_failed
+    double precision :: cubic_spline_small_angle_step_correction, cs_test
+    integer, parameter :: n_theta = 50
+    double precision, parameter :: delta_theta = pi/(n_theta)
+    integer :: i
+    double precision, dimension(n_theta) :: theta_array
+    double precision :: stepcorr
+    
+    do i = 0, n_theta, 1
+        theta_array = i * delta_theta
+        stepcorr = cubic_spline_small_angle_step_correction(i*delta_theta)
+        print *, i*delta_theta, ", ", stepcorr
+        !print *, i, " ", i*delta_theta/pi, " ", stepcorr
+    end do
+    num_tests_run = num_tests_run + 1
+end subroutine test_cubic_spline_small_angle_step_correction
+    
 end module tests
 
 program test
@@ -321,6 +342,7 @@ program test
     call test_lorentz_boost(num_tests_run, num_tests_failed)
     call test_rotations(num_tests_run, num_tests_failed)
     call test_small_angle_scattering(num_tests_run, num_tests_failed)
+    call test_cubic_spline_small_angle_step_correction(num_tests_run, num_tests_failed)
 
     print *, " "
     print *, "TESTS FINISHED"

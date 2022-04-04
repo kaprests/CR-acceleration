@@ -1,8 +1,15 @@
 find diffusion stepsize stuff again
+    - Missing: add new interpol coeffs to program
+
 RE-attempt analytical calculation with proper rotation 
+
 Investigate trajectories
+    - Sort of done
+
 Read
+
 think/read about frames (especially for shock crossing)
+
 eventually implement shock frame crossing
 
 Implement:

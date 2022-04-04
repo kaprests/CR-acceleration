@@ -9,12 +9,12 @@ from scipy.stats import norm
 DATA_DIR = os.path.dirname(__file__)+'/../cluster_dump/randomwalk-data/'
 OUT_DIR = '../figs/'
 t_max = 20
-theta_pi_frac = 0.1
+theta_pi_frac = 0.2
 theta = theta_pi_frac*pi
 nsets = 100
 nstart = 100
 nproc = 6
-E_inj_exp = 10
+E_inj_exp = 14
 z_ax = False
 iso_stepsize = False
 

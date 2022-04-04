@@ -70,13 +70,14 @@ if __name__ == "__main__":
     v = 0.99558849759333801 # Proton of energy 1GeV
     R_L = 3.5230000000000007E-005 # Larmor radius (isotropic stepsize)
     D = R_L/3
+    print(f"D theory: {D}")
 
     theta_max_data_arr, D_coeff_arr = np.genfromtxt("rw_dcoeff.csv", delimiter=",").T
     theta_max_data_arr *= np.pi
     theta_max_arr = np.linspace(theta_max_data_arr[0], theta_max_data_arr[-1], 100)
 
     corr_arr = (R_L*v)/(3*D_coeff_arr)
-    D_target = 1.1687289275261758e-05 # Replace with theoretical
+    D_target = D#1.1687289275261758e-05 # Replace with theoretical
     print("Target D_coeff: ", D_target)
 
     # Fitting power law
