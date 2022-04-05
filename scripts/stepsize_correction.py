@@ -10,6 +10,11 @@ def small_angle_corr_analytical(theta_max):
     return (1-np.cos(theta_max))/2
 
 
+def small_angle_corr_litteratur(theta_max):
+    """ Approximation(?) from litterature, valid for small angles """
+    return (theta_max**2)/6
+
+
 def stepsize_isotropic(D, v):
     return 3*D/v
 
@@ -31,21 +36,6 @@ def piecewise_poly(x, bp, coeffs):
         bp: 1d array, breakpoints
         coeffs: ndarray, coefficients for polynomials on each interval
     """
-
-#    print("LARGEST BP")
-#    print(max(bp))
-#
-#    print("piecewise_poly paramaters: ")
-#    print("####################")
-#    print("x: ", x)
-#    print()
-#    print("bp (breakpoints): \n")
-#    print(bp)
-#    print("")
-#    print("coeffs (coefficients): \n")
-#    print(coeffs)
-#    print("####################")
-
     if x < bp[0] or x > bp[-1]:
         raise Exception(f"Error, argument x={x} out of range")
     for (i, b) in enumerate(bp[1:]):
@@ -86,11 +76,6 @@ if __name__ == "__main__":
         bounds=(-np.inf, np.inf)
     )
     a, b = pars
-    print("###############")
-    print("Power Law: f(x) = a*x^b")
-    print("a: ", a)
-    print("b: ", b)
-    print("###############")
 
     # Interpolation of stepsize (linear and cubic splines)
     l_ls = interp1d(theta_max_data_arr, corr_arr) # linear interpolation
@@ -104,6 +89,7 @@ if __name__ == "__main__":
     plt.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
     plt.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Fitted power law")
     plt.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label='analytical attempt')
+    plt.plot(theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label='litterature')
     plt.xscale("log")
     plt.yscale("log")
     plt.legend()
@@ -116,17 +102,23 @@ if __name__ == "__main__":
     #plt.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
     plt.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
     plt.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label='analytical attempt')
+    plt.plot(theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label='litterature')
     plt.legend()
     plt.show()
 
+    # Print power law parameters
+    print("######################")
+    print("Power law parameters: ")
+    print("Power Law: f(x) = a*x^b")
+    print("a: ", a)
+    print("b: ", b)
+    print("######################")
+    print()
 
     # Print l_cs breakpoints and coeffs
+    print("######################")
     print("l_cs breakpoints: ", l_cs.x)
     print("l_cs breakpoints shape: ", l_cs.x.shape)
     print("l_cs coeffs: ", l_cs.c)
     print("l_cs coeffs shape: ", l_cs.c.shape)
-
-#    # Write function/subroutine in Fortran to construct callable from list of breakpoints and coeffs
-    #print(piecewise_poly_vectorized(0.005*np.pi, l_cs.x, l_cs.c))
-    #print(piecewise_poly_vectorized(0.1*np.pi, l_cs.x, l_cs.c))
-    #print(piecewise_poly_vectorized(1.0*np.pi, l_cs.x, l_cs.c))
+    print("######################")

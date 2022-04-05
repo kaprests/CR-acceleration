@@ -20,7 +20,7 @@ iso_stepsize = False
 
 # Trajectory specific
 n_traj_plot = 100
-n_steps_plot = 10
+n_steps_plot = 100
 check_small_angle_validity = False
 
 D10 = 1.1687289275261758e-05 # E-inj-exp = 10
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         y = y[0:n_steps_plot]
         z = z[0:n_steps_plot]
         ax.plot(x, y, z)
-        ax.plot(x, y, z, ".")
+        #ax.plot(x, y, z, ".")
     plt.title(f"theta_max/pi: {theta_pi_frac}, first {len(x)+1} step positions, for {n_traj_plot} particles")
     plt.show()
 

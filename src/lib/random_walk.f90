@@ -210,6 +210,10 @@ contains
                     v_rel = get_v_rel(v_shock(t))
                     if (v_rel <= 0.d0) call error("v_rel <= 0", 0)
                     gamma_factor = 1.d0/(1.d0 - v_rel**2)
+
+                    ! Compute angle, not just cosine -- rethink to ensure correctness
+                    ! call store_cross_angle(cross_angle)
+
                     cos_theta = &
                         cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &
                         sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
@@ -314,6 +318,21 @@ contains
         end if
         En_f(pid, i) = En_f(pid, i) + w*En
     end subroutine store
+
+    subroutine store_cross_angle(cross_angle)
+        use internal
+        use result, only: cross_angle_distribution, n_angle_bins
+        use constants, only: pi
+
+        implicit none
+        double precision, intent(in) :: cross_angle
+        double precision :: bin_size
+        integer :: bin_num
+        
+        bin_size = pi/n_angle_bins
+        bin_num = max(ceiling(cross_angle/bin_size), 1)
+        cross_angle_distribution(bin_num) = cross_angle_distribution(bin_num) + 1
+    end subroutine store_cross_angle
 
     subroutine store_shockless(n_injected, x1, x2, x3)
         use result, only: final_positions

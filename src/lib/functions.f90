@@ -210,14 +210,6 @@ double precision function analytical_stepsize(En, t, theta_max)
     analytical_stepsize = (3*D_coef(En, t)/v_particle(En, m_p))*(1 - cos(theta_max))/2
 end function analytical_stepsize
 
-double precision function cs_test(x)
-    use stepsize_interpolated_polynom_coefficients, only: bp, coeffs
-    implicit none
-    double precision, intent(in) :: x
-    
-    cs_test = x
-end function cs_test
-
 double precision function cubic_spline_small_angle_step_correction(x)
     use stepsize_interpolated_polynom_coefficients, only: bp, coeffs
     use constants, only: pi
