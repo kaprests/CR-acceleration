@@ -83,8 +83,9 @@ module event_internal                           ! used instead of stack
     save
     integer, parameter ::  n_max = 2              ! max. number of secondaries
     type one_event
-        integer :: pid, A, Z
-        double precision :: x(3), t, E, w
+        integer :: pid, A, Z 
+        double precision, dimension(3) :: x, p ! 3-position and 3-momentum
+        double precision :: t, E, w 
     end type one_event
     type(one_event), target :: event(n_max)
 end module event_internal

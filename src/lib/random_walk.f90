@@ -31,22 +31,25 @@ contains
         integer :: k, n_step
         double precision :: r, m, f, df, dt, dE, delta, l_0, l_0_0
         double precision :: r_sh1, r_sh2, phi, theta, phi_v, theta_v, d1, d2, dmax, v_rel
-        double precision :: gamma_factor, cos_theta, dt_us
+        double precision :: gamma_factor, gamma_particle, cos_theta, dt_us
         double precision, dimension(3) :: l_vec, l_vec_us, v_rel_vec
         double precision :: ran0, R_L, t_shock, v_shock, get_v_rel
         integer, pointer :: pid, A, Z
-        double precision, pointer :: E, x(:), t, w
+        double precision, pointer :: E, x(:), t, w, p(:)
         double precision, dimension(4, 4) :: boost_matrix
         double precision, dimension(4) :: l_four_vec
         double precision :: stepsize, analytical_stepsize, t0, v_particle
         integer :: num_steps_taken, num_steps_total, sample_int, num_sample_pos, sample_count
         integer :: num_crossings
+        double precision :: E_0
+        double precision, dimension(3) :: p_0
 
         pid => event(n_in)%pid
         A => event(n_in)%A
         Z => event(n_in)%Z
         E => event(n_in)%E
         x => event(n_in)%x
+        p => event(n_in)%p
         t => event(n_in)%t
         w => event(n_in)%w
 
@@ -81,7 +84,8 @@ contains
             sample_int = floor(real(num_steps_total/num_sample_pos_target)) + 1
             num_sample_pos = floor(real(num_steps_total/sample_int))
             sample_count = 0
-            if (.not. allocated(sample_positions)) allocate(sample_positions(4, n_start, num_sample_pos))
+            if (.not. allocated(sample_positions)) &
+                allocate(sample_positions(4, n_start, num_sample_pos))
         else
             num_crossings = 0
         end if
@@ -114,8 +118,6 @@ contains
                 ! Stepsize
                 df = 1.d-99 ! f_tot_rates(A,Z,E,d1,t)            ! interaction rate (1/yr)
                 call scales_charged(m, Z, E, t, w, df, dt, dE)
-                !l_0 = R_L(E, t)/dble(Z)
-                !l_0 = analytical_stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
                 l_0 = stepsize(E, t, theta_max)!R_L(E, t)/dble(Z)
                 l_0_0 = l_0
                 dt = l_0/v_particle(E, m_p)
@@ -134,9 +136,9 @@ contains
                 ! Following steps are small angle
                 call small_angle_scatter(theta, phi, theta_max)
             end if
+
             if (dt >= l_0) then                       ! one random step of size l_0
                 dE = dE*l_0/dt
-                dt = l_0/v_particle(E, m_p)
                 n_step = 1
             else                                    ! n steps l0 in same direction
                 ! Only relevant with interactions turned on
@@ -161,79 +163,135 @@ contains
                 print *, x(1), x(2), x(3)
             end if
 
-            ! Convert step from spherical to cartesian coordinates
-            ! l_vec: cartesian step in the particle's local region's restframe
-            ! l_0: stepsize in particle's local region's frame
-            ! theta, phi: particle flight anlges in the local frame
-            call spherical_to_cartesian(l_0, theta, phi, l_vec(1), l_vec(2), l_vec(3))
+            ! Step and momentum in the particle's local region rest frame
+            ! dt also in particle's local region's restframe
+            call spherical_to_cartesian(&
+                l_0, theta, phi, l_vec(1), l_vec(2), l_vec(3)) ! spatial step, local frame
+            gamma_particle = 1.d0/sqrt(1.d0 - v_particle(E, m_p)**2)
+            call spherical_to_cartesian(&
+                gamma_particle*m_p*v_particle(E, m_p), theta, phi, p(1), p(2), p(3)) ! 3-momentum
 
+            ! Can now: propagete from t to t + dt, get initial particle momentum -> 4-momentum
+            ! Should have a variable for gamma_particle (?)
+
+            ! if particle in downstream -> transform step to upstream
+            ! Then apply step, propagate time by dt (upstream), and find new positions
             do k = 1, n_step
-                r_sh1 = t_shock(t)                              ! Radial position of shock before step
-                d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)          ! Radial position of particle before step
+                r_sh1 = t_shock(t)  ! Radial position of shock before step 
+                d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)  ! Radial position of particle before step
 
+                ! transform step if particle is in the downstream region
                 if (d1 < r_sh1 .and. .not. shockless) then
-                    ! Particle is in the downstream region
-                    call cartesian_to_spherical(x(1), x(2), x(3), v_rel, theta_v, phi_v)
+                    ! Radial (out) direction
+                    call cartesian_to_spherical(& 
+                        x(1), x(2), x(3), v_rel, theta_v, phi_v)
+
+                    ! Relative velocity of DS and US
                     v_rel = get_v_rel(v_shock(t))
                     if (v_rel <= 0.d0) call error('v_rel<=0', 0)
-                    call spherical_to_cartesian(v_rel, theta_v, phi_v, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
+
+                    ! relative 3-velocity vector 
+                    call spherical_to_cartesian(& ! shock 3-velocity in downstream frame
+                        v_rel, theta_v, phi_v, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
+                    v_rel_vec = -v_rel_vec ! Upstream flows radially inward (as seen in DS)
 
                     ! Advection -- add downstream flow velocity to the step (Gallilean boost)
                     !l_vec(1) = l_vec(1) + v_rel_vec(1)*dt !v_rel*cos(phi_v)*sin(theta_v)*dt
                     !l_vec(2) = l_vec(2) + v_rel_vec(2)*dt !v_rel*sin(phi_v)*sin(theta_v)*dt
                     !l_vec(3) = l_vec(3) + v_rel_vec(3)*dt !v_rel*cos(theta_v)*dt
 
+                    call lorentz_boost(dt, l_vec, dt_us, l_vec_us, v_rel_vec)
                     ! Advection -- account for downstream velocity -- Lorentz transform
-                    call lorentz_boost_matrix(-v_rel_vec, boost_matrix)
-                    l_four_vec = matmul(boost_matrix, [dt, l_vec(1), l_vec(2), l_vec(3)])
-                    dt_us = l_four_vec(1)
-                    l_vec_us = l_four_vec(2:)
+                    !call lorentz_boost_matrix(v_rel_vec, boost_matrix)
+                    !l_four_vec = matmul(boost_matrix, [dt, l_vec(1), l_vec(2), l_vec(3)])
+                    !dt_us = l_four_vec(1)
+                    !l_vec_us = l_four_vec(2:)
 
+                    ! temporal and spatial step meassured from the upstream frame
                     dt = dt_us
                     l_vec(1) = l_vec_us(1)
                     l_vec(2) = l_vec_us(2)
                     l_vec(3) = l_vec_us(3)
                 end if
+                t = t + dt
                 x(1) = x(1) + l_vec(1)
                 x(2) = x(2) + l_vec(2)
                 x(3) = x(3) + l_vec(3)
 
-                t = t + dt
+                ! Update particle distance and shock positions
+                r_sh2 = t_shock(t)
                 d2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)              ! new distance
                 E = E + dE
-                r_sh2 = t_shock(t)
 
                 if (.not. shockless) then
-                if (d2 < r_sh2 .and. d1 > r_sh1) then
-                    ! we have crossed to the left: US -> DS
-                    call cartesian_to_spherical(x(1), x(2), x(3), v_rel, theta_v, phi_v)
+                if (d2 < r_sh2 .and. d1 > r_sh1) then ! crossed to the 'left': US -> DS
+                    ! Radial (out) direction
+                    call cartesian_to_spherical(& 
+                        x(1), x(2), x(3), v_rel, theta_v, phi_v)
+
+                    ! Relative velocity of DS and US
                     v_rel = get_v_rel(v_shock(t))
-                    if (v_rel <= 0.d0) call error("v_rel <= 0", 0)
+                    if (v_rel <= 0.d0) call error('v_rel<=0', 0)
+
+                    ! relative 3-velocity vector 
+                    call spherical_to_cartesian(& ! shock 3-velocity in downstream frame
+                        v_rel, theta_v, phi_v, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
+
+                    E_0 = E
+                    p_0 = p
+                    call lorentz_boost(E_0, p_0, E, p, v_rel_vec)
+
                     gamma_factor = 1.d0/(1.d0 - v_rel**2)
-
-                    ! Compute angle, not just cosine -- rethink to ensure correctness
-                    ! call store_cross_angle(cross_angle)
-
+                    !! Compute angle, not just cosine -- rethink to ensure correctness
+                    !! call store_cross_angle(cross_angle)
                     cos_theta = &
                         cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &
                         sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
                         cos(theta)*cos(theta_v)
-                    E = gamma_factor*E*(1.d0 - v_rel*cos_theta)
+                    !E = gamma_factor*E*(1.d0 - v_rel*cos_theta)
                     accel = 1
                     num_crossings = num_crossings + 1
-                else if (d2 > r_sh2 .and. d1 < r_sh1) then
-                    ! we have crossed to the right: DS -> US
-                    call cartesian_to_spherical(x(1), x(2), x(3), v_rel, theta_v, phi_v)
+                    
+                    print *, "---------"
+                    print *, E_0
+                    print *, E
+                    print *, gamma_factor*E_0*(1.d0 - v_rel*cos_theta)
+                    print *, E/E_0
+                    print *, gamma_factor*E_0*(1.d0 - v_rel*cos_theta)/E_0
+                    print *, "---------"
+                else if (d2 > r_sh2 .and. d1 < r_sh1) then ! crossed to the right: DS -> US
+                    ! Radial (out) direction
+                    call cartesian_to_spherical(& 
+                        x(1), x(2), x(3), v_rel, theta_v, phi_v)
+
+                    ! Relative velocity of DS and US
                     v_rel = get_v_rel(v_shock(t))
-                    if (v_rel <= 0.d0) call error("v_rel <= 0", 0)
+                    if (v_rel <= 0.d0) call error('v_rel<=0', 0)
+
+                    ! relative 3-velocity vector 
+                    call spherical_to_cartesian(& ! shock 3-velocity in downstream frame
+                        v_rel, theta_v, phi_v, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
+                    v_rel_vec = -v_rel_vec ! US flows radially inward
+
+                    E_0 = E
+                    p_0 = p
+                    call lorentz_boost(E_0, p_0, E, p, v_rel_vec)
+
                     gamma_factor = 1.d0/(1.d0 - v_rel**2)
                     cos_theta = &
                         cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &
                         sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
                         cos(theta)*cos(theta_v)
-                    E = gamma_factor*E*(1.d0 + v_rel*cos_theta)
+                    !E = gamma_factor*E*(1.d0 + v_rel*cos_theta)
                     accel = 1
                     num_crossings = num_crossings + 1
+                    print *, "---------"
+                    print *, E_0
+                    print *, E
+                    print *, gamma_factor*E_0*(1.d0 - v_rel*cos_theta)
+                    print *, E/E_0
+                    print *, gamma_factor*E_0*(1.d0 - v_rel*cos_theta)/E_0
+                    print *, "---------"
                 end if
                 end if
 

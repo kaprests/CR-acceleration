@@ -189,8 +189,8 @@ subroutine test_lorentz_boost(num_tests_run, num_tests_failed)
     r_vec_prime = 0.d0
     t2 = 0.d0
     r_vec2 = 0.d0
-    call lorentz_boost0(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
-    call lorentz_boost0(t_prime, r_vec_prime, t2, r_vec2, -v_rel_vec)
+    call lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
+    call lorentz_boost(t_prime, r_vec_prime, t2, r_vec2, -v_rel_vec)
 
     if (abs(t - t2) > 1e-6) then
         print *, "Failed: test_lorentz_boost, z-axis"
@@ -311,7 +311,7 @@ subroutine test_cubic_spline_small_angle_step_correction(num_tests_run, num_test
     implicit none
     integer, intent(inout) :: num_tests_run, num_tests_failed
     double precision :: cubic_spline_small_angle_step_correction, cs_test
-    integer, parameter :: n_theta = 50
+    integer, parameter :: n_theta = 100
     double precision, parameter :: delta_theta = pi/(n_theta)
     integer :: i
     double precision, dimension(n_theta) :: theta_array
@@ -320,13 +320,22 @@ subroutine test_cubic_spline_small_angle_step_correction(num_tests_run, num_test
     do i = 0, n_theta, 1
         theta_array = i * delta_theta
         stepcorr = cubic_spline_small_angle_step_correction(i*delta_theta)
-        print *, i*delta_theta, ", ", stepcorr
+        !print *, i*delta_theta, ", ", stepcorr
         !print *, i, " ", i*delta_theta/pi, " ", stepcorr
     end do
     num_tests_run = num_tests_run + 1
 end subroutine test_cubic_spline_small_angle_step_correction
+
+subroutine test_lorentz_boost_energy_gain(num_tests_run, num_tests_failed)
+    implicit none
+    integer, intent(inout) :: num_tests_run, num_tests_failed
+
+    ! Should test lorentz_boost of 4-momentum against old energy gain
+    num_tests_run = num_tests_run + 1
+end subroutine test_lorentz_boost_energy_gain
     
 end module tests
+
 
 program test
     use constants

@@ -61,6 +61,12 @@ if __name__ == "__main__":
     R_L = 3.5230000000000007E-005 # Larmor radius (isotropic stepsize)
     D = R_L/3
     print(f"D theory: {D}")
+    print(f"D theory: {D}")
+    print(f"D theory: {D}")
+    print(f"D theory: {D}")
+    print(f"D theory: {D}")
+    print(f"D theory: {D}")
+    print(f"D theory: {D}")
 
     theta_max_data_arr, D_coeff_arr = np.genfromtxt("rw_dcoeff.csv", delimiter=",").T
     theta_max_data_arr *= np.pi

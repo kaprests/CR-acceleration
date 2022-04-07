@@ -160,6 +160,7 @@ subroutine small_angle_scatter(theta, phi, theta_max)
     double precision :: theta_scat, phi_scat, r_unity
     double precision :: cos_scatter_rot, cos_scatter_lab
 
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! First generate random scattered direction in rotated frame !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -168,10 +169,13 @@ subroutine small_angle_scatter(theta, phi, theta_max)
     call small_angles(theta_scat, phi_scat, theta_max)
 
     ! p: unit vector along scattered particle momentum direction in rotated frame
-    call spherical_to_cartesian(1.d0, theta_scat, phi_scat, p_scat_rot(1), p_scat_rot(2), p_scat_rot(3))
+    call spherical_to_cartesian(&
+        1.d0, theta_scat, phi_scat, p_scat_rot(1), p_scat_rot(2), p_scat_rot(3) &
+    )
 
     ! cos of scattering angle in rotated frame
     cos_scatter_rot = dot_product([0.d0, 0.d0, 1.d0], p_scat_rot)
+
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Find the scattered direction vector in the lab frame !
@@ -179,7 +183,7 @@ subroutine small_angle_scatter(theta, phi, theta_max)
 
     ! p_init: unit vector along initial momentum direction before scattering (lab frame)
     call spherical_to_cartesian(1.d0, theta, phi, p_init(1), p_init(2), p_init(3))
-
+    
     ! Rotation matrices
     call euler_Rz(phi, Rz)
     call euler_Ry(theta, Ry)
@@ -195,9 +199,11 @@ subroutine small_angle_scatter(theta, phi, theta_max)
         print *, cos_scatter_lab
         call error("Cosine of scattering not conserved in back rotation.", 0)
     end if
-    
+
     ! set new angles (output)
-    call cartesian_to_spherical(p_scat_lab(1), p_scat_lab(2), p_scat_lab(3), r_unity, theta, phi)
+    call cartesian_to_spherical( &
+        p_scat_lab(1), p_scat_lab(2), p_scat_lab(3), r_unity, theta, phi &
+    )
 end subroutine small_angle_scatter
 
 double precision function get_v_rel(v_shock)
@@ -292,57 +298,6 @@ double precision function spacetime_interval(t, r_vec)
     spacetime_interval = -1*t**2 + dot_product(r_vec, r_vec)
 end function spacetime_interval
 
-subroutine lorentz_boost0(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
-    ! Lorentz boost
-    ! Parameters:
-    !   t: time component in original frame
-    !   r_vec: spatial component in original frame
-    !   t_prime: time component in the boosted frame
-    !   r_vec_prime: spatial component on boosted frame
-    !   v_rel_vec: relative velocity vector of the two frames
-    implicit none
-    double precision, intent(in) :: t
-    double precision, dimension(3), intent(in) :: r_vec, v_rel_vec
-    double precision, intent(out) :: t_prime
-    double precision, dimension(3), intent(out) :: r_vec_prime
-    double precision :: gamma_factor
-    double precision, dimension(3) :: r_parallel, r_orthogonal, r_parallel_prime
-    double precision, dimension(4) :: four_vec_parallel, four_vec_parallel_prime
-    double precision, dimension(4, 4) :: boost_matrix
-    integer :: i, j
-    double precision :: spacetime_interval
-
-    gamma_factor = 1.d0/sqrt(1.d0 - dot_product(v_rel_vec, v_rel_vec))
-    call parallel_projection(r_vec, v_rel_vec, r_parallel)
-    call orthogonal_projection(r_vec, v_rel_vec, r_orthogonal)
-    four_vec_parallel = [t, r_parallel(1), r_parallel(2), r_parallel(3)]
-    boost_matrix = transpose(reshape([ &
-        ! Row1
-        gamma_factor, -gamma_factor*v_rel_vec(1), &
-        -gamma_factor*v_rel_vec(2), -gamma_factor*v_rel_vec(3), &
-        ! Row2
-        -gamma_factor*v_rel_vec(1), gamma_factor, 0.d0, 0.d0, &
-        ! Row3
-        -gamma_factor*v_rel_vec(2), 0.d0, gamma_factor, 0.d0, &
-        ! Row4
-        -gamma_factor*v_rel_vec(3), 0.d0, 0.d0, gamma_factor &
-        ], shape(boost_matrix) &
-        ))
-    four_vec_parallel_prime = matmul(boost_matrix, four_vec_parallel)
-    t_prime = four_vec_parallel_prime(1)
-    r_parallel_prime = four_vec_parallel_prime(2:)
-    r_vec_prime = r_parallel_prime + r_orthogonal
-    if (spacetime_interval(t, r_vec) - spacetime_interval(t_prime, r_vec_prime) > 0.0001) then
-        print *, "-------------------------"
-        print *, "t: ", t
-        print *, "r_vec: ", r_vec
-        print *, "t_prime: ", t_prime
-        print *, "r_vec_prime: ", r_vec_prime
-        print *, "Delta ds^2: ", spacetime_interval(t, r_vec)-spacetime_interval(t_prime, r_vec_prime)
-        call error("Erroneous boost, spacetime interval not invariant.", 0)
-    end if
-end subroutine lorentz_boost0
-
 subroutine lorentz_boost_matrix(v_rel_vec, boost_matrix)
     implicit none
     double precision, dimension(3), intent(in) :: v_rel_vec
@@ -357,7 +312,7 @@ subroutine lorentz_boost_matrix(v_rel_vec, boost_matrix)
     boost_matrix = 0.d0
     boost_matrix = transpose(reshape([ &
         ! row1
-        gamma_factor, &                         ! (1, 1)
+        gamma_factor, &                       ! (1, 1)
         -gamma_factor*vx, &                   ! (1, 2)
         -gamma_factor*vy, &                   ! (1, 3)
         -gamma_factor*vz, &                   ! (1, 4)
@@ -377,13 +332,6 @@ subroutine lorentz_boost_matrix(v_rel_vec, boost_matrix)
         (gamma_factor - 1.d0)*((vz*vy)/(v_squared)), &              ! (3, 2)
         1.d0 + (gamma_factor - 1.d0)*((vz*vz)/(v_squared)) &        ! (4, 4)
         ], shape(boost_matrix)))
-    !print *, "---------------------------------"
-    !print *, v_rel_vec
-    !print *, boost_matrix(1, :)
-    !print *, boost_matrix(2, :)
-    !print *, boost_matrix(3, :)
-    !print *, boost_matrix(4, :)
-    !print *, "---------------------------------"
 end subroutine lorentz_boost_matrix
 
 subroutine lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)

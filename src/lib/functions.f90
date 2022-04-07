@@ -254,9 +254,17 @@ double precision function stepsize(En, t, theta_max)
     double precision :: R_L, cubic_spline_small_angle_step_correction
     double precision :: power_law_small_angle_step_correction
     !stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
-    if (theta_max > 0.4*pi) then
-        stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
-    else
-        stepsize = R_L(En, t)*power_law_small_angle_step_correction(theta_max)
-    end if
+    stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
+    !if (theta_max > 0.4*pi) then
+    !    stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
+    !else
+    !    stepsize = R_L(En, t)*power_law_small_angle_step_correction(theta_max)
+    !end if
 end function stepsize
+
+double precision function time_step(E, m, t, theta_max)
+    implicit none
+    double precision, intent(in) :: E, m, t, theta_max
+    double precision :: v_particle, stepsize
+    time_step = stepsize(E, t, theta_max) / v_particle(E, m)
+end function time_step
