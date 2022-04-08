@@ -316,7 +316,8 @@ contains
                 end if
 
                 v_rel = get_v_rel(v_shock(t))
-                dmax = 3.d0*l_0_0/v_rel
+                !dmax = 3.d0*l_0_0/v_rel
+                dmax = 3.d0*R_L(E, t)/v_rel
                 f = f + df*dt                      ! \int dt f(t)
                 delta = exp(-f)                    ! exp(-\int dt f(t))
 
