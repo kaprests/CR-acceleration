@@ -2,10 +2,13 @@
 
 subroutine output(set, n_proc)
     use result; use SNR_data; use internal; use user_variables
+    use constants, only: pi
 
     implicit none
     integer set, n_proc, i, j, pid
     double precision l, E, m, nu_tot
+    double precision :: bin_size
+    integer :: bin_num
 
     call banner(n_proc, set)
     n_tot = n_tot + n_start*n_proc
@@ -22,6 +25,7 @@ subroutine output(set, n_proc)
     open (29, file=trim(outdir)//'/spec_prot'//filename)
     !open (30, file='Data/spec_neut'//filename)
     !open (50, file='Data/spec_nu'//filename)
+    open (60, file='Data/cross-angle-dist'//filename)
     do j = 1, n_enbin
         nu_tot = 0.d0
         pid = stable_pid(10) ! Proton id
@@ -43,9 +47,15 @@ subroutine output(set, n_proc)
     end do
     !close (20); close (21); close (22); close (23); close (24); close (25);
     !close (26); close (27); close (28); close (29); close (30); close (50);
+    bin_size = pi/n_angle_bins
+    do j = 1, n_angle_bins, 1
+        write (60, 23) j*bin_size, cross_angle_distribution_tot(j)
+    end do
     close (29)
+    close (60)
 23  format(24E16.6)
     En_f_tot = 0.d0
+    cross_angle_distribution_tot = 0.d0
 end subroutine output
 
 subroutine banner(n_proc, i)

@@ -96,6 +96,11 @@ program acceleration
                 En_f, En_f_tot, n_array, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
                 MPI_COMM_WORLD, ierr &
                 )
+            call MPI_REDUCE( &
+                cross_angle_distribution, cross_angle_distribution_tot, &
+                n_angle_bins, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
+                MPI_COMM_WORLD, ierr &
+                )
             if (myid == 0) call output(set, n_proc)
         end if
     end do

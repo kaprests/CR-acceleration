@@ -41,7 +41,7 @@ contains
         double precision :: stepsize, analytical_stepsize, t0, v_particle
         integer :: num_steps_taken, num_steps_total, sample_int, num_sample_pos, sample_count
         integer :: num_crossings
-        double precision :: E_0, v_p
+        double precision :: E_0, v_p, cross_angle
         double precision, dimension(3) :: p_0
 
         pid => event(n_in)%pid
@@ -173,21 +173,6 @@ contains
                 theta, phi, p(1), p(2), p(3)) ! 3-momentum
                 !gamma_particle*m_p*v_particle(E, m_p), theta, phi, p(1), p(2), p(3)) ! 3-momentum
 
-            
-            !print *, ":::::::::::"
-            !print *, "E: ", gamma_particle * m_p - E
-            !print *, "v: ", v_particle(E, m_p) - &
-            !    sqrt(l_vec(1)**2 + l_vec(2)**2 + l_vec(3)**2)/dt
-            !print *, "p1: ", p(1) - gamma_particle * m_p * l_vec(1)/dt
-            !print *, "p2: ", p(2) - gamma_particle * m_p * l_vec(2)/dt
-            !print *, "p3: ", p(3) - gamma_particle * m_p * l_vec(3)/dt
-            !print *, "PuPu: ", (E**2 - (p(1)**2 + p(2)**2 + p(3)**2))
-            !print *, "m_p**2: ", m_p**2
-            !print *, ":::::::::::"
-
-            ! Can now: propagete from t to t + dt, get initial particle momentum -> 4-momentum
-            ! Should have a variable for gamma_particle (?)
-
             ! if particle in downstream -> transform step to upstream
             ! Then apply step, propagate time by dt (upstream), and find new positions
             do k = 1, n_step
@@ -255,27 +240,16 @@ contains
                     p_0 = p
                     call lorentz_boost(E_0, p_0, E, p, v_rel_vec)
 
+                    ! Stor cross angle
+                    cross_angle = & ! approx, more accurate for smaller steps
+                        acos(dot_product(l_vec, [x(1), x(2), x(3)])/(l_0 * d1))
+                    call store_cross_angle(cross_angle)
+
                     ! flight direction in new frame
                     call cartesian_to_spherical(p(1), p(2), p(3), v_p, theta, phi)
-                    
-                    !gamma_factor = 1.d0/(1.d0 - v_rel**2)
-                    !! Compute angle, not just cosine -- rethink to ensure correctness
-                    !! call store_cross_angle(cross_angle)
-                    !cos_theta = &
-                    !    cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &
-                    !    sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
-                    !    cos(theta)*cos(theta_v)
-                    !E = gamma_factor*E*(1.d0 - v_rel*cos_theta)
+
                     accel = 1
                     num_crossings = num_crossings + 1
-                    
-                    !print *, "---------"
-                    !print *, E_0
-                    !print *, E
-                    !print *, gamma_factor*E_0*(1.d0 - v_rel*cos_theta)
-                    !print *, E/E_0
-                    !print *, gamma_factor*E_0*(1.d0 - v_rel*cos_theta)/E_0
-                    !print *, "---------"
                 else if (d2 > r_sh2 .and. d1 < r_sh1) then ! crossed to the right: DS -> US
                     ! Radial (out) direction
                     call cartesian_to_spherical(& 
@@ -294,24 +268,16 @@ contains
                     p_0 = p
                     call lorentz_boost(E_0, p_0, E, p, v_rel_vec)
 
+                    ! Stor cross angle
+                    cross_angle = & ! approx, more accurate for smaller steps
+                        acos(dot_product(l_vec, [x(1), x(2), x(3)])/(l_0 * d1))
+                    call store_cross_angle(cross_angle)
+
                     ! flight direction in new frame
                     call cartesian_to_spherical(p(1), p(2), p(3), v_p, theta, phi)
 
-                    !gamma_factor = 1.d0/(1.d0 - v_rel**2)
-                    !cos_theta = &
-                    !    cos(phi)*sin(theta)*cos(phi_v)*sin(theta_v) + &
-                    !    sin(phi)*sin(theta)*sin(phi_v)*sin(theta_v) + &
-                    !    cos(theta)*cos(theta_v)
-                    !E = gamma_factor*E*(1.d0 + v_rel*cos_theta)
                     accel = 1
                     num_crossings = num_crossings + 1
-                    !print *, "---------"
-                    !print *, E_0
-                    !print *, E
-                    !print *, gamma_factor*E_0*(1.d0 - v_rel*cos_theta)
-                    !print *, E/E_0
-                    !print *, gamma_factor*E_0*(1.d0 - v_rel*cos_theta)/E_0
-                    !print *, "---------"
                 end if
                 end if
 
