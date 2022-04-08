@@ -76,6 +76,7 @@ subroutine parse_cmd_args
                 case (8) ! gamma_shock
                     read (arg, *) gamma_shock
                     gamma_shock_set = .true.
+                    v_shock_const = sqrt( (gamma_shock**2 - 1)/(gamma_shock**2) )
                     inj_model = 0
                 case (9) ! fname
                     read (arg, *) filename
