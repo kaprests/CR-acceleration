@@ -49,13 +49,19 @@ subroutine output(set, n_proc)
     !close (26); close (27); close (28); close (29); close (30); close (50);
     bin_size = pi/n_angle_bins
     do j = 1, n_angle_bins, 1
-        write (60, 23) j*bin_size, cross_angle_distribution_tot(j)
+        write (60, 23) &
+            j*bin_size, &
+            cross_angle_distribution_first_tot(j), &
+            cross_angle_distribution_updown_tot(j), &
+            cross_angle_distribution_downup_tot(j)
     end do
     close (29)
     close (60)
 23  format(24E16.6)
     En_f_tot = 0.d0
-    cross_angle_distribution_tot = 0.d0
+    cross_angle_distribution_first_tot = 0.d0
+    cross_angle_distribution_updown_tot = 0.d0
+    cross_angle_distribution_downup_tot = 0.d0
 end subroutine output
 
 subroutine banner(n_proc, i)

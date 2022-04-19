@@ -25,6 +25,7 @@ contains
         use event_internal; use result
         use internal
         use test_var, only: sec, accel
+        use result
 
         implicit none
         integer, intent(in) :: set, n_injected, n_proc
@@ -240,10 +241,14 @@ contains
                     p_0 = p
                     call lorentz_boost(E_0, p_0, E, p, v_rel_vec)
 
-                    ! Stor cross angle
+                    ! Store cross angle
                     cross_angle = & ! approx, more accurate for smaller steps
                         acos(dot_product(l_vec, [x(1), x(2), x(3)])/(l_0 * d1))
-                    call store_cross_angle(cross_angle)
+                    if (num_crossings == 0) then
+                        call store_cross_angle(cross_angle, cross_angle_distribution_first)
+                    else
+                        call store_cross_angle(cross_angle, cross_angle_distribution_updown)
+                    end if
 
                     ! flight direction in new frame
                     call cartesian_to_spherical(p(1), p(2), p(3), v_p, theta, phi)
@@ -268,10 +273,10 @@ contains
                     p_0 = p
                     call lorentz_boost(E_0, p_0, E, p, v_rel_vec)
 
-                    ! Stor cross angle
+                    ! Store cross angle
                     cross_angle = & ! approx, more accurate for smaller steps
                         acos(dot_product(l_vec, [x(1), x(2), x(3)])/(l_0 * d1))
-                    call store_cross_angle(cross_angle)
+                    call store_cross_angle(cross_angle, cross_angle_distribution_downup)
 
                     ! flight direction in new frame
                     call cartesian_to_spherical(p(1), p(2), p(3), v_p, theta, phi)
@@ -364,19 +369,20 @@ contains
         En_f(pid, i) = En_f(pid, i) + w*En
     end subroutine store
 
-    subroutine store_cross_angle(cross_angle)
+    subroutine store_cross_angle(cross_angle, distribution_array)
         use internal
-        use result, only: cross_angle_distribution, n_angle_bins
+        use result, only: n_angle_bins
         use constants, only: pi
 
         implicit none
         double precision, intent(in) :: cross_angle
+        double precision, intent(inout) :: distribution_array(n_angle_bins)
         double precision :: bin_size
         integer :: bin_num
         
         bin_size = pi/n_angle_bins
         bin_num = max(ceiling(cross_angle/bin_size), 1)
-        cross_angle_distribution(bin_num) = cross_angle_distribution(bin_num) + 1
+        distribution_array(bin_num) = distribution_array(bin_num) + 1
     end subroutine store_cross_angle
 
     subroutine store_shockless(n_injected, x1, x2, x3)

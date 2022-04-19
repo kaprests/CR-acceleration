@@ -33,6 +33,9 @@ Time development of random walk distribution (vs diffusion)
 
 Theoretical value of D-coeff (right units etc.)
 
+NOTE - FIX:
+- Log US and DS crossing angles sepparately
+- Exlude first crossing or log sepparately
 
 Thesis structure:
     1. Abstract

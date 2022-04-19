@@ -97,7 +97,17 @@ program acceleration
                 MPI_COMM_WORLD, ierr &
                 )
             call MPI_REDUCE( &
-                cross_angle_distribution, cross_angle_distribution_tot, &
+                cross_angle_distribution_first, cross_angle_distribution_first_tot, &
+                n_angle_bins, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
+                MPI_COMM_WORLD, ierr &
+                )
+            call MPI_REDUCE( &
+                cross_angle_distribution_updown, cross_angle_distribution_updown_tot, &
+                n_angle_bins, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
+                MPI_COMM_WORLD, ierr &
+                )
+            call MPI_REDUCE( &
+                cross_angle_distribution_downup, cross_angle_distribution_downup_tot, &
                 n_angle_bins, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
                 MPI_COMM_WORLD, ierr &
                 )

@@ -178,8 +178,12 @@ module result
     ! Currently only for protons
     integer, parameter :: n_angle_bins = 100
     double precision, dimension(n_angle_bins) :: &
-        cross_angle_distribution = 0.d0, &
-        cross_angle_distribution_tot = 0.d0
+        cross_angle_distribution_first = 0.d0, &            ! The first shock cross
+        cross_angle_distribution_first_tot = 0.d0, &
+        cross_angle_distribution_updown = 0.d0, &           ! upstream -> downstream
+        cross_angle_distribution_updown_tot = 0.d0, &
+        cross_angle_distribution_downup = 0.d0, &           ! downstream -> upstream
+        cross_angle_distribution_downup_tot = 0.d0
 
     ! For shockless simulation only:
     double precision, dimension(:, :), allocatable :: final_positions
