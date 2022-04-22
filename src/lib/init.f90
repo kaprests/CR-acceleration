@@ -250,7 +250,7 @@ subroutine init_inject_spec
 end subroutine init_inject_spec
 
 subroutine inject !(i)
-    use user_variables, only: shockless
+    use user_variables
     use internal
     use event_internal
     use SNR_data
@@ -259,7 +259,7 @@ subroutine inject !(i)
     integer, parameter :: n = 1
     double precision :: x(3), t, w, phi, theta
     double precision :: dNdEdt0, f0, dNdEdt
-    double precision r, ran0, t_shock
+    double precision r, ran0, t_shock, stepsize
 
     select case (inj_model)
     case (0)
@@ -269,7 +269,7 @@ subroutine inject !(i)
         end if
         x(1) = 0.d0
         x(2) = 0.d0
-        x(3) = t_shock(t)
+        x(3) = t_shock(t) + stepsize(E_inj, t, theta_max) ! inject one stepsize ahead of the shock
     case (1, 2, 4)
         do
             r = ran0()

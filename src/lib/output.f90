@@ -53,7 +53,8 @@ subroutine output(set, n_proc)
             j*bin_size, &
             cross_angle_distribution_first_tot(j), &
             cross_angle_distribution_updown_tot(j), &
-            cross_angle_distribution_downup_tot(j)
+            cross_angle_distribution_downup_tot(j), &
+            cross_angle_distribution_smallcone_updown_tot(j)
     end do
     close (29)
     close (60)

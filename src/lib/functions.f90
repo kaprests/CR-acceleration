@@ -104,6 +104,14 @@ double precision function v_shock(t)   ! dimensionless
     end select
 end function v_shock
 
+double precision function gamma_shock(t)
+    implicit none
+    double precision, intent(in) :: t
+    double precision :: v_shock
+
+    gamma_shock = 1.d0 / sqrt( 1.d0 - v_shock(t)**2)
+end function gamma_shock
+
 double precision function t_shock(t)
     use internal
     use SNR_data
@@ -194,13 +202,18 @@ double precision function tau_syn(m, E, t)     ! pc
 end function tau_syn
 
 function v_particle(E, m) result(v)
-    ! Maybe move to functions.f90?
     implicit none
     double precision, intent(in) :: E, m
     double precision :: v
     v = sqrt(E**2 - m**2)/E
     if (v < 0) call error("Negative particle velocity invalid E, m combo", 0)
 end function v_particle
+
+double precision function upstream_loss_cone_opening_angle(v_sh, v_part)
+    implicit none
+    double precision, intent(in) :: v_sh, v_part
+    upstream_loss_cone_opening_angle = acos(v_sh/v_part)
+end function upstream_loss_cone_opening_angle
 
 double precision function analytical_stepsize(En, t, theta_max)
     use particle_data, only: m_p

@@ -111,6 +111,12 @@ program acceleration
                 n_angle_bins, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
                 MPI_COMM_WORLD, ierr &
                 )
+            call MPI_REDUCE( &
+                cross_angle_distribution_smallcone_updown, &
+                cross_angle_distribution_smallcone_updown_tot, &
+                n_angle_bins, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
+                MPI_COMM_WORLD, ierr &
+                )
             if (myid == 0) call output(set, n_proc)
         end if
     end do
@@ -124,7 +130,8 @@ program acceleration
         close (99)
     end if
     call MPI_FINALIZE(ierr)
-end program acceleration
+
+contains
 
 subroutine start_particle(set, myid, n_proc)
     use user_variables, only: n_start!, debug
@@ -182,3 +189,4 @@ subroutine tracer(set, n_injected, n_proc)
         call error('wrong particle typ in tracer', 0)
     end select
 end subroutine tracer
+end program acceleration

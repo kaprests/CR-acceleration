@@ -19,7 +19,8 @@ contains
             init_z, &
             no_stepsize_corr, &
             n_start, &
-            n_sets
+            n_sets, &
+            inj_model
         use SNR_data, only: t_max; 
         use constants; use particle_data, only: m_p
         use event_internal; use result
@@ -38,7 +39,8 @@ contains
         double precision :: ran0, R_L, t_shock, v_shock, get_v_rel
         integer, pointer :: pid, A, Z
         double precision, pointer :: E, x(:), t, w, p(:)
-        double precision :: stepsize, analytical_stepsize, t0, v_particle
+        double precision :: stepsize, analytical_stepsize, t0, v_particle, gamma_shock
+        double precision :: upstream_loss_cone_opening_angle
         integer :: num_steps_taken, num_steps_total, sample_int, num_sample_pos, sample_count
         integer :: num_crossings
         double precision :: E_0, v_p, cross_angle
@@ -54,7 +56,7 @@ contains
         w => event(n_in)%w
 
         d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
-        if (sec == 0 .and. abs(d1/t_shock(t) - 1.d0) .gt. 1.d-6) then
+        if (sec == 0 .and. abs(d1/(t_shock(t)+stepsize(E, t, theta_max)) - 1.d0) .gt. 1.d-6) then
             call error('wrong initial condition, shock', 0)
         end if
         r = ran0()
@@ -216,7 +218,7 @@ contains
                 E = E + dE
 
                 if (.not. shockless) then
-                if (d2 < r_sh2 .and. d1 > r_sh1) then ! crossed to the 'left': US -> DS
+                if (d2 < r_sh2 .and. d1 >= r_sh1) then ! crossed to the 'left': US -> DS
                     ! Radial (out) direction:
                     call cartesian_to_spherical(& 
                         x(1), x(2), x(3), v_rel, theta_v, phi_v)
@@ -239,9 +241,19 @@ contains
                     cross_angle = & ! planar shock approx, more accurate for smaller steps
                         acos(dot_product(l_vec_us, [x(1), x(2), x(3)]) / (l_0 * d1))
                     if (num_crossings == 0) then
-                        call store_angle(cross_angle, cross_angle_distribution_first)
+                        call store_angle(cross_angle, cross_angle_distribution_first, pi)
                     else
-                        call store_angle(cross_angle, cross_angle_distribution_updown)
+                        call store_angle(cross_angle, cross_angle_distribution_updown, pi)
+                        if (inj_model == 0 .and. gamma_shock(t) >= 100.d0) then
+                            ! Compute cone opening angle and set max_angle accordingly
+                            call store_angle(&
+                                cross_angle, &
+                                cross_angle_distribution_smallcone_updown, &
+                                upstream_loss_cone_opening_angle( &
+                                    v_shock(t), v_particle(E, m_p) &
+                                ) + 10 * theta_max &
+                            )
+                        end if
                     end if
 
                     ! flight direction in new frame:
@@ -249,7 +261,7 @@ contains
 
                     accel = 1
                     num_crossings = num_crossings + 1
-                else if (d2 > r_sh2 .and. d1 < r_sh1) then ! crossed to the right: DS -> US
+                else if (d2 >= r_sh2 .and. d1 < r_sh1) then ! crossed to the right: DS -> US
                     ! Radial (out) direction:
                     call cartesian_to_spherical(& 
                         x(1), x(2), x(3), v_rel, theta_v, phi_v)
@@ -271,7 +283,7 @@ contains
                     ! Store cross angle -- angle measured in DS frame
                     cross_angle = & ! approx, more accurate for smaller steps
                         acos(dot_product(l_vec_ds, [x(1), x(2), x(3)])/(l_0 * d1))
-                    call store_angle(cross_angle, cross_angle_distribution_downup)
+                    call store_angle(cross_angle, cross_angle_distribution_downup, pi)
 
                     ! flight direction in new frame: 
                     call cartesian_to_spherical(p(1), p(2), p(3), v_p, theta, phi)
@@ -322,6 +334,9 @@ contains
                             p_0 = p ! p_0 energy in local frame before cross i.e. downstream frame
                             ! E, p: energy and momentum in local frame after cross i.e. upstream
                             call lorentz_boost(E_0, p_0, E, p, v_rel_vec)
+                            print *, "DS exit, num crossings: ", num_crossings
+                        else
+                            print *, "Upstream time exit, num crossings: ", num_crossings
                         end if
                         if (n_start * n_sets * n_proc == 1) then
                             print *, "num crossings: ", num_crossings
@@ -385,18 +400,23 @@ contains
         En_f(pid, i) = En_f(pid, i) + w*En
     end subroutine store
 
-    subroutine store_angle(angle, distribution_array)
+    subroutine store_angle(angle, distribution_array, max_angle)
         use internal
         use result, only: n_angle_bins
         use constants, only: pi
 
         implicit none
-        double precision, intent(in) :: angle
+        double precision, intent(in) :: angle, max_angle
         double precision, intent(inout) :: distribution_array(n_angle_bins)
         double precision :: bin_size
         integer :: bin_num
-        
-        bin_size = pi/n_angle_bins
+
+        if (angle > max_angle) then
+            print *, "angle: ", angle
+            print *, "max cone angle: ", max_angle
+            call error("angle > max_angle", 0)
+        end if
+        bin_size = max_angle/n_angle_bins
         bin_num = max(ceiling(angle/bin_size), 1)
         distribution_array(bin_num) = distribution_array(bin_num) + 1
     end subroutine store_angle
