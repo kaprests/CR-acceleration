@@ -183,7 +183,12 @@ module result
         cross_angle_distribution_updown = 0.d0, &           ! upstream -> downstream
         cross_angle_distribution_updown_tot = 0.d0, &
         cross_angle_distribution_downup = 0.d0, &           ! downstream -> upstream
-        cross_angle_distribution_downup_tot = 0.d0
+        cross_angle_distribution_downup_tot = 0.d0, &
+
+        ! To be implemented into simulation:
+        cross_angle_distribution_smallcone_updown = 0.d0, & ! us -> ds in small cone 
+        cross_angle_distribution_smallcone_updown_tot = 0.d0 ! to capture anisotropic dist.
+    ! May be useful with planar shocks -- implement that first!
     double precision, dimension(n_angle_bins) :: &
         flight_angle_distribution_first = 0.d0, &
         flight_angle_distribution_first_tot = 0.d0, &

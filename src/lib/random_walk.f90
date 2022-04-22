@@ -289,7 +289,7 @@ contains
                 f = f + df*dt_loc                  ! \int dt f(t) 
                 delta = exp(-f)                    ! exp(-\int dt f(t))
 
-                ! shockless exit
+                ! shockless exit:
                 if (shockless) then
                     if (t > shockless_t_max) then
                         ! exit random walking particle when max time exceeded
@@ -298,11 +298,31 @@ contains
                         n_out = n_out + 1
                         return
                     end if
-                ! acceleration exit
+                ! acceleration exit:
                 else if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta) then
                     ! exit accel particle, if a) too late, b) too far down-stream, or c) scattering:
                     if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
                         !              write(*,*) 'tired',n_in,n_out
+                        if (d2 < r_sh2 - dmax) then
+                            ! particle exited in DS - transform energy to US
+                            ! Radial (out) direction:
+                            call cartesian_to_spherical(& 
+                                x(1), x(2), x(3), v_rel, theta_v, phi_v)
+
+                            ! Relative velocity of DS and US:
+                            v_rel = get_v_rel(v_shock(t))
+                            if (v_rel <= 0.d0) call error('v_rel<=0', 0)
+
+                            ! relative 3-velocity vector:
+                            call spherical_to_cartesian(& ! shock 3-velocity in downstream frame
+                                v_rel, theta_v, phi_v, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
+                            v_rel_vec = -v_rel_vec ! US flows radially inward
+
+                            E_0 = E ! E_0 energy in local frame before cross i.e. downstream frame
+                            p_0 = p ! p_0 energy in local frame before cross i.e. downstream frame
+                            ! E, p: energy and momentum in local frame after cross i.e. upstream
+                            call lorentz_boost(E_0, p_0, E, p, v_rel_vec)
+                        end if
                         if (n_start * n_sets * n_proc == 1) then
                             print *, "num crossings: ", num_crossings
                         end if
