@@ -20,7 +20,7 @@ iso_stepsize = False
 
 # Trajectory specific
 n_traj_plot = 100
-n_steps_plot = -1
+n_steps_plot = 20
 check_small_angle_validity = False
 
 D10 = 1.1687289275261758e-05 # E-inj-exp = 10
