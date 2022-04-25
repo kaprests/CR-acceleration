@@ -7,7 +7,7 @@ subroutine output(set, n_proc)
     implicit none
     integer set, n_proc, i, j, pid
     double precision l, E, m, nu_tot
-    double precision :: bin_size
+    double precision :: bin_size, bin_size_aniso
     integer :: bin_num
 
     call banner(n_proc, set)
@@ -26,6 +26,7 @@ subroutine output(set, n_proc)
     !open (30, file='Data/spec_neut'//filename)
     !open (50, file='Data/spec_nu'//filename)
     open (60, file='Data/cross-angle-dist'//filename)
+    open (70, file='Data/aniso-cross-angle-dist'//filename)
     do j = 1, n_enbin
         nu_tot = 0.d0
         pid = stable_pid(10) ! Proton id
@@ -53,11 +54,20 @@ subroutine output(set, n_proc)
             j*bin_size, &
             cross_angle_distribution_first_tot(j), &
             cross_angle_distribution_updown_tot(j), &
-            cross_angle_distribution_downup_tot(j), &
-            cross_angle_distribution_smallcone_updown_tot(j)
+            cross_angle_distribution_downup_tot(j)
     end do
+    if (inj_model == 0 .and. gamma_shock_const >= 100) then
+        bin_size_aniso = pi/n_angle_bins_aniso
+        do j = 1, n_angle_bins_aniso, 1
+            write (70, 23) &
+                j*bin_size_aniso, &
+                cross_angle_distribution_aniso_updown_tot(j)
+        end do
+    end if
     close (29)
     close (60)
+    close (70)
+
 23  format(24E16.6)
     En_f_tot = 0.d0
     cross_angle_distribution_first_tot = 0.d0

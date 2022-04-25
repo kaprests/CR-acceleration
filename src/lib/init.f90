@@ -72,11 +72,12 @@ subroutine parse_cmd_args
                 case (7) ! v_shock_const
                     read (arg, *) v_shock_const
                     gamma_shock_set = .false.
+                    gamma_shock_const = 1.d0 / (1.d0 - v_shock_const**2)
                     inj_model = 0
-                case (8) ! gamma_shock
-                    read (arg, *) gamma_shock
+                case (8) ! gamma_shock_const
+                    read (arg, *) gamma_shock_const
                     gamma_shock_set = .true.
-                    v_shock_const = sqrt( (gamma_shock**2 - 1)/(gamma_shock**2) )
+                    v_shock_const = sqrt( (gamma_shock_const**2 - 1.d0)/(gamma_shock_const**2) )
                     inj_model = 0
                 case (9) ! fname
                     read (arg, *) filename
@@ -156,7 +157,7 @@ subroutine init_general(myid, n_proc)
     else
         if (inj_model == 0) then
             if (gamma_shock_set) then
-                write (gamma_shock_str, '(f10.3)') gamma_shock
+                write (gamma_shock_str, '(f10.3)') gamma_shock_const
                 filename = filename//"_gamma"//trim(adjustl(gamma_shock_str))
             else
                 write (v_shock_str, '(f10.3)') v_shock(0)

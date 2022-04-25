@@ -20,7 +20,8 @@ contains
             no_stepsize_corr, &
             n_start, &
             n_sets, &
-            inj_model
+            inj_model, &
+            gamma_shock_const
         use SNR_data, only: t_max; 
         use constants; use particle_data, only: m_p
         use event_internal; use result
@@ -39,7 +40,7 @@ contains
         double precision :: ran0, R_L, t_shock, v_shock, get_v_rel
         integer, pointer :: pid, A, Z
         double precision, pointer :: E, x(:), t, w, p(:)
-        double precision :: stepsize, analytical_stepsize, t0, v_particle, gamma_shock
+        double precision :: stepsize, analytical_stepsize, t0, v_particle
         double precision :: upstream_loss_cone_opening_angle
         integer :: num_steps_taken, num_steps_total, sample_int, num_sample_pos, sample_count
         integer :: num_crossings
@@ -241,17 +242,22 @@ contains
                     cross_angle = & ! planar shock approx, more accurate for smaller steps
                         acos(dot_product(l_vec_us, [x(1), x(2), x(3)]) / (l_0 * d1))
                     if (num_crossings == 0) then
-                        call store_angle(cross_angle, cross_angle_distribution_first, pi)
+                        !call store_angle(cross_angle, cross_angle_distribution_first, pi)
+                        call store_cross_angle_iso(cross_angle, cross_angle_distribution_first)
                     else
-                        call store_angle(cross_angle, cross_angle_distribution_updown, pi)
-                        if (inj_model == 0 .and. gamma_shock(t) >= 100.d0) then
+                        !call store_angle(cross_angle, cross_angle_distribution_updown, pi)
+                        call store_cross_angle_iso(cross_angle, cross_angle_distribution_updown)
+                        if (inj_model == 0 .and. gamma_shock_const >= 100.d0) then
                             ! Compute cone opening angle and set max_angle accordingly
-                            call store_angle(&
+                            ! Nope, cannot have changing max_angle
+                            !call store_angle(&
+                            !    cross_angle, &
+                            !    cross_angle_distribution_smallcone_updown, &
+                            !    2/gamma_shock_const &
+                            !)
+                            call store_cross_angle_aniso(&
                                 cross_angle, &
-                                cross_angle_distribution_smallcone_updown, &
-                                upstream_loss_cone_opening_angle( &
-                                    v_shock(t), v_particle(E, m_p) &
-                                ) + 10 * theta_max &
+                                cross_angle_distribution_aniso_updown &
                             )
                         end if
                     end if
@@ -283,7 +289,8 @@ contains
                     ! Store cross angle -- angle measured in DS frame
                     cross_angle = & ! approx, more accurate for smaller steps
                         acos(dot_product(l_vec_ds, [x(1), x(2), x(3)])/(l_0 * d1))
-                    call store_angle(cross_angle, cross_angle_distribution_downup, pi)
+                    !call store_angle(cross_angle, cross_angle_distribution_downup, pi)
+                    call store_cross_angle_iso(cross_angle, cross_angle_distribution_downup)
 
                     ! flight direction in new frame: 
                     call cartesian_to_spherical(p(1), p(2), p(3), v_p, theta, phi)
@@ -400,23 +407,36 @@ contains
         En_f(pid, i) = En_f(pid, i) + w*En
     end subroutine store
 
-    subroutine store_angle(angle, distribution_array, max_angle)
-        use internal
+    subroutine store_cross_angle_iso(angle, distribution_array)
         use result, only: n_angle_bins
+        implicit none
+        double precision, intent(in) :: angle
+        double precision, intent(inout) :: distribution_array(n_angle_bins)
+
+        call store_angle(angle, distribution_array, n_angle_bins)
+    end subroutine store_cross_angle_iso
+
+    subroutine store_cross_angle_aniso(angle, distribution_array)
+        use result, only: n_angle_bins_aniso
+        implicit none
+        double precision, intent(in) :: angle
+        double precision, intent(inout) :: distribution_array(n_angle_bins_aniso)
+
+        call store_angle(angle, distribution_array, n_angle_bins_aniso)
+    end subroutine store_cross_angle_aniso
+
+    subroutine store_angle(angle, distribution_array, n_angle_bins)
+        use internal
         use constants, only: pi
 
         implicit none
-        double precision, intent(in) :: angle, max_angle
+        double precision, intent(in) :: angle
+        integer, intent(in) :: n_angle_bins
         double precision, intent(inout) :: distribution_array(n_angle_bins)
         double precision :: bin_size
         integer :: bin_num
 
-        if (angle > max_angle) then
-            print *, "angle: ", angle
-            print *, "max cone angle: ", max_angle
-            call error("angle > max_angle", 0)
-        end if
-        bin_size = max_angle/n_angle_bins
+        bin_size = pi/n_angle_bins
         bin_num = max(ceiling(angle/bin_size), 1)
         distribution_array(bin_num) = distribution_array(bin_num) + 1
     end subroutine store_angle

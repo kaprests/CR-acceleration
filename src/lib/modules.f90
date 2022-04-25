@@ -27,7 +27,7 @@ module user_variables
 
     ! inj_model = 0: constant shock velocity
     double precision :: v_shock_const = 3.d-2 ! Default 3.d-2
-    double precision :: gamma_shock
+    double precision :: gamma_shock_const
     logical :: gamma_shock_set = .false. ! if inj_model = 0, use v_shock_const by default
 
     ! Shockless simulation
@@ -183,11 +183,14 @@ module result
         cross_angle_distribution_updown = 0.d0, &           ! upstream -> downstream
         cross_angle_distribution_updown_tot = 0.d0, &
         cross_angle_distribution_downup = 0.d0, &           ! downstream -> upstream
-        cross_angle_distribution_downup_tot = 0.d0, &
+        cross_angle_distribution_downup_tot = 0.d0
 
         ! To be implemented into simulation:
-        cross_angle_distribution_smallcone_updown = 0.d0, & ! us -> ds in small cone 
-        cross_angle_distribution_smallcone_updown_tot = 0.d0 ! to capture anisotropic dist.
+    integer, parameter :: n_angle_bins_aniso = 1000 ! fine resolution to capture anisotropy
+    double precision, dimension(n_angle_bins_aniso) :: &
+        cross_angle_distribution_aniso_updown = 0.d0, & ! us -> ds in small cone 
+        cross_angle_distribution_aniso_updown_tot = 0.d0 ! to capture anisotropic dist.
+
     ! May be useful with planar shocks -- implement that first!
     double precision, dimension(n_angle_bins) :: &
         flight_angle_distribution_first = 0.d0, &
