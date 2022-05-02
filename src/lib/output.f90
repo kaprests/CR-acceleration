@@ -6,7 +6,7 @@ subroutine output(set, n_proc)
 
     implicit none
     integer set, n_proc, i, j, pid
-    double precision l, E, m, nu_tot
+    double precision l, E, m, nu_tot, N_bin_j
     double precision :: bin_size, bin_size_aniso
     integer :: bin_num
 
@@ -25,6 +25,7 @@ subroutine output(set, n_proc)
     open (29, file=trim(outdir)//'/spec_prot'//filename)
     !open (30, file='Data/spec_neut'//filename)
     !open (50, file='Data/spec_nu'//filename)
+    open (51, file=trim(outdir)//'/enumerate_spec_prot'//filename)
     open (60, file='Data/cross-angle-dist'//filename)
     open (70, file='Data/aniso-cross-angle-dist'//filename)
     do j = 1, n_enbin
@@ -34,6 +35,10 @@ subroutine output(set, n_proc)
         E = 10.d0**l
         m = En_f_tot(pid, j)/(dble(n_tot)*log(10.d0)*dn)
         if (m > 0.d0) write (19 + 10, 23) E, m, log10(E), log10(m)
+        N_bin_j = exit_energy_enumerate_dist(j)
+        if (N_bin_j > 0.d0) then
+            write (51, 23) E, N_bin_j, log10(E), log10(N_bin_j)
+        end if
         ! With interactions on:
         !do i = 1, n_stable
         !    pid = stable_pid(i)
@@ -57,7 +62,7 @@ subroutine output(set, n_proc)
             cross_angle_distribution_downup_tot(j)
     end do
     if (inj_model == 0 .and. gamma_shock_const >= 100) then
-        bin_size_aniso = pi/n_angle_bins_aniso
+        bin_size_aniso = (pi/2.d0)/n_angle_bins_aniso
         do j = 1, n_angle_bins_aniso, 1
             write (70, 23) &
                 j*bin_size_aniso, &
@@ -65,6 +70,7 @@ subroutine output(set, n_proc)
         end do
     end if
     close (29)
+    close (51)
     close (60)
     close (70)
 

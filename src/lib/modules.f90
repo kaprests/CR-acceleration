@@ -171,9 +171,14 @@ module result
         n_tbin_in = 200, & ! time bins for injected spectrum
         n_tbin_out = 20, & ! time bins for output spectrum
         n_enbin = 100                              ! ten decades starting in E_min
-    double precision :: N_i(2, n_tbin_in), E2N_i(2, n_tbin_in), &
+    double precision :: &
+        N_i(2, n_tbin_in), &
+        E2N_i(2, n_tbin_in), &
         En_f(-pid_max:pid_max, n_enbin), &
         En_f_tot(-pid_max:pid_max, n_enbin)
+    double precision, dimension(n_enbin) :: & ! Only for protons
+        exit_energy_enumerate_dist, &
+        exit_energy_enumerate_dist_tot
 
     ! Currently only for protons
     integer, parameter :: n_angle_bins = 100
@@ -186,7 +191,7 @@ module result
         cross_angle_distribution_downup_tot = 0.d0
 
         ! To be implemented into simulation:
-    integer, parameter :: n_angle_bins_aniso = 1000 ! fine resolution to capture anisotropy
+    integer, parameter :: n_angle_bins_aniso = 3000 ! fine resolution to capture anisotropy
     double precision, dimension(n_angle_bins_aniso) :: &
         cross_angle_distribution_aniso_updown = 0.d0, & ! us -> ds in small cone 
         cross_angle_distribution_aniso_updown_tot = 0.d0 ! to capture anisotropic dist.

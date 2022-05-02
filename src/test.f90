@@ -333,17 +333,70 @@ subroutine test_lorentz_boost_energy_gain(num_tests_run, num_tests_failed)
     ! Should test lorentz_boost of 4-momentum against old energy gain
     num_tests_run = num_tests_run + 1
 end subroutine test_lorentz_boost_energy_gain
-    
+
 end module tests
+
+
+module quantitative_tests
+    public
+contains
+
+subroutine test_lorentz_boosted_advection_step()
+    use constants
+
+    implicit none
+    double precision :: theta, phi, delta_phi
+    double precision :: t, t_prime
+    double precision, dimension(3) :: r_vec, r_vec_prime, v_rel_vec
+    integer :: n_vecs, i, fu, fu_prime
+    character(len=*), parameter :: OUT_FILE = 'test_data.txt'
+    character(len=*), parameter :: OUT_FILE_PRIME = 'test_data_prime.txt'
+    character(len=*), parameter :: PLT_FILE = 'plot.plt'
+
+    n_vecs = 20
+    delta_phi = two_pi/n_vecs
+    theta = pi/2.d0 ! vectors in the xy-plane
+    v_rel_vec = [0.9, 0.3, 0.0] ! Boost along x-axis
+
+    open(action='write', file=OUT_FILE, newunit=fu, status='replace')
+    open(action='write', file=OUT_FILE_PRIME, newunit=fu_prime, status='replace')
+    do i = 1, n_vecs, 1
+        ! create unitvector i, store coords in file as x, y, z
+        ! Then boost along x and store in a different file 
+        ! Or only store boosted vectors?
+
+        phi = i * delta_phi
+        r_vec(1) = sin(theta)*cos(phi)
+        r_vec(2) = sin(theta)*sin(phi)
+        r_vec(3) = cos(theta)
+        t = 1.d0
+
+        call lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
+        write(fu, *) r_vec(1), r_vec(2), r_vec(3)
+        write(fu_prime, *) r_vec_prime(1), r_vec_prime(2), r_vec_prime(3)
+    end do
+    close(fu)
+    close(fu_prime)
+
+    !call execute_command_line('gnuplot -p'//PLT_FILE)
+end subroutine test_lorentz_boosted_advection_step
+
+end module quantitative_tests
 
 
 program test
     use constants
     use user_variables
     use tests
+    use quantitative_tests
 
     implicit none
     integer :: num_tests_run, num_tests_failed
+    logical :: run_qualitative = .true.
+
+    !!!!!!!!!!!!!!!!!!!!
+    !!! Unit 'tests' !!!
+    !!!!!!!!!!!!!!!!!!!!
 
     num_tests_run = 0
     num_tests_failed = 0
@@ -353,12 +406,23 @@ program test
     call test_small_angle_scattering(num_tests_run, num_tests_failed)
     call test_cubic_spline_small_angle_step_correction(num_tests_run, num_tests_failed)
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!
+    !!! quantitative tests !!
+    !!!!!!!!!!!!!!!!!!!!!!!!!
+
+    if (run_qualitative) then
+        call test_lorentz_boosted_advection_step
+    end if
+
+    !!!!!!!!!!!!!!!
+    !!! Summary !!!
+    !!!!!!!!!!!!!!!
+
     print *, " "
     print *, "TESTS FINISHED"
     print *, "-------------------------------------- "
     print *, "Summary:"
-    print *, "Num tests run:      ", num_tests_run
-    print *, "Num tests succeded: ", num_tests_run - num_tests_failed
-    print *, "Num tests failed:   ", num_tests_failed
+    print *, "Num unit tests run:      ", num_tests_run
+    print *, "Num unit tests failed:      ", num_tests_failed
     print *, "-------------------------------------- "
 end program test

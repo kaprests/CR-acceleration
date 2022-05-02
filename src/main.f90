@@ -97,6 +97,12 @@ program acceleration
                 MPI_COMM_WORLD, ierr &
                 )
             call MPI_REDUCE( &
+                exit_energy_enumerate_dist, &
+                exit_energy_enumerate_dist_tot, n_enbin, &
+                MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
+                MPI_COMM_WORLD, ierr &
+                )
+            call MPI_REDUCE( &
                 cross_angle_distribution_first, cross_angle_distribution_first_tot, &
                 n_angle_bins, MPI_DOUBLE_PRECISION, MPI_SUM, 0, &
                 MPI_COMM_WORLD, ierr &
