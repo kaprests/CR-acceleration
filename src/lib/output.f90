@@ -35,7 +35,7 @@ subroutine output(set, n_proc)
         E = 10.d0**l
         m = En_f_tot(pid, j)/(dble(n_tot)*log(10.d0)*dn)
         if (m > 0.d0) write (19 + 10, 23) E, m, log10(E), log10(m)
-        N_bin_j = exit_energy_enumerate_dist(j)
+        N_bin_j = exit_energy_enumerate_dist_tot(j)
         if (N_bin_j > 0.d0) then
             write (51, 23) E, N_bin_j, log10(E), log10(N_bin_j)
         end if

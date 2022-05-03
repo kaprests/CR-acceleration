@@ -190,7 +190,7 @@ module result
         cross_angle_distribution_downup = 0.d0, &           ! downstream -> upstream
         cross_angle_distribution_downup_tot = 0.d0
 
-        ! To be implemented into simulation:
+    ! To be implemented into simulation:
     integer, parameter :: n_angle_bins_aniso = 3000 ! fine resolution to capture anisotropy
     double precision, dimension(n_angle_bins_aniso) :: &
         cross_angle_distribution_aniso_updown = 0.d0, & ! us -> ds in small cone 
