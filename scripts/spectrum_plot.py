@@ -5,14 +5,14 @@ from scipy.optimize import curve_fit
 
 DATA_DIR = os.path.dirname(__file__) + "/../Data/"
 
-theta_max_pi_frac = 1.0
+theta_max_pi_frac = 0.0031
 v_shock = 0.01
 gamma_shock = 100
-n_sets = 1000
-n_start = 10
+n_sets = 100
+n_start = 100
 E_inj_exp = 10
-n_proc = 4
-gamma_set = False
+n_proc = 6
+gamma_set = True
 z_ax = False
 
 
@@ -64,35 +64,58 @@ if __name__ == "__main__":
 
     F_enum = N_gte_E/N_tot
 
-    # Original
-    plt.title("Original plot")
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel("E")
-    plt.ylabel("E**2 * F")
-    plt.step(E, m)
-    plt.show()
-    
-    # E vs F (F = m/E**2)
-    plt.title("E vs F ( F = m/E**2)")
+#    # Original
+#    plt.title("Original plot")
+#    plt.xscale("log")
+#    plt.yscale("log")
+#    plt.xlabel("E")
+#    plt.ylabel("E**2 * F")
+#    plt.step(E, m)
+#    plt.show()
+#    
+#    # E vs F (F = m/E**2)
+#    plt.title("E vs F ( F = m/E**2)")
+#    plt.xscale("log")
+#    plt.yscale("log")
+#    plt.xlabel("E")
+#    plt.ylabel("F")
+#    plt.step(E, m/E**2)
+#    plt.plot(E_enum, 1e10/(E_enum**2), label="~1/E^2")
+#    plt.plot(E_enum, 1/(E_enum**1), label="~1/E")
+#    plt.legend()
+#    plt.show()
+#
+#    # E vs F from 'enumerate' data file
+#    plt.title("E vs F (new/alternative method)")
+#    plt.xscale("log")
+#    plt.yscale("log")
+#    plt.xlabel("E")
+#    plt.ylabel("F")
+#    plt.step(E_enum, F_enum)
+#    plt.plot(E_enum, 1e20/(E_enum**2), label="~1/E^2")
+#    plt.plot(E_enum, 1e10/(E_enum**1), label="~1/E")
+#    plt.legend()
+#    plt.show()
+
+    # E vs F from 'enumerate' data file
+    plt.title("E vs F (new/alternative method)")
+    plt.grid(ls="--")
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel("E")
     plt.ylabel("F")
-    plt.step(E, m/E**2)
-    plt.plot(E_enum, 1e10/(E_enum**2), label="~1/E^2")
-    plt.plot(E_enum, 1/(E_enum**1), label="~1/E")
+    plt.step(E_enum, N0/(N_tot*E_enum))
+    plt.plot(E_enum, 1e9/(E_enum**2), label="~1/E^2")
     plt.legend()
     plt.show()
 
     # E vs F from 'enumerate' data file
     plt.title("E vs F (new/alternative method)")
+    plt.grid(ls="--")
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel("E")
     plt.ylabel("F")
-    plt.step(E_enum, F_enum)
-    plt.plot(E_enum, 1e20/(E_enum**2), label="~1/E^2")
-    plt.plot(E_enum, 1e10/(E_enum**1), label="~1/E")
-    plt.legend()
+    plt.step(E_enum, E_enum**2 * N0/(N_tot*E_enum))
+    #plt.legend()
     plt.show()

@@ -20,9 +20,6 @@ program acceleration
         traj_offset, &
         fpos_offset, &
         samplepos_offset
-    ! non-MPI values
-    !myid = 0
-    !n_proc = 1
 
     ! MPI init
     call MPI_INIT(ierr)
@@ -44,9 +41,6 @@ program acceleration
 
     do set = 1, n_sets
         call start_particle(set, myid, n_proc)
-
-        ! non-MPI values
-        !En_f_tot = En_f
 
         ! Write trajectory data
         traj_array_bsize = sizeof(initial_trajectories)
