@@ -266,8 +266,9 @@ double precision function stepsize(En, t, theta_max)
     double precision, intent(in) :: En, t, theta_max
     double precision :: R_L, cubic_spline_small_angle_step_correction
     double precision :: power_law_small_angle_step_correction
-    !stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
+
     stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
+
     !if (theta_max > 0.4*pi) then
     !    stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
     !else
