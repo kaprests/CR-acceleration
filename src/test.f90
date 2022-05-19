@@ -310,19 +310,20 @@ subroutine test_cubic_spline_small_angle_step_correction(num_tests_run, num_test
 
     implicit none
     integer, intent(inout) :: num_tests_run, num_tests_failed
-    double precision :: cubic_spline_small_angle_step_correction, cs_test
+    double precision :: cubic_spline_small_angle_step_correction
     integer, parameter :: n_theta = 100
     double precision, parameter :: delta_theta = pi/(n_theta)
-    integer :: i
-    double precision, dimension(n_theta) :: theta_array
+    integer :: i, fu
     double precision :: stepcorr
-    
+    double precision, dimension(n_theta) :: theta_array
+
+    open(action='write', file="stepsizecorr_cs.txt", newunit=fu, status='replace')
     do i = 0, n_theta, 1
-        theta_array = i * delta_theta
+        !theta_array = i * delta_theta
         stepcorr = cubic_spline_small_angle_step_correction(i*delta_theta)
-        !print *, i*delta_theta, ", ", stepcorr
-        !print *, i, " ", i*delta_theta/pi, " ", stepcorr
+        write(fu, *) i*delta_theta, stepcorr
     end do
+    close(fu)
     num_tests_run = num_tests_run + 1
 end subroutine test_cubic_spline_small_angle_step_correction
 
@@ -380,6 +381,13 @@ subroutine test_lorentz_boosted_advection_step()
 
     !call execute_command_line('gnuplot -p'//PLT_FILE)
 end subroutine test_lorentz_boosted_advection_step
+
+subroutine test_stepsize_correction()
+    use constants
+    
+    implicit none
+    double precision cubic_spline_small_angle_step_correction
+end subroutine test_stepsize_correction
 
 end module quantitative_tests
 

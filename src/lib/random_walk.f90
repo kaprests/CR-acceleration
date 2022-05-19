@@ -84,8 +84,8 @@ contains
                 call error("wrong stepsize", 0)
             end if
             num_steps_total = abs(t0 - shockless_t_max)/l_0 + 1
-            sample_int = floor(real(num_steps_total/num_sample_pos_target)) + 1
-            num_sample_pos = floor(real(num_steps_total/sample_int))
+            sample_int = ceiling(real(num_steps_total/num_sample_pos_target))
+            num_sample_pos = ceiling(real(num_steps_total/sample_int))
             sample_count = 0
             if (.not. allocated(sample_positions)) &
                 allocate(sample_positions(4, n_start, num_sample_pos))
@@ -104,7 +104,8 @@ contains
                 initial_trajectories(4, n_injected, num_steps_taken + 1) = x(3)
             end if
             if (shockless) then
-                if (modulo(num_steps_taken + 1, sample_int) == 0) then
+                if (modulo(num_steps_taken - 1, sample_int) == 0 &
+                    .and. sample_count+1 <= num_sample_pos) then
                     ! Sampled position
                     if (sample_count > num_sample_pos) then
                         print *, "sample_count: ", sample_count
@@ -210,8 +211,13 @@ contains
                         ! Don't need dt_ds and l_vec_ds in this case
                     end if
                 end if
-                t = t + dt_us
-                x = x + l_vec_us
+                if (shockless) then
+                    t = t + dt_loc
+                    x = x + l_vec_loc
+                else
+                    t = t + dt_us
+                    x = x + l_vec_us
+                end if
 
                 ! Update particle distance and shock positions
                 r_sh2 = t_shock(t)
