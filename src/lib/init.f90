@@ -201,7 +201,7 @@ subroutine init_general(myid, n_proc)
         open (unit=99, file='Data/error'//filename)
         write (*, *) 'iseed = ', iseed
     end if
-
+    
     !transition time between ED and ST phases (yr) (McKee)  ! init SNR_data variables
     t_ch = 423.d0/sqrt(E_snr/1.d51)*(M_ej/M_sun)**(5.d0/6.d0)/n_ISM**(1.d0/3.d0) ! yr
     R_ch = 3.07d0*(M_ej/M_sun)**(1.d0/3.d0)/n_ISM**(1.d0/3.d0)! pc

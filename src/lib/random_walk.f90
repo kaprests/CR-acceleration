@@ -84,8 +84,11 @@ contains
                 call error("wrong stepsize", 0)
             end if
             num_steps_total = abs(t0 - shockless_t_max)/l_0 + 1
-            sample_int = ceiling(real(num_steps_total/num_sample_pos_target))
+            sample_int = max(ceiling(real(num_steps_total/num_sample_pos_target)), 1)
             num_sample_pos = ceiling(real(num_steps_total/sample_int))
+            if (sample_int == 1) then
+                num_sample_pos = num_steps_total
+            end if
             sample_count = 0
             if (.not. allocated(sample_positions)) &
                 allocate(sample_positions(4, n_start, num_sample_pos))
