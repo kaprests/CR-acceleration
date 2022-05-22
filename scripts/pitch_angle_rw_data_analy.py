@@ -9,14 +9,14 @@ from scipy.stats import norm
 DATA_DIR = os.path.dirname(__file__)+'/../cluster_dump/randomwalk-data/'
 OUT_DIR = '../figs/'
 t_max = 20
-theta_pi_frac = 0.2
+theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
 nsets = 100
 nstart = 100
 nproc = 6
-E_inj_exp = 14
+E_inj_exp = 10
 z_ax = False
-iso_stepsize = False
+iso_stepsize = True
 
 #D10 = 1.1753625473872295e-05 # E-inj-exp = 10
 D10 = 1.1687289275261758e-05 # E-inj-exp = 10
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     )
 
     filename_iso = (
-            f"randw_t-max{t_max:.3f}_"
+            f"randw_iso-stepsize_t-max{t_max:.3f}_"
             f"theta-max{np.pi:.3f}_"
             f"nsets{nsets}_"
             f"nstart{nstart}_"
