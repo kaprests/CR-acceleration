@@ -14,9 +14,9 @@ theta = theta_pi_frac*pi
 nsets = 100
 nstart = 100
 nproc = 6
-E_inj_exp = 14
-z_ax = True
-iso_stepsize = False
+E_inj_exp = 10
+z_ax = False
+iso_stepsize = True
 
 # Trajectory specific
 n_traj_plot = 100

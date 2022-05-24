@@ -206,6 +206,7 @@ if __name__ == "__main__":
     samplepos_file = open(samplepos_fname, 'rb')
     samplepos_data = np.fromfile(samplepos_file, dtype='float64')
     n_samples = int(len(samplepos_data) / (nproc * nsets * nstart * 4))
+    print(f"n_samples: {n_samples}")
     samplepos_data = samplepos_data.reshape((nproc, nsets, n_samples, nstart, 4))
 
     avg_drifts_sampled = np.zeros(n_samples)
@@ -240,7 +241,7 @@ if __name__ == "__main__":
     samplepos_data_iso = samplepos_data_iso.reshape((nproc, nsets, n_samples_iso, nstart, 4))
 
     avg_drifts_sampled_iso = np.zeros(n_samples)
-    t_sampled_iso = np.zeros(n_samples)
+    t_sampled_iso = np.zeros(n_samples_iso)
 
     for sample in range(n_samples_iso):
         x_samples = np.zeros(nsets*nstart*nproc)
@@ -262,6 +263,11 @@ if __name__ == "__main__":
             y_samples[seti*len(y_samples_seti):(seti+1)*len(y_samples_seti)] = y_samples_seti
             z_samples[seti*len(z_samples_seti):(seti+1)*len(z_samples_seti)] = z_samples_seti
         avg_drifts_sampled_iso[sample] = np.average(x_samples**2 + y_samples**2 + z_samples**2)
+
+    t_sampled = t_sampled[:-int(n_samples/10)]
+    t_sampled_iso = t_sampled_iso[:-int(n_samples_iso/10)]
+    avg_drifts_sampled = avg_drifts_sampled[:-int(n_samples/10)]
+    avg_drifts_sampled_iso = avg_drifts_sampled_iso[:-int(n_samples_iso/10)]
 
     plt.plot(t_sampled, avg_drifts_sampled, label=f"theta: {theta}")
     plt.plot(t_sampled_iso, avg_drifts_sampled_iso, label="isotropic")

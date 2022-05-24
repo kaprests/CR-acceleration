@@ -61,12 +61,6 @@ if __name__ == "__main__":
     R_L = 3.5230000000000007E-005 # Larmor radius (isotropic stepsize)
     D = R_L/3
     print(f"D theory: {D}")
-    print(f"D theory: {D}")
-    print(f"D theory: {D}")
-    print(f"D theory: {D}")
-    print(f"D theory: {D}")
-    print(f"D theory: {D}")
-    print(f"D theory: {D}")
 
     theta_max_data_arr, D_coeff_arr = np.genfromtxt("rw_dcoeff.csv", delimiter=",").T
     theta_max_data_arr *= np.pi
@@ -108,7 +102,7 @@ if __name__ == "__main__":
     #plt.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
     plt.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
     plt.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Fitted power law")
-    #plt.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label='analytical attempt')
+    plt.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label='analytical attempt')
     plt.plot(theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label='litterature')
     plt.legend()
     plt.show()
