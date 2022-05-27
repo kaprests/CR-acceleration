@@ -283,16 +283,13 @@ subroutine inject !(i)
             if (dNdEdt0 .gt. f0) call error('dNdEdt0 > f0', 0)
             if (dNdEdt0 .ge. r*f0) exit
         end do
-        call isotropic_scatter(phi, theta)
-        r = t_shock(t)                     ! delta function at shock
+        call isotropic_scatter(theta, phi)
+        r = t_shock(t) + stepsize(E_inj, t, theta_max)    ! delta function at shock
         x(1) = r*cos(phi)*sin(theta)
         x(2) = r*sin(phi)*sin(theta)
         x(3) = r*cos(theta)
         !t = t_inj_init
         !t = 2.d3
-        x(1) = 0.d0
-        x(2) = 0.d0
-        x(3) = t_shock(t)               ! delta function at shock, planar approx
     case default
         write (*, *) 'injection model', inj_model
         call error('wrong shock model', 0)

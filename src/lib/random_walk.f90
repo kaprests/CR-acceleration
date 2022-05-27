@@ -57,7 +57,12 @@ contains
         w => event(n_in)%w
 
         d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
-        if (sec == 0 .and. abs(d1/(t_shock(t)+stepsize(E, t, theta_max)) - 1.d0) .gt. 1.d-6) then
+        if (sec == 0 .and. abs(d1 - stepsize(E, t, theta_max) - t_shock(t)) .gt. 1.d-6) then
+            print *, d1
+            print *, stepsize(E, t, theta_max)
+            print *, t_shock(t)
+            print *, t_shock(t) + stepsize(E, t, theta_max) 
+            print *, abs(t_shock(t) + stepsize(E, t, theta_max) - d1)
             call error('wrong initial condition, shock', 0)
         end if
         r = ran0()
@@ -341,12 +346,12 @@ contains
                             p_0 = p ! p_0 energy in local frame before cross i.e. downstream frame
                             ! E, p: energy and momentum in local frame after cross i.e. upstream
                             call lorentz_boost(E_0, p_0, E, p, v_rel_vec)
-                            print *, "DS exit, num crossings: ", num_crossings
+                            !print *, "DS exit, num crossings: ", num_crossings
                         else
-                            print *, "Upstream time exit, num crossings: ", num_crossings
+                            !print *, "Upstream time exit, num crossings: ", num_crossings
                         end if
                         if (n_start * n_sets * n_proc == 1) then
-                            print *, "num crossings: ", num_crossings
+                            !print *, "num crossings: ", num_crossings
                         end if
                         call store(pid, E, w)
                         n_in = n_in - 1
