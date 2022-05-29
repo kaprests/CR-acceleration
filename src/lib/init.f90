@@ -1,5 +1,12 @@
 ! File: init.f90
 
+module initialize
+    use aux
+    use functions
+    implicit none
+    public
+contains
+
 subroutine init(myid, n_proc)
     !use user_variables, only: restart
 
@@ -134,7 +141,8 @@ subroutine init_general(myid, n_proc)
 
     implicit none
     integer, intent(in) :: myid, n_proc
-    double precision :: v_EDST, v_shock
+    !double precision :: v_EDST, v_shock
+    double precision :: v_EDST
 
     ! Parse command line arguments and apply given settings/configuration
     call parse_cmd_args
@@ -160,9 +168,10 @@ subroutine init_general(myid, n_proc)
                 write (gamma_shock_str, '(f10.3)') gamma_shock_const
                 filename = filename//"_gamma"//trim(adjustl(gamma_shock_str))
             else
-                write (v_shock_str, '(f10.3)') v_shock(0)
+                write (v_shock_str, '(f10.3)') v_shock(0.d0)
                 filename = filename//"_vshock"//trim(adjustl(v_shock_str))
             end if
+            v_rel_global = get_v_rel(v_shock(0.d0), .true.)
         else if (inj_model == 1) then
             filename = filename//"_injmod1"
         else if (inj_model == 2) then
@@ -231,7 +240,7 @@ subroutine init_inject_spec
     use internal; use result
 
     implicit none
-    double precision :: dNdEdt
+    !double precision :: dNdEdt
 
     t_inj_fin = t_max
     d_time_inj = log10(t_inj_fin/t_inj_init)/dble(n_tbin_in) ! linear or log??
@@ -259,8 +268,10 @@ subroutine inject !(i)
     implicit none
     integer, parameter :: n = 1
     double precision :: x(3), t, w, phi, theta
-    double precision :: dNdEdt0, f0, dNdEdt
-    double precision r, ran0, t_shock, stepsize
+    !double precision :: dNdEdt0, f0, dNdEdt
+    double precision :: f0, dNdEdt0
+    !double precision r, ran0, t_shock, stepsize
+    double precision r
 
     select case (inj_model)
     case (0)
@@ -303,3 +314,4 @@ subroutine inject !(i)
     event(n)%t = t
     event(n)%w = w
 end subroutine inject
+end module initialize

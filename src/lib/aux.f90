@@ -1,6 +1,10 @@
 ! File: aux.f90
 ! Auxillary/utility subroutines and functions
 
+module aux
+    implicit none
+    public
+contains
 subroutine error(string, s)
     !Error handling
     implicit none
@@ -44,14 +48,14 @@ subroutine error(string, s)
     end if
 end subroutine error
 
-function ran0()
+double precision function ran0()
     !random number generator from Numerical Recipes (Fortran90)
     use internal, only: iseed
 
     implicit none
     integer, parameter :: K4B = selected_int_kind(9)
     !integer(K4B), intent(inout) :: iseed
-    double precision ran0
+    !double precision ran0
     integer(K4B), parameter :: IA = 16807, IM = 2147483647, IQ = 127773, IR = 2836
     real, save :: am
     integer(K4B), save :: ix = -1, iy = -1, k
@@ -76,7 +80,7 @@ subroutine isotropic_scatter(theta, phi)
 
     implicit none
     double precision phi, theta, r, x
-    double precision ran0
+    !double precision ran0
 
     r = ran0()
     x = -1.d0 + 2.d0*r                      ! generate x=cos(theta)
@@ -92,7 +96,8 @@ subroutine small_angles(theta, phi, theta_max)
     implicit none
     double precision, intent(inout) :: phi, theta
     double precision, intent(in) :: theta_max
-    double precision :: ran0, z
+    !double precision :: ran0, z
+    double precision :: z
 
     ! Random angle within the max scattering cone
     z = cos(theta_max) + (1 - cos(theta_max))*ran0()
@@ -206,24 +211,69 @@ subroutine small_angle_scatter(theta, phi, theta_max)
     )
 end subroutine small_angle_scatter
 
-double precision function get_v_rel(v_shock)
+double precision function velicity_add(u, v)
     implicit none
-    double precision, intent(in) :: v_shock
-    double precision :: gamma_sh
+    double precision, intent(in) :: u, v
+    velicity_add = (u+v)/(1 + u*v)
+end function velicity_add
 
-    if (v_shock <= 0.1 .and. 0 < v_shock) then
+!double precision function compute_v_rel(v_shock_urf)
+subroutine compute_v_rel(v_shock_urf, v_rel)
+    implicit none
+    double precision, intent(in) :: v_shock_urf
+    double precision, intent(out) :: v_rel
+    double precision :: v_us_srf, v_ds_srf, v_ds_urf
+    if (v_shock_urf <= 0.1 .and. 0 < v_shock_urf) then
         ! Non relativistic regime
-        get_v_rel = 0.75d0*v_shock
-    else if (0.9 <= v_shock .and. v_shock < 1) then
+        v_rel = 0.75d0*v_shock_urf
+    else if (0.9 <= v_shock_urf .and. v_shock_urf < 1) then
         ! (Ultra) relativistic regime
-        gamma_sh = 1.d0/sqrt(1.d0 - v_shock**2)
-        get_v_rel = 1.d0 - 1.d0/(gamma_sh**2)
-    else if (0.1 < v_shock .and. v_shock < 0.9) then
+        !gamma_shock_urf = 1.d0/sqrt(1.d0 - v_shock_urf**2) ! in the lab frame
+        v_us_srf = -v_shock_urf
+        v_ds_srf = v_us_srf/3.d0
+        v_ds_urf = velicity_add(v_ds_srf, v_shock_urf)
+        v_rel = v_ds_urf
+    else if (0.1 < v_shock_urf .and. v_shock_urf < 0.9) then
         ! In between regimes
-        get_v_rel = 0.75d0*v_shock
-        call error("v_shock in between regimes 0.1 < v_shock < 0.9", 1)
+        v_rel = 0.75d0*v_shock_urf
+        call error("v_shock_urf in between regimes 0.1 < v_shock_urf < 0.9", 1)
     else
-        call error("v_shock outside of allowed range [0, 1]", 0)
+        call error("v_shock_urf outside of allowed range [0, 1]", 0)
+    end if
+    if (v_rel <= 0.d0) then
+        print *, "v_rel <=0: "
+        print *, "v_shock_urf: ", v_shock_urf
+        call error("compute_v_rel: v_rel <= 0", 0)
+    else if (v_rel >= 1.d0) then
+        print *, "v_rel >=1: "
+        print *, "v_shock_urf: ", v_shock_urf
+        call error("compute_v_rel: v_rel >= 1", 0)
+    end if
+end subroutine compute_v_rel
+!end function compute_v_rel
+
+double precision function get_v_rel(v_shock_urf, init_opt)
+    use user_variables, only: inj_model
+    use internal, only: v_rel_global
+    implicit none
+    double precision, intent(in) :: v_shock_urf
+    logical, intent(in), optional :: init_opt
+    logical :: init
+    init = .false.
+    if (present(init_opt)) then
+        init = init_opt
+    end if
+    if (inj_model == 0) then
+        if (init) then
+            ! Compute and store v_rel
+            call compute_v_rel(v_shock_urf, v_rel_global)
+            get_v_rel = v_rel_global
+        else
+            get_v_rel = v_rel_global
+        end if
+    else
+        call compute_v_rel(v_shock_urf, v_rel_global)
+        get_v_rel = v_rel_global
     end if
 end function get_v_rel
 
@@ -363,9 +413,9 @@ subroutine upstream_to_downstream_boost(t_us, r_us, t_ds, r_ds, v_shock_us, pos_
     double precision, dimension(3), intent(out) :: r_ds
     double precision :: v_rel, r, theta, phi
     double precision, dimension(3) :: v_rel_vec
-    double precision :: get_v_rel
+    !double precision :: get_v_rel
 
-    v_rel = get_v_rel(v_shock_us)
+    call compute_v_rel(v_shock_us, v_rel)
     call cartesian_to_spherical(pos_vec_us(1), pos_vec_us(2), pos_vec_us(3), r, theta, phi)
     call spherical_to_cartesian(v_rel, theta, phi, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
     call lorentz_boost(t_us, r_us, t_ds, r_ds, v_rel_vec)
@@ -380,13 +430,13 @@ subroutine downstream_to_upstream_boost(t_ds, r_ds, t_us, r_us, v_shock_us, time
     double precision, dimension(3), intent(out) :: r_us
     double precision :: v_rel, r, theta, phi
     double precision, dimension(3) :: v_rel_vec
-    double precision :: get_v_rel
+    !double precision :: get_v_rel
     double precision :: time_ds
     double precision, dimension(3) :: pos_vec_ds
 
     ! Transform pos_vec_us to pos_vec_ds
     call upstream_to_downstream_boost(time_us, pos_vec_us, time_ds, pos_vec_ds, v_shock_us, pos_vec_us)
-    v_rel = get_v_rel(v_shock_us)
+    call compute_v_rel(v_shock_us, v_rel)
     call cartesian_to_spherical(pos_vec_ds(1), pos_vec_ds(2), pos_vec_ds(3), r, theta, phi)
     call spherical_to_cartesian(v_rel, theta, phi, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
     v_rel_vec = -1.d0*v_rel_vec ! Minus sign since US flows radially inward
@@ -407,3 +457,4 @@ subroutine upstream_to_shockfront_boost(t_us, r_us, t_sh, r_sh, v_shock_us, pos_
     call spherical_to_cartesian(v_shock_us, theta, phi, v_shock_vec(1), v_shock_vec(2), v_shock_vec(3))
     call lorentz_boost(t_us, r_us, t_sh, r_sh, v_shock_vec)
 end subroutine upstream_to_shockfront_boost
+end module aux

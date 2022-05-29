@@ -1,11 +1,17 @@
 ! File: functions.f90
+module functions
+    use aux
+    implicit none
+    public
+
+contains
 
 double precision function R_p(r, t)
     use SNR_data
 
     implicit none
     double precision r, t, r_sh
-    double precision t_shock
+    !double precision t_shock
 
     r_sh = t_shock(t)                   ! either z or r coordinate
     if (r > r_sh) then
@@ -19,7 +25,7 @@ double precision function D_coef(En, t) ! yr
     !Diffusion coefficient: Bohm diffusion
     implicit none
     double precision En, t     ! eV, yr
-    double precision R_L      ! yr
+    !double precision R_L      ! yr
     D_coef = R_L(En, t)/3.d0   ! yr
 end function D_coef
 
@@ -51,7 +57,7 @@ double precision function dNdEdt(t)             ! injection rate
 
     implicit none
     double precision t, v_snr, a, r_snr
-    double precision v_shock, R_shock
+    !double precision v_shock, R_shock
 
     select case (inj_model)
     case (0)
@@ -107,7 +113,7 @@ end function v_shock
 double precision function gamma_shock(t)
     implicit none
     double precision, intent(in) :: t
-    double precision :: v_shock
+    !double precision :: v_shock
 
     gamma_shock = 1.d0 / sqrt( 1.d0 - v_shock(t)**2)
 end function gamma_shock
@@ -118,7 +124,7 @@ double precision function t_shock(t)
 
     implicit none
     double precision t, t_star, r, x
-    double precision v_shock
+    !double precision v_shock
 
     select case (inj_model)
     case (0)
@@ -207,6 +213,8 @@ function v_particle(E, m) result(v)
     double precision :: v
     v = sqrt(E**2 - m**2)/E
     if (v < 0) call error("Negative particle velocity invalid E, m combo", 0)
+    !if (v .ge. 1.d0) call error("v_particle == 1, Max energy due to numerical precision reached", 11)
+    !if (v .ge. 1.d0) print *, "v_particle = 1"
 end function v_particle
 
 double precision function upstream_loss_cone_opening_angle(v_sh, v_part)
@@ -219,7 +227,7 @@ double precision function analytical_stepsize(En, t, theta_max)
     use particle_data, only: m_p
     implicit none
     double precision En, t, theta_max
-    double precision D_coef, v_particle
+    !double precision D_coef, v_particle
     analytical_stepsize = (3*D_coef(En, t)/v_particle(En, m_p))*(1 - cos(theta_max))/2
 end function analytical_stepsize
 
@@ -264,8 +272,8 @@ double precision function stepsize(En, t, theta_max)
     use constants, only: pi
     implicit none
     double precision, intent(in) :: En, t, theta_max
-    double precision :: R_L, cubic_spline_small_angle_step_correction
-    double precision :: power_law_small_angle_step_correction
+    !double precision :: R_L, cubic_spline_small_angle_step_correction
+    !double precision :: power_law_small_angle_step_correction
 
     stepsize = R_L(En, t)*cubic_spline_small_angle_step_correction(theta_max)
 
@@ -279,6 +287,8 @@ end function stepsize
 double precision function time_step(E, m, t, theta_max)
     implicit none
     double precision, intent(in) :: E, m, t, theta_max
-    double precision :: v_particle, stepsize
+    !double precision :: v_particle, stepsize
     time_step = stepsize(E, t, theta_max) / v_particle(E, m)
 end function time_step
+
+end module functions

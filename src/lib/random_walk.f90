@@ -4,6 +4,8 @@ module random_walk
 ! Module containing the cone restricted random_walk procedure 
 ! 'scattering' angle restricted by theta_max 
 ! Shock acceleration can be turned on/off 
+    use aux
+    use functions
     implicit none
     private
     public pitch_angle_random_walk
@@ -37,10 +39,9 @@ contains
         double precision :: gamma_factor, gamma_particle, cos_theta
         double precision :: dt_loc, dt_us, dt_ds
         double precision, dimension(3) :: l_vec_loc, l_vec_us, l_vec_ds, v_rel_vec
-        double precision :: ran0, R_L, t_shock, v_shock, get_v_rel
         integer, pointer :: pid, A, Z
         double precision, pointer :: E, x(:), t, w, p(:)
-        double precision :: stepsize, analytical_stepsize, t0, v_particle
+        double precision :: t0
         double precision :: upstream_loss_cone_opening_angle
         integer :: num_steps_taken, num_steps_total, sample_int, num_sample_pos, sample_count
         integer :: num_crossings
@@ -56,6 +57,10 @@ contains
         t => event(n_in)%t
         w => event(n_in)%w
 
+        if (n_in .ne. 1) then
+            print *, "n_in0 != 1, n_in: ", n_in
+        end if
+
         d1 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
         if (sec == 0 .and. abs(d1 - stepsize(E, t, theta_max) - t_shock(t)) .gt. 1.d-6) then
             print *, d1
@@ -63,6 +68,9 @@ contains
             print *, t_shock(t)
             print *, t_shock(t) + stepsize(E, t, theta_max) 
             print *, abs(t_shock(t) + stepsize(E, t, theta_max) - d1)
+            call error('wrong initial condition, shock', 0)
+        end if
+        if (d1 < t_shock(t)) then
             call error('wrong initial condition, shock', 0)
         end if
         r = ran0()
@@ -156,6 +164,7 @@ contains
                 n_step = 1
             else                                    ! n steps l0 in same direction
                 ! Only relevant with interactions turned on
+                print *, "Interactions part whyyyyyy"
                 l_0 = dt_loc * v_particle(E, m_p)
                 if (l_0_0/dt_loc < 1.d3) then
                     n_step = int(l_0_0/dt_loc + 0.5d0)
@@ -185,11 +194,14 @@ contains
 
             ! gamma factor of the particle
             gamma_particle = 1.d0/sqrt(1.d0 - v_particle(E, m_p)**2)
+            if (v_particle(E, m_p) .ge. 1.d0) then
+                print *, "v_p >= 1: "
+                print *, "v_p: ", v_particle(E, m_p)
+            end if
 
             ! p: three-momentum vector for particle in the local frame
             call spherical_to_cartesian(&
-                gamma_particle*m_p* &
-                sqrt(l_vec_loc(1)**2 + l_vec_loc(2)**2 + l_vec_loc(3)**2)/dt_loc, &
+                gamma_particle*m_p*v_particle(E, m_p), &
                 theta, phi, p(1), p(2), p(3))
 
             ! if particle in downstream -> transform step to upstream
@@ -201,12 +213,12 @@ contains
                 ! transform step if particle is in the downstream region
                 if (.not. shockless) then
                     if (d1 < r_sh1) then ! Particle is in the downstream region
+                        !print *, "Particle in DS, num_crossings: ", num_crossings
                         dt_ds = dt_loc          ! downstream timestep
                         l_vec_ds = l_vec_loc    ! downstream step vector
                         call cartesian_to_spherical(& ! Radial out direction
                             x(1), x(2), x(3), v_rel, theta_v, phi_v)
-                        v_rel = get_v_rel(v_shock(t)) ! Relative velocity of DS and US
-                        if (v_rel <= 0.d0) call error('v_rel<=0', 0)
+                        call compute_v_rel(v_shock(t), v_rel) ! Relative velocity of DS and US
                         ! relative 3-velocity vector:
                         call spherical_to_cartesian(& ! shock 3-velocity in downstream frame
                             v_rel, theta_v, phi_v, v_rel_vec(1), v_rel_vec(2), v_rel_vec(3))
@@ -216,6 +228,9 @@ contains
                     else
                         dt_us = dt_loc          ! dt_us
                         l_vec_us = l_vec_loc    ! l_vec_us
+                        if (isnan(dt_us)) then
+                            print *, "ISNAN TRUE US DT_US"
+                        end if
                         ! Don't need dt_ds and l_vec_ds in this case
                     end if
                 end if
@@ -239,7 +254,7 @@ contains
                         x(1), x(2), x(3), v_rel, theta_v, phi_v)
 
                     ! Relative velocity of DS and US:
-                    v_rel = get_v_rel(v_shock(t))
+                    call compute_v_rel(v_shock(t), v_rel)
                     if (v_rel <= 0.d0) call error('v_rel<=0', 0)
 
                     ! relative 3-velocity vector:
@@ -279,7 +294,7 @@ contains
                         x(1), x(2), x(3), v_rel, theta_v, phi_v)
 
                     ! Relative velocity of DS and US:
-                    v_rel = get_v_rel(v_shock(t))
+                    call compute_v_rel(v_shock(t), v_rel)
                     if (v_rel <= 0.d0) call error('v_rel<=0', 0)
 
                     ! relative 3-velocity vector:
@@ -305,7 +320,7 @@ contains
                 end if
                 end if
 
-                v_rel = get_v_rel(v_shock(t))
+                call compute_v_rel(v_shock(t), v_rel)
                 dmax = 3.d0*R_L(E, t)/v_rel
 
                 ! Interaction stuff: 
@@ -314,6 +329,12 @@ contains
                 delta = exp(-f)                    ! exp(-\int dt f(t))
 
                 ! shockless exit:
+                if (n_in == 0) then
+                    ! This should not happend, yet it sometimes does
+                    print *, "n_in reduced before exit, strange"
+                    n_in = 1
+                    print *, "n_in reduced before exit, strange"
+                end if
                 if (shockless) then
                     if (t > shockless_t_max) then
                         ! exit random walking particle when max time exceeded
@@ -323,18 +344,18 @@ contains
                         return
                     end if
                 ! acceleration exit:
-                else if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta) then
-                    ! exit accel particle, if a) too late, b) too far down-stream, or c) scattering:
-                    if (t > t_max .or. d2 < r_sh2 - dmax) then  ! we're tired or trapped behind
-                        !              write(*,*) 'tired',n_in,n_out
-                        if (d2 < r_sh2 - dmax) then
+                else if (t > t_max .or. d2 < r_sh2 - dmax .or. r > delta .or. v_particle(E, m_p) == 1.d0) then
+                    ! exit accel particle, if a) too late, b) too far down-stream, or c) scattering, or d) max energy reached:
+                    if (t > t_max .or. d2 < r_sh2 - dmax .or. v_particle(E, m_p) == 1.d0) then  
+                        ! we're tired or trapped behind or max energy is reached
+                        if (d2 < r_sh2) then
                             ! particle exited in DS - transform energy to US
                             ! Radial (out) direction:
                             call cartesian_to_spherical(& 
                                 x(1), x(2), x(3), v_rel, theta_v, phi_v)
 
                             ! Relative velocity of DS and US:
-                            v_rel = get_v_rel(v_shock(t))
+                            call compute_v_rel(v_shock(t), v_rel)
                             if (v_rel <= 0.d0) call error('v_rel<=0', 0)
 
                             ! relative 3-velocity vector:
@@ -347,11 +368,16 @@ contains
                             ! E, p: energy and momentum in local frame after cross i.e. upstream
                             call lorentz_boost(E_0, p_0, E, p, v_rel_vec)
                             !print *, "DS exit, num crossings: ", num_crossings
+                            if (modulo(num_crossings, 2) == 0) call error("DS exit, even number of shock crossings", 0)
                         else
-                            !print *, "Upstream time exit, num crossings: ", num_crossings
+                            !print *, "Upstream exit, num crossings: ", num_crossings
+                            if (modulo(num_crossings, 2) .ne. 0) call error("US exit, odd number of shock crossings", 0)
+                        end if
+                        if (v_particle(E, m_p) == 1.d0) then
+                            print *, "E-max exit, E_exit = ", E
                         end if
                         if (n_start * n_sets * n_proc == 1) then
-                            !print *, "num crossings: ", num_crossings
+                            print *, "num crossings: ", num_crossings
                         end if
                         call store(pid, E, w)
                         n_in = n_in - 1

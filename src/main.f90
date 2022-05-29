@@ -3,6 +3,8 @@
 
 program acceleration
     use mpi_f08
+    use initialize
+    use aux
     use user_variables
     use result; use user_variables, only: n_sets
 
@@ -141,6 +143,7 @@ subroutine start_particle(set, myid, n_proc)
     implicit none
     integer, intent(in) :: set, myid, n_proc
 
+    n_in = 0
     n_injected = 0
     do while (n_injected < n_start)
 
@@ -153,7 +156,9 @@ subroutine start_particle(set, myid, n_proc)
             !write(*,*) 'primary',n_injected,n_start
         else
             sec = 1
-            !write(*,*) 'secondary'
+            write(*,*) 'secondary: '
+            print *, "n_in: ", n_in
+            call error("Interactions are off, should have no secondaries", 0)
         end if
         call tracer(set, n_injected, n_proc)
         if (myid == 0 .and. mod(n_injected*100, n_start) == 0 .and. sec == 0) &
@@ -183,8 +188,11 @@ subroutine tracer(set, n_injected, n_proc)
         n_in = n_in - 1
         return
     case (7, 145:159)
+        !write (*, *) 'n_in: ', n_in
+        !write (*, *) 'A,pid', A, pid
         call pitch_angle_random_walk(set, n_injected, n_proc)
     case default
+        write (*, *) 'n_in: ', n_in
         write (*, *) 'A,pid', A, pid
         call error('wrong particle typ in tracer', 0)
     end select

@@ -159,6 +159,7 @@ module internal
         alpha_f1, K_inj
     double precision, parameter ::  dn = 0.1d0
     integer n_tot
+    double precision :: v_rel_global
 end module internal
 
 module result

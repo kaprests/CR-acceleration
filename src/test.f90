@@ -1,4 +1,5 @@
 module tests
+    use aux
     public
 contains
 
@@ -77,7 +78,7 @@ end subroutine test_spherical_cartesian_coord_change
 subroutine test_lorentz_boost(num_tests_run, num_tests_failed)
     implicit none
     integer, intent(inout) :: num_tests_run, num_tests_failed
-    double precision :: t, t2, t_prime
+    double precision :: t, t2, t_prime, gamma_factor, v_ds_srf, v_us_srf
     double precision, dimension(3) :: r_vec, r_vec2, r_vec_prime, v_rel_vec
     double precision :: ran0
     integer :: i
@@ -213,6 +214,24 @@ subroutine test_lorentz_boost(num_tests_run, num_tests_failed)
         return
     end if
     num_tests_run = num_tests_run + 1
+
+    ! Testing v_rel
+    v_us_srf = -0.99
+    v_ds_srf = v_us_srf/3.d0 ! UR jump condition
+    gamma_factor = 1.d0/sqrt(1.d0 - v_ds_srf**2)
+
+    ! Four velocity in SRF
+    t = gamma_factor
+    r_vec(1) = gamma_factor * v_ds_srf
+    r_vec(2) = 0.d0
+    r_vec(3) = 0.d0
+
+    ! Boost along x-axis
+    v_rel_vec(1) = v_us_srf
+    v_rel_vec(2) = 0.0d0
+    v_rel_vec(3) = 0.0d0
+    call lorentz_boost(t, r_vec, t_prime, r_vec_prime, v_rel_vec)
+    !call lorentz_boost(t_prime, r_vec_prime, t2, r_vec2, -v_rel_vec)
 end subroutine test_lorentz_boost
 
 subroutine test_rotations(num_tests_run, num_tests_failed)
