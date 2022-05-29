@@ -320,7 +320,7 @@ if __name__ == "__main__":
     filename, filename_iso = construct_base_filename("randw_") # construct base filename of the correct data file(s)
 
     # Plot functions
-    final_positions_plot(filename, filename_iso)
-    final_drift_distribution_plot(filename, filename_iso)
-    average_drift_plot(filename, filename_iso)
-    #rw_D_coeff_csv()
+    #final_positions_plot(filename, filename_iso)
+    #final_drift_distribution_plot(filename, filename_iso)
+    #average_drift_plot(filename, filename_iso)
+    rw_D_coeff_csv()
