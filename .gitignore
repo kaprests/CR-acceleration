@@ -7,3 +7,8 @@
 /figs/*.pdf
 cluster_data
 /cluster_data/*
+/scripts/test_tex/*
+!/scripts/test_tex/test.tex
+!/scripts/test_tex/test.pdf
+!/scripts/test_tex/.latexmkrc
+!/scripts/test_tex/plot.py

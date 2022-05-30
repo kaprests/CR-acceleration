@@ -8,12 +8,40 @@ from scipy.stats import norm
 from tqdm import trange
 
 
+#######################
+### Plot parameters ###
+#######################
+
+
+fontsize = 12
+newparams = {
+    "axes.titlesize": fontsize,
+    "axes.labelsize": fontsize,
+    "ytick.labelsize": fontsize,
+    "xtick.labelsize": fontsize,
+    "legend.fontsize": fontsize,
+    "figure.titlesize": fontsize,
+    "legend.handlelength": 1.5,
+    "lines.linewidth": 1.5,
+    "lines.markersize": 7,
+    #"figure.figsize": (11, 7),
+    "figure.dpi": 200,
+    "text.usetex": True,
+    #"font.family": "sans-serif",
+    "font.family": "cm",
+    "mathtext.fontset": "cm",
+}
+plt.rcParams.update(newparams)
+
+
 ###########################
 ### Settings/parameters ###
 ###########################
+
+
 #DATA_DIR = os.path.dirname(__file__)+'/../Data/'
 DATA_DIR = os.path.dirname(__file__)+'/../../cluster_data/randomwalk-data/'
-OUT_DIR = '../figs/'
+OUT_DIR = f"{os.path.dirname(__file__)}/figs/"
 t_max = 20
 theta_pi_frac = 1.0
 theta = theta_pi_frac*pi
@@ -23,11 +51,14 @@ nproc = 6
 E_inj_exp = 10
 z_ax = False
 iso_stepsize = True
+save_figs = False
 
 
 ################################################
 ### Analytical solution diffusion (gaussian) ###
 ################################################
+
+
 D10 = 1.1687289275261758e-05 # E-inj-exp = 10
 D14 = 0.11758733574069284 # E-inj-exp = 14
 D12 = 0.0011752490186288554 # E-inj-exp = 12
@@ -174,99 +205,131 @@ def sample_positions_data(base_filename):
 #############
 
 
-def final_positions_plot(base_filename, base_filename_iso):
+def final_positions_plot(theta_pi_frac_arr):
     """Plots the final positions of rw particles
 
     :base_filename: TODO
     :returns: TODO
 
     """
-    x_final, y_final, z_final = final_positions_data(base_filename)
-    x_final_iso, y_final_iso, z_final_iso = final_positions_data(base_filename_iso)
+    global theta
+    theta_initial = theta
+    for (i, theta_pi_frac) in enumerate(theta_pi_frac_arr):
+        theta = theta_pi_frac * np.pi
+        filename, filename_iso = construct_base_filename("randw_")
+        x_final, y_final, z_final = final_positions_data(filename)
+        x_final_iso, y_final_iso, z_final_iso = final_positions_data(filename_iso)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    ax.set_title("Final positions")
-    ax.scatter(x_final, y_final, z_final, marker='o', label=f'theta-max = {theta:.3f}')
-    ax.scatter(x_final_iso, y_final_iso, z_final_iso, marker='^', label=f'theta-max = {np.pi:.3f}')
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.set_title(fr"Final positions")
+        ax.scatter(x_final, y_final, z_final, marker='o', label=fr'$\theta_{{\mathrm{{max}}}}/\pi={theta_pi_frac}$')
+        if i == 0:
+            ax.scatter(x_final_iso, y_final_iso, z_final_iso, marker='^', label=fr'$\theta_{{\mathrm{{max}}}}/\pi =1.0$')
+    theta = theta_initial
     ax.legend()
-    plt.show()
+    if __name__ == "__main__":
+        plt.show()
 
 
-def final_drift_distribution_plot(base_filename, base_filename_iso, n_bins=50):
-    """Plots the final drift distribution"""
-    x_final, y_final, z_final = final_positions_data(base_filename)
-    x_final_iso, y_final_iso, z_final_iso = final_positions_data(base_filename_iso)
+def total_final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50):
+    """Plot of total drift distribution from origin"""
+    colors = ["black", "green", "blue", "orange", "yellow"]
+    global theta
+    theta_initial = theta
 
-    # Total drifted distance
-    final_drift_distances = np.sqrt(x_final**2 + y_final**2 + z_final**2)
-    final_drift_distances_iso = np.sqrt(x_final_iso**2 + y_final_iso**2 + z_final_iso**2)
-    bins = np.linspace(min(final_drift_distances), max(final_drift_distances), n_bins)
-    bins_iso = np.linspace(min(final_drift_distances_iso), max(final_drift_distances_iso), n_bins)
-    plt.title("Total drift")
-    plt.hist(
-        final_drift_distances, label='pitch angle', histtype=u'step', color='blue', bins=bins,
-        density=True
-    )
-    plt.hist(
-        final_drift_distances_iso, label='isotropic', histtype=u'step', color='red', bins=bins_iso,
-        density=True
-    )
-    plt.show()
+    #_, filename_iso = construct_base_filename("randw_")
+    #x_final_iso, y_final_iso, z_final_iso = final_positions_data(filename_iso)
+    #final_drift_distances_iso = np.sqrt(x_final_iso**2 + y_final_iso**2 + z_final_iso**2)
+    #bins_iso = np.linspace(min(final_drift_distances_iso), max(final_drift_distances_iso), n_bins)
+    #plt.hist(
+    #    final_drift_distances_iso, histtype=u'step', color='red', bins=bins_iso,
+    #    density=True, label=fr'$\theta_{{\mathrm{{max}}}}/\pi=1.0$'
+    #)
 
-    # Drift z-direction
-    zbins = np.linspace(min(z_final), max(z_final), n_bins)
-    zbins_iso = np.linspace(min(z_final_iso), max(z_final_iso), n_bins)
-    z_arr = np.linspace(min(z_final), max(z_final), 1000)
-    plt.title("Distribution along z-axis")
-    plt.hist(
-        z_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
-        histtype=u'step', color='blue', bins=zbins, density=True
-    )
-    plt.hist(
-        z_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
-        histtype=u'step', color='red', bins=zbins_iso, density=True
-    )
-    plt.plot(z_arr, pdf(z_arr), color="green", label="Analytical")    
-    plt.legend()    
-    plt.show()
+    theta_pi_frac_arr = sorted(theta_pi_frac_arr, reverse=True)
+    for (theta_pi_frac, color) in zip(theta_pi_frac_arr, colors): # not global theta!
+        theta = theta_pi_frac * np.pi
+        filename, _ = construct_base_filename("randw_")
+        x_final, y_final, z_final = final_positions_data(filename)
 
-    # Drift x-direction
-    xbins = np.linspace(min(x_final), max(x_final), n_bins)
-    xbins_iso = np.linspace(min(x_final_iso), max(x_final_iso), n_bins)
-    x_arr = np.linspace(min(x_final), max(x_final), 1000)
-    plt.title("Distribution along x-axis")
-    plt.hist(
-        x_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
-        histtype=u'step', color='blue', bins=xbins, density=True
-    )
-    plt.hist(
-        x_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
-        histtype=u'step', color='red', bins=xbins_iso, density=True
-    )
-    plt.plot(x_arr, pdf(x_arr), color="green", label="Analytical")    
+        # Total drifted distance
+        final_drift_distances = np.sqrt(x_final**2 + y_final**2 + z_final**2)
+        bins = np.linspace(min(final_drift_distances), max(final_drift_distances), n_bins)
+        plt.hist(
+            final_drift_distances, histtype=u'step', color=color, bins=bins,
+            density=True, label=fr'$\theta_{{\mathrm{{max}}}}/\pi={theta_pi_frac}$'
+        )
+    theta = theta_initial
+
+    plt.title(fr"Total drift")
+    plt.xlabel("x [fix units]")
+    plt.ylabel("y [fix units]")
     plt.legend()
-    plt.show()
-
-    # Drift y-direction
-    ybins = np.linspace(min(y_final), max(y_final), n_bins)
-    ybins_iso = np.linspace(min(y_final_iso), max(y_final_iso), n_bins)
-    y_arr = np.linspace(min(y_final), max(y_final), 1000)
-    plt.title("Distribution along y-axis")
-    plt.hist(
-        y_final, label=f"theta:{theta:.3f}, initial-along-z:{z_ax}", 
-        histtype=u'step', color='blue', bins=ybins,density=True
-    )
-    plt.hist(
-        y_final_iso, label=f"theta:{np.pi:.3f}, initial-iso", 
-        histtype=u'step', color='red', bins=ybins_iso, density=True
-    )
-    plt.plot(y_arr, pdf(y_arr), color="green", label="Analytical")    
-    plt.legend()
-    plt.show()
+    pdf_name = "final_total_drift_selected_theta"
+    if iso_stepsize: pdf_name += "_no-step-corr"
+    if z_ax: pdf_name += "_init-z"
+    if __name__ == "__main__":
+        plt.show()
 
 
-def average_drift_plot(base_filename, base_filename_iso):
+def final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50):#base_filename, base_filename_iso, n_bins=50):
+    """Plots the final drift distribution along each axis"""
+    # Get data
+    colors = ["black", "green", "blue", "orange", "yellow"]
+    global theta
+    theta_initial = theta
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    #fig.suptitle("Distribution along each spatial axis")
+    axes = [ax1, ax2, ax3]
+    for (i, theta_pi_frac) in enumerate(theta_pi_frac_arr):
+        theta = theta_pi_frac * np.pi
+        filename, filename_iso = construct_base_filename("randw_")
+        x_final, y_final, z_final = final_positions_data(filename)
+        x_final_iso, y_final_iso, z_final_iso = final_positions_data(filename_iso)
+
+        # Drift x-direction
+        xbins = np.linspace(min(x_final), max(x_final), n_bins)
+        xbins_iso = np.linspace(min(x_final_iso), max(x_final_iso), n_bins)
+        x_arr = np.linspace(min(x_final), max(x_final), 1000)
+        # Drift y-direction
+        ybins = np.linspace(min(y_final), max(y_final), n_bins)
+        ybins_iso = np.linspace(min(y_final_iso), max(y_final_iso), n_bins)
+        y_arr = np.linspace(min(y_final), max(y_final), 1000)
+        zbins = np.linspace(min(z_final), max(z_final), n_bins)
+        zbins_iso = np.linspace(min(z_final_iso), max(z_final_iso), n_bins)
+        z_arr = np.linspace(min(z_final), max(z_final), 1000)
+
+        axis_labels = ['x', 'y', 'z']
+        ax_bins_array = [xbins, ybins, zbins]
+        ax_bins_array_iso = [xbins_iso, ybins_iso, zbins_iso]
+        ax_arrays = [x_arr, y_arr, z_arr]
+        ax_final_arrays = [x_final, y_final, z_final]
+        ax_final_arrays_iso = [x_final_iso, y_final_iso, z_final_iso]
+
+        for (j, axis_label) in enumerate(axis_labels):
+            ax_array = ax_arrays[j]
+            ax_final_array = ax_final_arrays[j]
+            if i == 0:
+                axes[j].plot(ax_array, pdf(ax_array), linestyle=(0, (5, 1)), color="gray", label="Target distribution")
+            hist = axes[j].hist(
+                ax_final_array, 
+                label=fr'$\theta_{{\mathrm{{max}}}}/\pi={theta_pi_frac}$', 
+                histtype=u'step', color=colors[i], bins=ax_bins_array[j], density=True
+            )
+            if i == 0:
+                axes[j].set_xlabel(f"{axis_labels[j]}-axis [fix units]")
+                axes[j].set_ylim(top=max(hist[0])*1.05)
+                if j == 0:
+                    axes[j].set_ylabel(f"Distribution [fix units]")
+    theta = theta_initial
+    handles, labels = ax1.get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper center', ncol=len(theta_pi_frac_arr)+1, mode="expand")
+    if __name__ == "__main__":
+        plt.show()
+
+
+def average_drift_plot(theta_pi_frac_arr):
     """Plots avg drift vs time
 
     :base_filename: TODO
@@ -274,13 +337,30 @@ def average_drift_plot(base_filename, base_filename_iso):
     :returns: TODO
 
     """
-    t_sampled, avg_drifts_sampled = sample_positions_data(base_filename)
-    t_sampled_iso, avg_drifts_sampled_iso = sample_positions_data(base_filename_iso)
-    
-    plt.plot(t_sampled, avg_drifts_sampled, label=f"theta: {theta}")
-    plt.plot(t_sampled_iso, avg_drifts_sampled_iso, label="isotropic")
+    global theta
+    theta_initial = theta
+    target_plotted = False
+    for (i, theta_pi_frac) in enumerate(theta_pi_frac_arr):
+        theta = theta_pi_frac * np.pi
+        filename, filename_iso = construct_base_filename("randw_")
+        t_sampled, avg_drifts_sampled = sample_positions_data(filename)
+
+        if theta_pi_frac == 1.0:
+            continue
+        if not target_plotted:
+            t_sampled_iso, avg_drifts_sampled_iso = sample_positions_data(filename_iso)
+            plt.plot(t_sampled_iso, avg_drifts_sampled_iso, color="gray", label="Target drift") # replace with theoretical
+            plt.plot(t_sampled_iso[0::10], avg_drifts_sampled_iso[0::10], "+", 
+                    color="red", markersize=8,label=fr"$\theta_{{\mathrm{{max}}}}/\pi=1.0$")
+            target_plotted = True
+        plt.plot(t_sampled[0::10], avg_drifts_sampled[0::10], linestyle="-", label=fr"$\theta_{{\mathrm{{max}} }}/\pi={theta_pi_frac}$")
+
+        #plt.plot(t_sampled_iso[0::10], avg_drifts_sampled_iso[0::10], "+", color="red", label=fr"$\theta_{{\mathrm{{max}} }}/\pi=1.0$")
+    plt.xlabel("x [add untis]")
+    plt.ylabel("y [add untis]")
     plt.legend()
-    plt.show()
+    if __name__ == "__main__":
+        plt.show()
 
 
 ########################
@@ -295,10 +375,9 @@ def D_coeff_estimate(base_filename):
 
 def rw_D_coeff_csv():
     print("Writing Dcoeffs to CSV")
-    global theta
     global theta_pi_frac
     theta_initial = theta
-    theta_pi_frac_intital = theta_pi_frac
+    theta_pi_frac_initial = theta_pi_frac
     with open('rw_dcoeff.csv', 'w') as f:
         writer = csv.writer(f)
         writer.writerow([f"{0.0:.3f}", 'inf'])
@@ -312,15 +391,43 @@ def rw_D_coeff_csv():
                 writer.writerow([f"{theta_pi_frac:.3f}", D_coeff_estimate(filename)])
         writer.writerow([f"{1.0:.3f}", D_coeff_estimate(filename_iso)])
     theta = theta_initial
-    theta_pi_frac = theta_pi_frac_intital
+    theta_pi_frac = theta_pi_frac_initial
 
 
 if __name__ == "__main__":
+    # Setup
     parse_cmd_args() # Parse optional cmd args -- overrides default parameter values
+    #theta_pi_frac_selected = [0.05, 0.1, 0.5]
+    theta_pi_frac_selected = [0.1, 0.5, 1.0]
+    theta_pi_frac_all = [0.05, 0.1, 0.5]
     filename, filename_iso = construct_base_filename("randw_") # construct base filename of the correct data file(s)
 
-    # Plot functions
-    #final_positions_plot(filename, filename_iso)
-    #final_drift_distribution_plot(filename, filename_iso)
+    # Final positions scatter 3D plot
+    #final_positions_plot([theta_pi_frac])
+
+    # Total drift
+    #total_final_drift_distribution_plot([theta_pi_frac]) # Single theta 
+    #total_final_drift_distribution_plot(theta_pi_frac_selected) # Multiple theta
+
+    # Drift along axis
+    #final_drift_distribution_plot(theta_pi_frac_selected)
+    #final_drift_distribution_plot([theta_pi_frac])
+
+    # average drift over time
     #average_drift_plot(filename, filename_iso)
-    rw_D_coeff_csv()
+
+    # Compute corresponding diffusion coefficients
+    #rw_D_coeff_csv()
+
+    #######################
+    # Test for production #
+    #######################
+
+    total_final_drift_distribution_plot([1.0, 0.7, 0.5, 0.3])
+    total_final_drift_distribution_plot([0.1, 0.07, 0.05, 0.03])
+
+    final_drift_distribution_plot([1.0, 0.5])
+    final_drift_distribution_plot([0.05, 0.01])
+
+    average_drift_plot([0.7, 0.5, 0.3])
+    average_drift_plot([0.3, 0.2, 0.1])
