@@ -1,8 +1,14 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy.interpolate import CubicSpline
 from scipy.optimize import curve_fit
+import os.path
+
+
+# Input file 
+in_file = f"{os.path.dirname(__file__)}/rw_dcoeff.csv"
 
 
 def small_angle_corr_analytical(theta_max):
@@ -41,12 +47,6 @@ def piecewise_poly(x, bp, coeffs):
     for (i, b) in enumerate(bp[1:]):
         if x <= b:
             k = 3
-            if x > bp[-2]:
-                print("x>0.9pi BBY:")
-                print("coeffs")
-                print(coeffs[:, i])
-                print("bp")
-                print(bp[i])
             return sum(coeffs[m, i] * (x - bp[i])**(k-m) for m in range(k+1))
     raise Exception(f"Unknown error, possibly invalid argument")
 
@@ -56,21 +56,21 @@ piecewise_poly_vectorized.excluded.add(1)
 piecewise_poly_vectorized.excluded.add(2)
 
 
-if __name__ == "__main__":
+def curve_fit_and_plot(verbose=False, include_analyt=False):
     v = 0.99558849759333801 # Proton of energy 1GeV
     R_L = 3.5230000000000007E-005 # Larmor radius (isotropic stepsize)
     D = R_L/3
-    print(f"D theory: {D}")
+    #print(f"D theory: {D}")
 
-    theta_max_data_arr, D_coeff_arr = np.genfromtxt("rw_dcoeff.csv", delimiter=",").T
-    print(theta_max_data_arr)
-    print(D_coeff_arr)
+    theta_max_data_arr, D_coeff_arr = np.genfromtxt(in_file, delimiter=",").T
+    #print(theta_max_data_arr)
+    #print(D_coeff_arr)
     theta_max_data_arr *= np.pi
     theta_max_arr = np.linspace(theta_max_data_arr[0], theta_max_data_arr[-1], 100)
 
     corr_arr = (R_L*v)/(3*D_coeff_arr)
-    D_target = D#1.1687289275261758e-05 # Replace with theoretical
-    print("Target D_coeff: ", D_target)
+    #D_target = D#1.1687289275261758e-05 # Replace with theoretical
+    #print("Target D_coeff: ", D_target)
 
     # Fitting power law
     pars, cov = curve_fit(
@@ -83,45 +83,51 @@ if __name__ == "__main__":
     l_ls = interp1d(theta_max_data_arr, corr_arr) # linear interpolation
     l_cs = CubicSpline(theta_max_data_arr, corr_arr) # Cubic splines
 
-    plt.title("stepsize asf. theta_max")
-    plt.xlabel("theta_max")
-    plt.ylabel("stepsize")
-    plt.plot(theta_max_data_arr, corr_arr, "o", label="DP")
-    #plt.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
-    plt.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
-    plt.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Fitted power law")
-    plt.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label='analytical attempt')
-    plt.plot(theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label='litterature')
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.legend()
-    plt.show()
+    fig, (ax1, ax2) = plt.subplots(1, 2)
 
-    plt.title("stepsize asf. theta_max")
-    plt.xlabel("theta_max")
-    plt.ylabel("stepsize")
-    plt.plot(theta_max_data_arr, corr_arr, "o", label="DP")
-    #plt.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
-    plt.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
-    plt.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Fitted power law")
-    plt.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label='analytical attempt')
-    plt.plot(theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label='litterature')
-    plt.legend()
-    plt.show()
+    ax1.set_xlabel(r"$\theta_{\mathrm{max}}$")
+    ax1.set_ylabel("$\lambda / \lambda_0$")
+    ax1.plot(theta_max_data_arr, corr_arr, "+", label="Data points", markersize=5)
+    #ax1.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
+    ax1.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
+    ax1.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Power law fit")
+    if include_analyt:
+        ax1.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label='analytical attempt')
+    ax1.plot(theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label='litterature')
+    ax1.set_xscale("log")
+    ax1.set_yscale("log")
+    ax1.legend()
+
+    ax2.set_xlabel(r"$\theta_{\mathrm{max}}$")
+    #ax2.set_ylabel("$\lambda / \lambda_0$")
+    ax2.plot(theta_max_data_arr, corr_arr, "+", label="Data points", markersize=5)
+    #ax2.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
+    ax2.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
+    ax2.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Power law fit")
+    if include_analyt:
+        ax2.plot(theta_max_arr, small_angle_corr_analytical(theta_max_arr), label='analytical attempt')
+    ax2.plot(theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label='litterature')
+    ax2.legend()
+    if __name__ == "__main__":
+        plt.show()
 
     # Print power law parameters
-    print("######################")
-    print("Power law parameters: ")
-    print("Power Law: f(x) = a*x^b")
-    print("a: ", a)
-    print("b: ", b)
-    print("######################")
-    print()
+    #print("######################")
+    #print("Power law parameters: ")
+    #print("Power Law: f(x) = a*x^b")
+    #print("a: ", a)
+    #print("b: ", b)
+    #print("######################")
+    #print()
 
-    # Print l_cs breakpoints and coeffs
-    print("######################")
-    print("l_cs breakpoints: ", l_cs.x)
-    print("l_cs breakpoints shape: ", l_cs.x.shape)
-    print("l_cs coeffs: ", l_cs.c)
-    print("l_cs coeffs shape: ", l_cs.c.shape)
-    print("######################")
+    ## Print l_cs breakpoints and coeffs
+    #print("######################")
+    #print("l_cs breakpoints: ", l_cs.x)
+    #print("l_cs breakpoints shape: ", l_cs.x.shape)
+    #print("l_cs coeffs: ", l_cs.c)
+    #print("l_cs coeffs shape: ", l_cs.c.shape)
+    #print("######################")
+
+
+if __name__ == "__main__":
+    curve_fit_and_plot(verbose=True)

@@ -8,32 +8,6 @@ from scipy.stats import norm
 from tqdm import trange
 
 
-#######################
-### Plot parameters ###
-#######################
-
-
-fontsize = 12
-newparams = {
-    "axes.titlesize": fontsize,
-    "axes.labelsize": fontsize,
-    "ytick.labelsize": fontsize,
-    "xtick.labelsize": fontsize,
-    "legend.fontsize": fontsize,
-    "figure.titlesize": fontsize,
-    "legend.handlelength": 1.5,
-    "lines.linewidth": 1.5,
-    "lines.markersize": 7,
-    #"figure.figsize": (11, 7),
-    "figure.dpi": 200,
-    "text.usetex": True,
-    #"font.family": "sans-serif",
-    "font.family": "cm",
-    "mathtext.fontset": "cm",
-}
-plt.rcParams.update(newparams)
-
-
 ###########################
 ### Settings/parameters ###
 ###########################
@@ -95,25 +69,33 @@ def parse_cmd_args():
                             try:
                                 theta_pi_frac = float(val)
                                 theta = theta_pi_frac * pi
-                                print(f"Using provided theta_pi_frac: {theta_pi_frac}")
+                                if __name__ == "__main__":
+                                    print(f"Using provided theta_pi_frac: {theta_pi_frac}")
                             except:
-                                print(f"Invalid argument, using default theta_pi_frac: {theta_pi_frac}    ")
+                                if __name__ == "__main__":
+                                    print(f"Invalid argument, using default theta_pi_frac: {theta_pi_frac}    ")
                         elif j == 1:
                             try:
                                 t_max = int(val)
-                                print(f"Using provided t_max: {t_max}")
+                                if __name__ == "__main__":
+                                    print(f"Using provided t_max: {t_max}")
                             except:
-                                print(f"Invalid argument, using default t_max: {t_max}")
+                                if __name__ == "__main__":
+                                    print(f"Invalid argument, using default t_max: {t_max}")
                         elif j == 2:
                             try:
                                 stepexp = float(val)
-                                print(f"Using provided stepexp: {stepexp}")
+                                if __name__ == "__main__":
+                                    print(f"Using provided stepexp: {stepexp}")
                             except:
-                                print(f"Invalid argument, using default stepexp: {stepexp}")
+                                if __name__ == "__main__":
+                                    print(f"Invalid argument, using default stepexp: {stepexp}")
             else:
-                print(f"Bad flag {flag} provided, no new parameter value set")
+                if __name__ == "__main__":
+                    print(f"Bad flag {flag} provided, no new parameter value set")
     else:
-        print("Odd number of flags+parameters, using default values")
+        if __name__ == "__main__":
+            print("Odd number of flags+parameters, using default values")
 
 
 def construct_base_filename(base):
@@ -205,7 +187,7 @@ def sample_positions_data(base_filename):
 #############
 
 
-def final_positions_plot(theta_pi_frac_arr):
+def final_positions_plot(theta_pi_frac_arr, iso=None):
     """Plots the final positions of rw particles
 
     :base_filename: TODO
@@ -213,7 +195,11 @@ def final_positions_plot(theta_pi_frac_arr):
 
     """
     global theta
+    global iso_stepsize
+    iso_stepsize_initial = iso_stepsize
     theta_initial = theta
+    if iso != None:
+        iso_stepsize = iso
     for (i, theta_pi_frac) in enumerate(theta_pi_frac_arr):
         theta = theta_pi_frac * np.pi
         filename, filename_iso = construct_base_filename("randw_")
@@ -227,13 +213,18 @@ def final_positions_plot(theta_pi_frac_arr):
         if i == 0:
             ax.scatter(x_final_iso, y_final_iso, z_final_iso, marker='^', label=fr'$\theta_{{\mathrm{{max}}}}/\pi =1.0$')
     theta = theta_initial
+    iso_stepsize = iso_stepsize_initial
     ax.legend()
     if __name__ == "__main__":
         plt.show()
 
 
-def total_final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50):
+def total_final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50, iso=None):
     """Plot of total drift distribution from origin"""
+    global iso_stepsize
+    iso_stepsize_initial = iso_stepsize
+    if iso != None:
+        iso_stepsize = iso    
     colors = ["black", "green", "blue", "orange", "yellow"]
     global theta
     theta_initial = theta
@@ -261,8 +252,9 @@ def total_final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50):
             density=True, label=fr'$\theta_{{\mathrm{{max}}}}/\pi={theta_pi_frac}$'
         )
     theta = theta_initial
+    iso_stepsize = iso_stepsize_initial
 
-    plt.title(fr"Total drift")
+    #plt.title(fr"Total drift")
     plt.xlabel("x [fix units]")
     plt.ylabel("y [fix units]")
     plt.legend()
@@ -273,13 +265,17 @@ def total_final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50):
         plt.show()
 
 
-def final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50):#base_filename, base_filename_iso, n_bins=50):
+def final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50, legend=True, iso=None):
     """Plots the final drift distribution along each axis"""
     # Get data
     colors = ["black", "green", "blue", "orange", "yellow"]
     global theta
+    global iso_stepsize
     theta_initial = theta
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    iso_stepsize_initial = iso_stepsize
+    if iso != None:
+        iso_stepsize = iso
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
     #fig.suptitle("Distribution along each spatial axis")
     axes = [ax1, ax2, ax3]
     for (i, theta_pi_frac) in enumerate(theta_pi_frac_arr):
@@ -323,13 +319,19 @@ def final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50):#base_filename, 
                 if j == 0:
                     axes[j].set_ylabel(f"Distribution [fix units]")
     theta = theta_initial
+    iso_stepsize = iso_stepsize_initial
     handles, labels = ax1.get_legend_handles_labels()
-    fig.legend(handles, labels, loc='upper center', ncol=len(theta_pi_frac_arr)+1, mode="expand")
+    if legend:
+        if __name__ == "__main__":
+            fig.legend(handles, labels, loc='upper center', ncol=len(theta_pi_frac_arr)+1, mode="expand")
+        else: 
+            # tikzplotlib friendly legend
+            ax2.legend(bbox_to_anchor=(0.5, 1.1), loc="lower center", ncol=len(theta_pi_frac_arr)+1)
     if __name__ == "__main__":
         plt.show()
 
 
-def average_drift_plot(theta_pi_frac_arr):
+def average_drift_plot(theta_pi_frac_arr, ax=None):
     """Plots avg drift vs time
 
     :base_filename: TODO
@@ -349,17 +351,30 @@ def average_drift_plot(theta_pi_frac_arr):
             continue
         if not target_plotted:
             t_sampled_iso, avg_drifts_sampled_iso = sample_positions_data(filename_iso)
-            plt.plot(t_sampled_iso, avg_drifts_sampled_iso, color="gray", label="Target drift") # replace with theoretical
-            plt.plot(t_sampled_iso[0::10], avg_drifts_sampled_iso[0::10], "+", 
-                    color="red", markersize=8,label=fr"$\theta_{{\mathrm{{max}}}}/\pi=1.0$")
+            if ax:
+                ax.plot(t_sampled_iso, avg_drifts_sampled_iso, color="gray", label="Target drift") # replace with theoretical
+                ax.plot(t_sampled_iso[0::20], avg_drifts_sampled_iso[0::20], "+", 
+                        color="red", markersize=5,label=fr"$\theta_{{\mathrm{{max}}}}/\pi=1.0$")
+            else:
+                plt.plot(t_sampled_iso, avg_drifts_sampled_iso, color="gray", label="Target drift") # replace with theoretical
+                plt.plot(t_sampled_iso[0::20], avg_drifts_sampled_iso[0::20], "+", 
+                        color="red", markersize=5,label=fr"$\theta_{{\mathrm{{max}}}}/\pi=1.0$")
             target_plotted = True
-        plt.plot(t_sampled[0::10], avg_drifts_sampled[0::10], linestyle="-", label=fr"$\theta_{{\mathrm{{max}} }}/\pi={theta_pi_frac}$")
+        if ax:
+            ax.plot(t_sampled[0::10], avg_drifts_sampled[0::10], linestyle="-", label=fr"$\theta_{{\mathrm{{max}} }}/\pi={theta_pi_frac}$")
+        else:
+            plt.plot(t_sampled[0::10], avg_drifts_sampled[0::10], linestyle="-", label=fr"$\theta_{{\mathrm{{max}} }}/\pi={theta_pi_frac}$")
 
         #plt.plot(t_sampled_iso[0::10], avg_drifts_sampled_iso[0::10], "+", color="red", label=fr"$\theta_{{\mathrm{{max}} }}/\pi=1.0$")
-    plt.xlabel("x [add untis]")
-    plt.ylabel("y [add untis]")
-    plt.legend()
-    if __name__ == "__main__":
+    if ax:
+        ax.set_xlabel("x [add untis]")
+        ax.set_ylabel("y [add untis]")
+        ax.legend()
+    else:
+        plt.xlabel("x [add untis]")
+        plt.ylabel("y [add untis]")
+        plt.legend()
+    if __name__ == "__main__" and not ax:
         plt.show()
 
 
@@ -427,7 +442,19 @@ if __name__ == "__main__":
     total_final_drift_distribution_plot([0.1, 0.07, 0.05, 0.03])
 
     final_drift_distribution_plot([1.0, 0.5])
-    final_drift_distribution_plot([0.05, 0.01])
+    final_drift_distribution_plot([0.05, 0.01], legend=False)
 
-    average_drift_plot([0.7, 0.5, 0.3])
-    average_drift_plot([0.3, 0.2, 0.1])
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    average_drift_plot([0.7, 0.5, 0.3], ax=ax1)
+    average_drift_plot([0.3, 0.2, 0.1], ax=ax2)
+    plt.show()
+    average_drift_plot([0.3], ax=ax1)
+    average_drift_plot([0.1], ax=ax2)
+    plt.show()
+
+
+    total_final_drift_distribution_plot([1.0, 0.5, 0.1], iso=False)
+    plt.show()
+    final_drift_distribution_plot([0.5], iso=False)
+    final_drift_distribution_plot([0.1], iso=False)
+    plt.show()
