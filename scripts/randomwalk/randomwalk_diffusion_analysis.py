@@ -15,6 +15,7 @@ q_elementary = 0.30282212088 # HEP(?) Loretnz Heaviside units
 B0_reg = 1e-6 # regular B -- Gauss
 B0_turb = B0_reg/1.0 # turbulent B -- Gauss
 m_proton = 938.272e6 # Ev
+c = 0.307 # Speed of light, parsec/year
 
 
 ###########################
@@ -47,23 +48,6 @@ def v_particle(E, m):
     return np.sqrt(E**2 - m**2)/E
 
 
-def R_larmor_natural(E, m = m_proton, B = B0_turb):
-    """
-    Compute the larmor radius of a particle with energy E, 
-    in a magnetic field with strength B
-
-    Units where c = 1
-    """
-    e = q_elementary
-    v = v_particle(E, m)
-    gamma = 1.0/np.sqrt(1 - v**2)
-    p = gamma*m*v
-    R_L = p/(e*B)
-    print((v*E/(e*B)) / (E/B))
-    print(3.523e-21*E/B)
-    return R_L
-
-
 def R_larmor_year(E, B=B0_turb):
     """
     Larmor radius from energy in simulation units ([t] = [l] = year, [v] = 1)
@@ -82,7 +66,25 @@ def D_coeff_year(E):
     Simulation units
     """
     return v_particle(E, m_proton)*R_larmor_year(E)/3
-    
+
+
+def R_larmor_parsec(E, B=B0_turb):
+    """
+    Larmor radius in parsec. 
+    """
+    R_year = R_larmor_year(E, B=B)
+    R_parsec = R_year * c
+    return R_parsec
+
+
+def D_coeff_pc2_yr(E):
+    """
+    Diffusion coefficient in units pc^2/year. 
+    """
+    v = v_particle(E, m_proton) * c # particle velocity in parsec per year
+    return v * R_larmor_parsec(E)/3
+
+
 
 #D10 = 1.1687289275261758e-05 # E-inj-exp = 10
 #D14 = 0.11758733574069284 # E-inj-exp = 14
@@ -493,11 +495,11 @@ if __name__ == "__main__":
     # Test for production #
     #######################
 
-    total_final_drift_distribution_plot([1.0, 0.7, 0.5, 0.3])
-    total_final_drift_distribution_plot([0.1, 0.07, 0.05, 0.03])
+    #total_final_drift_distribution_plot([1.0, 0.7, 0.5, 0.3])
+    #total_final_drift_distribution_plot([0.1, 0.07, 0.05, 0.03])
 
-    final_drift_distribution_plot([1.0, 0.5])
-    final_drift_distribution_plot([0.05, 0.01], legend=False)
+    #final_drift_distribution_plot([1.0, 0.5])
+    #final_drift_distribution_plot([0.05, 0.01], legend=False)
 
     #fig, (ax1, ax2) = plt.subplots(1, 2)
     #average_drift_plot([0.7, 0.5, 0.3], ax=ax1)
@@ -507,12 +509,15 @@ if __name__ == "__main__":
     #average_drift_plot([0.1], ax=ax2)
     #plt.show()
 
-    total_final_drift_distribution_plot([1.0, 0.5, 0.1], iso=False)
-    plt.show()
-    final_drift_distribution_plot([0.5], iso=False)
-    final_drift_distribution_plot([0.1], iso=False)
-    plt.show()
+    #total_final_drift_distribution_plot([1.0, 0.5, 0.1], iso=False)
+    #plt.show()
+    #final_drift_distribution_plot([0.5], iso=False)
+    #final_drift_distribution_plot([0.1], iso=False)
+    #plt.show()
 
-    #print(D_coeff_year(1e10)/D10)
-    #print(D_coeff_year(1e12)/D12)
-    #print(D_coeff_year(1e14)/D14)
+    print(D_coeff_year(1e10)/D10)
+    print(D_coeff_year(1e12)/D12)
+    print(D_coeff_year(1e14)/D14)
+
+    print(D_coeff_pc2_yr(1e10))
+    print(D_coeff_year(1e10))
