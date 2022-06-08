@@ -12,3 +12,4 @@ cluster_data
 !/scripts/test_tex/test.pdf
 !/scripts/test_tex/.latexmkrc
 !/scripts/test_tex/plot.py
+*__pycache__/*

@@ -8,11 +8,18 @@ from scipy.stats import norm
 from tqdm import trange
 
 
+#################
+### Constants ###
+#################
+q_elementary = 0.30282212088 # HEP(?) Loretnz Heaviside units
+B0_reg = 1e-6 # regular B -- Gauss
+B0_turb = B0_reg/1.0 # turbulent B -- Gauss
+m_proton = 938.272e6 # Ev
+
+
 ###########################
 ### Settings/parameters ###
 ###########################
-
-
 #DATA_DIR = os.path.dirname(__file__)+'/../Data/'
 DATA_DIR = os.path.dirname(__file__)+'/../../cluster_data/randomwalk-data/'
 OUT_DIR = f"{os.path.dirname(__file__)}/figs/"
@@ -31,11 +38,58 @@ save_figs = False
 ################################################
 ### Analytical solution diffusion (gaussian) ###
 ################################################
+def v_particle(E, m):
+    """
+    Comute the velocity of a particle from given energy
+
+    Units where c = 1
+    """
+    return np.sqrt(E**2 - m**2)/E
 
 
-D10 = 1.1687289275261758e-05 # E-inj-exp = 10
-D14 = 0.11758733574069284 # E-inj-exp = 14
-D12 = 0.0011752490186288554 # E-inj-exp = 12
+def R_larmor_natural(E, m = m_proton, B = B0_turb):
+    """
+    Compute the larmor radius of a particle with energy E, 
+    in a magnetic field with strength B
+
+    Units where c = 1
+    """
+    e = q_elementary
+    v = v_particle(E, m)
+    gamma = 1.0/np.sqrt(1 - v**2)
+    p = gamma*m*v
+    R_L = p/(e*B)
+    print((v*E/(e*B)) / (E/B))
+    print(3.523e-21*E/B)
+    return R_L
+
+
+def R_larmor_year(E, B=B0_turb):
+    """
+    Larmor radius from energy in simulation units ([t] = [l] = year, [v] = 1)
+    
+    Lightspeed c = 1. 
+    """
+    return 3.523e-21*E/B
+
+
+def D_coeff_year(E):
+    """
+    Computes the diffusion coefficient corresponding to the mean free path corresponding 
+    to the given particle energy, 
+    for a random walk with isotropic scattering. 
+    
+    Simulation units
+    """
+    return v_particle(E, m_proton)*R_larmor_year(E)/3
+    
+
+#D10 = 1.1687289275261758e-05 # E-inj-exp = 10
+#D14 = 0.11758733574069284 # E-inj-exp = 14
+#D12 = 0.0011752490186288554 # E-inj-exp = 12
+D10 = D_coeff_year(1e10)
+D12 = D_coeff_year(1e12)
+D14 = D_coeff_year(1e14)
 D_dict = {10: D10, 12: D12, 14: D14}
 D = D_dict[E_inj_exp]
 mean = 0
@@ -187,6 +241,7 @@ def sample_positions_data(base_filename):
 #############
 
 
+#Non production
 def final_positions_plot(theta_pi_frac_arr, iso=None):
     """Plots the final positions of rw particles
 
@@ -219,7 +274,7 @@ def final_positions_plot(theta_pi_frac_arr, iso=None):
         plt.show()
 
 
-def total_final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50, iso=None):
+def total_final_drift_distribution_plot(theta_pi_frac_arr, n_bins=50, iso=None, datafname=None):
     """Plot of total drift distribution from origin"""
     global iso_stepsize
     iso_stepsize_initial = iso_stepsize
@@ -444,17 +499,20 @@ if __name__ == "__main__":
     final_drift_distribution_plot([1.0, 0.5])
     final_drift_distribution_plot([0.05, 0.01], legend=False)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    average_drift_plot([0.7, 0.5, 0.3], ax=ax1)
-    average_drift_plot([0.3, 0.2, 0.1], ax=ax2)
-    plt.show()
-    average_drift_plot([0.3], ax=ax1)
-    average_drift_plot([0.1], ax=ax2)
-    plt.show()
-
+    #fig, (ax1, ax2) = plt.subplots(1, 2)
+    #average_drift_plot([0.7, 0.5, 0.3], ax=ax1)
+    #average_drift_plot([0.3, 0.2, 0.1], ax=ax2)
+    #plt.show()
+    #average_drift_plot([0.3], ax=ax1)
+    #average_drift_plot([0.1], ax=ax2)
+    #plt.show()
 
     total_final_drift_distribution_plot([1.0, 0.5, 0.1], iso=False)
     plt.show()
     final_drift_distribution_plot([0.5], iso=False)
     final_drift_distribution_plot([0.1], iso=False)
     plt.show()
+
+    #print(D_coeff_year(1e10)/D10)
+    #print(D_coeff_year(1e12)/D12)
+    #print(D_coeff_year(1e14)/D14)
