@@ -23,7 +23,8 @@ c = 999992651 * np.pi / 10246429500  # speed of light, pc/year
 ###########################
 # DATA_DIR = os.path.dirname(__file__)+'/../Data/'
 DATA_DIR = os.path.dirname(__file__) + "/../../cluster_data/randomwalk-data/"
-OUT_DIR = f"{os.path.dirname(__file__)}/../outdir/"
+#OUT_DIR = f"{os.path.dirname(__file__)}/../outdir/"
+OUT_DIR = f"{os.path.dirname(__file__)}/../../../cr-acceleration-report/data/"
 t_max = 20
 theta_pi_frac = 1.0
 theta = theta_pi_frac * pi
@@ -209,9 +210,20 @@ def construct_base_filename(base):
 
 def save_table(columns, header, outpath):
     if len(np.shape(columns)) == 1:
+        print("Only 1 col provided")
+        print(np.shape(columns))
         columns = [columns]
+    print("col shape: ", np.shape(columns))
     table = np.column_stack(columns)
+    print(table.shape)
     np.savetxt(outpath, table, header=header, comments="")
+
+
+def round_to_one_significant(x):
+    """
+    Rounds to one significant digit. 
+    """
+    return round(x, -int(np.floor(np.log10(abs(x)))))
 
 
 ###################################
@@ -365,6 +377,9 @@ def total_final_drift_distribution_plot(
     iso_stepsize = iso_stepsize_initial
     if savedat:
         outpath = f"{OUT_DIR}total_drift_dist_isostep{iso}_E-inj-exp{E_inj_exp}.dat"
+        print(header)
+        print(len(columns))
+        print(len(columns[0]))
         save_table(columns, header.strip(), outpath)
     if plot:
         # plt.title(fr"Total drift")
@@ -446,7 +461,7 @@ def final_drift_distribution_plot(
                     axes[j].set_ylabel(f"Distribution [fix units]")
             if savedat:
                 if j == 0:
-                    header += f" {theta_pi_frac}"
+                    header += f" {round_to_one_significant(theta_pi_frac)}"
                     columns_x.append(ax_final_array)
                 elif j == 1:
                     columns_y.append(ax_final_array)
@@ -484,7 +499,7 @@ def final_drift_distribution_plot(
             plt.show()
 
 
-def average_drift_plot(theta_pi_frac_arr, ax=None, plot=True, savedat=False):
+def average_drift_plot(theta_pi_frac_arr, ax=None, plot=True, savedat=False, iso=True):
     """Plots avg drift vs time
 
     :base_filename: TODO
@@ -493,8 +508,13 @@ def average_drift_plot(theta_pi_frac_arr, ax=None, plot=True, savedat=False):
 
     """
     global theta
+    global iso_stepsize
     theta_initial = theta
+    iso_stepsize_initial = iso_stepsize
+    iso_stepsize = iso
     target_plotted = False
+    table = []
+    header = ""
     for (i, theta_pi_frac) in enumerate(theta_pi_frac_arr):
         theta = theta_pi_frac * np.pi
         filename, filename_iso = construct_base_filename("randw_")
@@ -504,7 +524,7 @@ def average_drift_plot(theta_pi_frac_arr, ax=None, plot=True, savedat=False):
             continue
         if not target_plotted:
             t_sampled_iso, avg_drifts_sampled_iso = sample_positions_data(filename_iso)
-            if ax:
+            if ax and plot:
                 ax.plot(
                     t_sampled_iso,
                     avg_drifts_sampled_iso,
@@ -519,7 +539,7 @@ def average_drift_plot(theta_pi_frac_arr, ax=None, plot=True, savedat=False):
                     markersize=5,
                     label=rf"$\theta_{{\mathrm{{max}}}}/\pi=1.0$",
                 )
-            else:
+            elif plot:
                 plt.plot(
                     t_sampled_iso,
                     avg_drifts_sampled_iso,
@@ -534,32 +554,43 @@ def average_drift_plot(theta_pi_frac_arr, ax=None, plot=True, savedat=False):
                     markersize=5,
                     label=rf"$\theta_{{\mathrm{{max}}}}/\pi=1.0$",
                 )
+            if savedat:
+                header += f" x1.0 y1.0"
+                table.append(t_sampled_iso)
+                table.append(avg_drifts_sampled_iso)
             target_plotted = True
-        if ax:
+        if ax and plot:
             ax.plot(
                 t_sampled[0::10],
                 avg_drifts_sampled[0::10],
                 linestyle="-",
                 label=rf"$\theta_{{\mathrm{{max}} }}/\pi={theta_pi_frac}$",
             )
-        else:
+        elif plot:
             plt.plot(
                 t_sampled[0::10],
                 avg_drifts_sampled[0::10],
                 linestyle="-",
                 label=rf"$\theta_{{\mathrm{{max}} }}/\pi={theta_pi_frac}$",
             )
-
+        if savedat:
+            header += f" x{round_to_one_significant(theta_pi_frac)} y{round_to_one_significant(theta_pi_frac)}"
+            table.append(t_sampled)
+            table.append(avg_drifts_sampled)
         # plt.plot(t_sampled_iso[0::10], avg_drifts_sampled_iso[0::10], "+", color="red", label=fr"$\theta_{{\mathrm{{max}} }}/\pi=1.0$")
-    if ax:
+    theta = theta_initial
+    iso_stepsize = iso_stepsize_initial
+    if savedat:
+        save_table(table, header.strip(), f"{OUT_DIR}sampled_average_drift_isostep{iso}.dat")
+    if ax and plot:
         ax.set_xlabel("x [add untis]")
         ax.set_ylabel("y [add untis]")
         ax.legend()
-    else:
+    elif plot:
         plt.xlabel("x [add untis]")
         plt.ylabel("y [add untis]")
         plt.legend()
-    if __name__ == "__main__" and not ax:
+    if __name__ == "__main__" and not ax and plot:
         plt.show()
 
 
@@ -575,6 +606,11 @@ def D_coeff_estimate(base_filename):
         / (t_sampled[-1] - t_sampled[0])
         / 3
     )
+
+
+######################
+### Main functions ###
+######################
 
 
 def rw_D_coeff_csv():
@@ -598,41 +634,12 @@ def rw_D_coeff_csv():
     theta_pi_frac = theta_pi_frac_initial
 
 
-if __name__ == "__main__":
-    # Setup
-    parse_cmd_args()  # Parse optional cmd args -- overrides default parameter values
-    # theta_pi_frac_selected = [0.05, 0.1, 0.5]
-    theta_pi_frac_selected = [0.1, 0.5, 1.0]
-    filename, filename_iso = construct_base_filename(
-        "randw_"
-    )  # construct base filename of the correct data file(s)
+def pyplotlab():
+    total_final_drift_distribution_plot([1.0, 0.7, 0.5, 0.3], iso=True)
+    total_final_drift_distribution_plot([0.1, 0.07, 0.05, 0.03], iso=True)
 
-    # Final positions scatter 3D plot
-    # final_positions_plot([theta_pi_frac])
-
-    # Total drift
-    # total_final_drift_distribution_plot([theta_pi_frac]) # Single theta
-    # total_final_drift_distribution_plot(theta_pi_frac_selected) # Multiple theta
-
-    # Drift along axis
-    # final_drift_distribution_plot(theta_pi_frac_selected)
-    # final_drift_distribution_plot([theta_pi_frac])
-
-    # average drift over time
-    # average_drift_plot(filename, filename_iso)
-
-    # Compute corresponding diffusion coefficients
-    # rw_D_coeff_csv()
-
-    #######################
-    # Test for production #
-    #######################
-
-    # total_final_drift_distribution_plot([1.0, 0.7, 0.5, 0.3], iso=True)
-    # total_final_drift_distribution_plot([0.1, 0.07, 0.05, 0.03], iso=True)
-
-    # final_drift_distribution_plot([1.0, 0.5], iso=True, legend=True)
-    # final_drift_distribution_plot([0.05, 0.01], iso=True, legend=True)
+    final_drift_distribution_plot([1.0, 0.5], iso=True, legend=True)
+    final_drift_distribution_plot([0.05, 0.01], iso=True, legend=True)
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
     average_drift_plot([0.7, 0.5, 0.3], ax=ax1)
@@ -643,32 +650,59 @@ if __name__ == "__main__":
     average_drift_plot([0.1], ax=ax2)
     plt.show()
 
-    # total_final_drift_distribution_plot([1.0, 0.5, 0.1], iso=False)
-    # final_drift_distribution_plot([0.5], iso=False)
-    # final_drift_distribution_plot([0.1], iso=False)
+    total_final_drift_distribution_plot([1.0, 0.5, 0.1], iso=False)
+    final_drift_distribution_plot([0.5], iso=False)
+    final_drift_distribution_plot([0.1], iso=False)
 
+
+def saveplotdat():
+    theta0_arr = [0.001, 0.01, 0.1]
+    theta_pi_frac_all_iso_step = [] # E = 1e10
+    for theta0 in theta0_arr:
+       for i in trange(9):
+           theta_pi_frac_all_iso_step.append(theta0 + i*theta0)
+    theta_pi_frac_all_iso_step.append(1.0)
+    theta_pi_frac_all_corr_step = [0.1, 0.5, 1.0]
+
+    total_final_drift_distribution_plot(
+           theta_pi_frac_all_iso_step, iso=True, savedat=True, plot=False
+    )
+    total_final_drift_distribution_plot(
+           theta_pi_frac_all_corr_step, iso=False, savedat=True, plot=False
+    )
+    final_drift_distribution_plot(theta_pi_frac_all_iso_step, iso=True, savedat=True, plot=False)
+    final_drift_distribution_plot(theta_pi_frac_all_corr_step, iso=False, savedat=True, plot=False)
+
+    average_drift_plot(theta_pi_frac_all_iso_step, iso=True, plot=False, savedat=True)
+    average_drift_plot(theta_pi_frac_all_corr_step, iso=True, plot=False, savedat=True)
+
+
+if __name__ == "__main__":
+    # Setup
+    #parse_cmd_args()  # Parse optional cmd args -- overrides default parameter values
+    # theta_pi_frac_selected = [0.05, 0.1, 0.5]
+    #theta_pi_frac_selected = [0.1, 0.5, 1.0]
+    #filename, filename_iso = construct_base_filename(
+    #    "randw_"
+    #)  # construct base filename of the correct data file(s)
     # print("D theory (yr): ", D_coeff_year(1e10))
     # print("D theory (pc^2/yr): ", D_coeff_pc2pyr(1e10))
     # print("D est (pc^2/yr): ", D_coeff_estimate(filename_iso))
     # print("R larmor theory (yr): ", R_larmor_year(1e10))
     # print("R larmor theory (pc): ", R_larmor_pc(1e10))
 
+
+    ####################################################
+    ### Compute corresponding diffusion coefficients ###
+    ####################################################
+    # rw_D_coeff_csv()
+
+    #####################
+    ### Test plotting ###
+    #####################
+    # pyplotlab()
+
     #################################
     # Save plot data for production #
     #################################
-    # theta0_arr = [0.001, 0.01, 0.1]
-    # theta_pi_frac_all_iso_step = [] # E = 1e10
-    # for theta0 in theta0_arr:
-    #    for i in trange(9):
-    #        theta_pi_frac_all_iso_step.append(theta0 + i*theta0)
-    # theta_pi_frac_all_iso_step.append(1.0)
-    # theta_pi_frac_all_corr_step = [0.1, 0.5, 1.0]
-
-    # total_final_drift_distribution_plot(
-    #        theta_pi_frac_all_iso_step, iso=True, savedat=True, plot=False
-    # )
-    # total_final_drift_distribution_plot(
-    #        theta_pi_frac_all_corr_step, iso=False, savedat=True, plot=False
-    # )
-    # final_drift_distribution_plot(theta_pi_frac_all_iso_step, iso=True, savedat=True, plot=False)
-    # final_drift_distribution_plot(theta_pi_frac_all_corr_step, iso=False, savedat=True, plot=False)
+    saveplotdat()
