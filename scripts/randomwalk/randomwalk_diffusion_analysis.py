@@ -660,7 +660,7 @@ def saveplotdat():
     theta_pi_frac_all_iso_step = [] # E = 1e10
     for theta0 in theta0_arr:
        for i in trange(9):
-           theta_pi_frac_all_iso_step.append(theta0 + i*theta0)
+           theta_pi_frac_all_iso_step.append(round_to_one_significant(theta0 + i*theta0))
     theta_pi_frac_all_iso_step.append(1.0)
     theta_pi_frac_all_corr_step = [0.1, 0.5, 1.0]
 
