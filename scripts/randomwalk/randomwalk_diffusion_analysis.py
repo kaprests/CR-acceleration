@@ -343,15 +343,16 @@ def total_final_drift_distribution_plot(
     """Plot of total drift distribution from origin"""
     global theta
     global iso_stepsize
+    print("tot fin drift thetapifr arr: ", theta_pi_frac_arr)
     theta_initial = theta
     iso_stepsize_initial = iso_stepsize
     iso_stepsize = iso
-    colors = ["black", "green", "blue", "orange", "yellow"]
+    #colors = ["black", "green", "blue", "orange", "yellow"]
     if savedat:
         header = ""
         columns = []
     theta_pi_frac_arr = sorted(theta_pi_frac_arr, reverse=True)
-    for (theta_pi_frac, color) in zip(theta_pi_frac_arr, colors):  # not global theta!
+    for theta_pi_frac in theta_pi_frac_arr:  # not global theta!
         theta = theta_pi_frac * np.pi
         filename, _ = construct_base_filename("randw_")
         x_final, y_final, z_final = final_positions_data(filename)
@@ -365,7 +366,6 @@ def total_final_drift_distribution_plot(
             plt.hist(
                 final_drift_distances,
                 histtype="step",
-                color=color,
                 bins=bins,
                 density=True,
                 label=rf"$\theta_{{\mathrm{{max}}}}/\pi={theta_pi_frac}$",
@@ -401,9 +401,10 @@ def final_drift_distribution_plot(
     theta_initial = theta
     iso_stepsize_initial = iso_stepsize
     iso_stepsize = iso
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
-    # fig.suptitle("Distribution along each spatial axis")
-    axes = [ax1, ax2, ax3]
+    if plot:
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+        # fig.suptitle("Distribution along each spatial axis")
+        axes = [ax1, ax2, ax3]
     if savedat:
         columns_x = []
         columns_y = []
@@ -438,27 +439,28 @@ def final_drift_distribution_plot(
         for (j, axis_label) in enumerate(axis_labels):
             ax_array = ax_arrays[j]
             ax_final_array = ax_final_arrays[j]
-            if i == 0:
-                axes[j].plot(
-                    ax_array,
-                    pdf(ax_array),
-                    linestyle=(0, (5, 1)),
-                    color="gray",
-                    label="Target distribution",
+            if plot:
+                if i == 0:
+                    axes[j].plot(
+                        ax_array,
+                        pdf(ax_array),
+                        linestyle=(0, (5, 1)),
+                        color="gray",
+                        label="Target distribution",
+                    )
+                hist = axes[j].hist(
+                    ax_final_array,
+                    label=rf"$\theta_{{\mathrm{{max}}}}/\pi={theta_pi_frac}$",
+                    histtype="step",
+                    color=colors[i % len(colors)],
+                    bins=ax_bins_array[j],
+                    density=True,
                 )
-            hist = axes[j].hist(
-                ax_final_array,
-                label=rf"$\theta_{{\mathrm{{max}}}}/\pi={theta_pi_frac}$",
-                histtype="step",
-                color=colors[i % len(colors)],
-                bins=ax_bins_array[j],
-                density=True,
-            )
-            if i == 0:
-                axes[j].set_xlabel(f"{axis_labels[j]}-axis [fix units]")
-                axes[j].set_ylim(top=max(hist[0]) * 1.05)
-                if j == 0:
-                    axes[j].set_ylabel(f"Distribution [fix units]")
+                if i == 0:
+                    axes[j].set_xlabel(f"{axis_labels[j]}-axis [fix units]")
+                    axes[j].set_ylim(top=max(hist[0]) * 1.05)
+                    if j == 0:
+                        axes[j].set_ylabel(f"Distribution [fix units]")
             if savedat:
                 if j == 0:
                     header += f" {round_to_one_significant(theta_pi_frac)}"
@@ -664,6 +666,8 @@ def saveplotdat():
     theta_pi_frac_all_iso_step.append(1.0)
     theta_pi_frac_all_corr_step = [0.1, 0.5, 1.0]
 
+    print(theta_pi_frac_all_iso_step)
+
     total_final_drift_distribution_plot(
            theta_pi_frac_all_iso_step, iso=True, savedat=True, plot=False
     )
@@ -700,9 +704,9 @@ if __name__ == "__main__":
     #####################
     ### Test plotting ###
     #####################
-    # pyplotlab()
+    pyplotlab()
 
     #################################
     # Save plot data for production #
     #################################
-    saveplotdat()
+    #saveplotdat()
