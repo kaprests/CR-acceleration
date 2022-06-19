@@ -109,6 +109,7 @@ E = 10**E_inj_exp
 D = D_coeff_pc2pyr(E)
 mean = 0
 stddev = np.sqrt(D * t_max)
+print("STDDEV: ", stddev)
 pdf = lambda x: norm.pdf(x, mean, stddev)
 
 
@@ -678,7 +679,7 @@ def saveplotdat():
     final_drift_distribution_plot(theta_pi_frac_all_corr_step, iso=False, savedat=True, plot=False)
 
     average_drift_plot(theta_pi_frac_all_iso_step, iso=True, plot=False, savedat=True)
-    average_drift_plot(theta_pi_frac_all_corr_step, iso=True, plot=False, savedat=True)
+    average_drift_plot(theta_pi_frac_all_corr_step, iso=False, plot=False, savedat=True)
 
 
 if __name__ == "__main__":
@@ -694,6 +695,7 @@ if __name__ == "__main__":
     # print("D est (pc^2/yr): ", D_coeff_estimate(filename_iso))
     # print("R larmor theory (yr): ", R_larmor_year(1e10))
     # print("R larmor theory (pc): ", R_larmor_pc(1e10))
+    print("HEEELLOO")
 
 
     ####################################################
@@ -704,9 +706,9 @@ if __name__ == "__main__":
     #####################
     ### Test plotting ###
     #####################
-    pyplotlab()
+    #pyplotlab()
 
     #################################
     # Save plot data for production #
     #################################
-    #saveplotdat()
+    saveplotdat()
