@@ -9,6 +9,26 @@ import os.path
 
 # Input file
 in_file = f"{os.path.dirname(__file__)}/rw_dcoeff.csv"
+# Output directory
+OUT_DIR = f"{os.path.dirname(__file__)}/../../../cr-acceleration-report/data/"
+
+
+def save_table(columns, header, outpath):
+    if len(np.shape(columns)) == 1:
+        print("Only 1 col provided")
+        print(np.shape(columns))
+        columns = [columns]
+    print("col shape: ", np.shape(columns))
+    table = np.column_stack(columns)
+    print(table.shape)
+    np.savetxt(outpath, table, header=header, comments="")
+
+
+def round_to_one_significant(x):
+    """
+    Rounds to one significant digit. 
+    """
+    return round(x, -int(np.floor(np.log10(abs(x)))))
 
 
 def small_angle_corr_analytical(theta_max):
@@ -56,7 +76,7 @@ piecewise_poly_vectorized.excluded.add(1)
 piecewise_poly_vectorized.excluded.add(2)
 
 
-def curve_fit_and_plot(verbose=False, include_analyt=False):
+def curve_fit_and_plot(verbose=False, include_analyt=False, plot=True, savedat=False):
     v = 0.99558849759333801  # Proton of energy 1GeV
     R_L = 3.5230000000000007e-005  # Larmor radius (isotropic stepsize)
     D = R_L / 3
@@ -86,45 +106,61 @@ def curve_fit_and_plot(verbose=False, include_analyt=False):
     l_ls = interp1d(theta_max_data_arr, corr_arr)  # linear interpolation
     l_cs = CubicSpline(theta_max_data_arr, corr_arr)  # Cubic splines
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-
-    ax1.set_xlabel(r"$\theta_{\mathrm{max}}$")
-    ax1.set_ylabel("$\lambda / \lambda_0$")
-    ax1.plot(theta_max_data_arr, corr_arr, "+", label="Data points", markersize=5)
-    # ax1.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
-    ax1.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
-    ax1.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Power law fit")
-    if include_analyt:
+    if plot:
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        ax1.set_xlabel(r"$\theta_{\mathrm{max}}$")
+        ax1.set_ylabel("$\lambda / \lambda_0$")
+        ax1.plot(theta_max_data_arr, corr_arr, "+", label="Data points", markersize=5)
+        # ax1.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
+        ax1.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
+        ax1.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Power law fit")
+        if include_analyt:
+            ax1.plot(
+                theta_max_arr,
+                small_angle_corr_analytical(theta_max_arr),
+                label="analytical attempt",
+            )
         ax1.plot(
-            theta_max_arr,
-            small_angle_corr_analytical(theta_max_arr),
-            label="analytical attempt",
+            theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label="litterature"
         )
-    ax1.plot(
-        theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label="litterature"
-    )
-    ax1.set_xscale("log")
-    ax1.set_yscale("log")
-    ax1.legend()
-
-    ax2.set_xlabel(r"$\theta_{\mathrm{max}}$")
-    # ax2.set_ylabel("$\lambda / \lambda_0$")
-    ax2.plot(theta_max_data_arr, corr_arr, "+", label="Data points", markersize=5)
-    # ax2.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
-    ax2.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
-    ax2.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Power law fit")
-    if include_analyt:
+        ax1.set_xscale("log")
+        ax1.set_yscale("log")
+        ax1.legend()
+        ax2.set_xlabel(r"$\theta_{\mathrm{max}}$")
+        # ax2.set_ylabel("$\lambda / \lambda_0$")
+        ax2.plot(theta_max_data_arr, corr_arr, "+", label="Data points", markersize=5)
+        # ax2.plot(theta_max_arr, l_ls(theta_max_arr), label="Linear interpolation")
+        ax2.plot(theta_max_arr, l_cs(theta_max_arr), label="Cubic Spline")
+        ax2.plot(theta_max_arr, power_law(theta_max_arr, a, b), label="Power law fit")
+        if include_analyt:
+            ax2.plot(
+                theta_max_arr,
+                small_angle_corr_analytical(theta_max_arr),
+                label="analytical attempt",
+            )
         ax2.plot(
-            theta_max_arr,
-            small_angle_corr_analytical(theta_max_arr),
-            label="analytical attempt",
+            theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label="litterature"
         )
-    ax2.plot(
-        theta_max_arr, small_angle_corr_litteratur(theta_max_arr), label="litterature"
-    )
-    ax2.legend()
-    if __name__ == "__main__":
-        plt.show()
+        ax2.legend()
+        if __name__ == "__main__":
+            plt.show()
+    if savedat:
+        columns = [ 
+            theta_max_arr, 
+            l_cs(theta_max_arr),
+            power_law(theta_max_arr, a, b),
+            small_angle_corr_analytical(theta_max_arr),
+            small_angle_corr_litteratur(theta_max_arr),
+        ]
+        header = "theta cubicspline powerlaw analyt litterature"
+        save_table(columns, header, f"{OUT_DIR}small_angle_stepsize_correction.dat")
+
+        columns_dp = [
+            theta_max_data_arr, 
+            corr_arr,
+        ]
+        header_dp = "theta corr"
+        save_table(columns_dp, header_dp, f"{OUT_DIR}small_angle_stepsize_correction_DP.dat")
 
     # Print power law parameters
     # print("######################")
@@ -145,4 +181,4 @@ def curve_fit_and_plot(verbose=False, include_analyt=False):
 
 
 if __name__ == "__main__":
-    curve_fit_and_plot(verbose=True)
+    curve_fit_and_plot(verbose=True, plot=True, savedat=True)
