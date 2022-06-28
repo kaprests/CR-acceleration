@@ -6,6 +6,7 @@ import csv
 from math import pi
 from scipy.stats import norm
 from tqdm import trange
+import scipy.integrate as integrate
 
 
 #################
@@ -111,6 +112,15 @@ mean = 0
 stddev = np.sqrt(D * t_max)
 print("STDDEV: ", stddev)
 pdf = lambda x: norm.pdf(x, mean, stddev)
+
+
+def radial_dist(r, sigma=stddev):
+    """mean = 0"""
+    return (4*np.pi*r**2) * norm.pdf(r, 0, sigma)
+
+
+def radial_dist_norm(r, sigma=stddev):
+    return radial_dist(r, sigma=sigma)/integrate.quad(radial_dist, 0, np.inf)[0]
 
 
 ###############################
@@ -352,13 +362,32 @@ def total_final_drift_distribution_plot(
     if savedat:
         header = ""
         columns = []
+        header_proc = ""
+        columns_proc = []
+        header_theory = ""
+        columns_theory = []
     theta_pi_frac_arr = sorted(theta_pi_frac_arr, reverse=True)
-    for theta_pi_frac in theta_pi_frac_arr:  # not global theta!
+    for (i, theta_pi_frac) in enumerate(theta_pi_frac_arr):  # not global theta!
         theta = theta_pi_frac * np.pi
         filename, _ = construct_base_filename("randw_")
         x_final, y_final, z_final = final_positions_data(filename)
 
-        # Total drifted distance
+        # Theoretical curve
+        if i == len(theta_pi_frac_arr)-1:
+            final_drift_distances = np.sqrt(x_final**2 + y_final**2 + z_final**2)
+            #r_max = np.max(final_drift_distances)
+            r_max = 0.5
+            if E_inj_exp > 12:
+                r_max = 3
+            r_vec = np.linspace(0, r_max, 10000)
+            if savedat:
+                header_theory += f" rtheory gtheory"
+                columns_theory.append(r_vec)
+                columns_theory.append(radial_dist_norm(r_vec))
+            if plot:
+                plt.plot(r_vec, radial_dist_norm(r_vec), label="theory")
+
+        # Numerical
         final_drift_distances = np.sqrt(x_final**2 + y_final**2 + z_final**2)
         if plot:
             bins = np.linspace(
@@ -371,17 +400,41 @@ def total_final_drift_distribution_plot(
                 density=True,
                 label=rf"$\theta_{{\mathrm{{max}}}}/\pi={theta_pi_frac}$",
             )
+
         if savedat:
+            # 'Raw' data
             header += f" {theta_pi_frac}"
             columns.append(final_drift_distances)
+
+            # Processed data
+            bins = np.linspace(
+                min(final_drift_distances), max(final_drift_distances), n_bins
+            )
+            y, x, _ = plt.hist(final_drift_distances, bins=bins, density=True, histtype="step")
+            x = x[:-1]
+            header_proc += f" x{theta_pi_frac} y{theta_pi_frac}"
+            columns_proc.append(x)
+            columns_proc.append(y)
+            plt.clf()
+
     theta = theta_initial
     iso_stepsize = iso_stepsize_initial
     if savedat:
+        # Raw data
         outpath = f"{OUT_DIR}total_drift_dist_isostep{iso}_E-inj-exp{E_inj_exp}.dat"
         print(header)
         print(len(columns))
         print(len(columns[0]))
         save_table(columns, header.strip(), outpath)
+
+        # Processed data
+        outpath_proc = f"{OUT_DIR}total_drift_dist_stephist_isostep{iso}_E-inj-exp{E_inj_exp}.dat"
+        save_table(columns_proc, header_proc.strip(), outpath_proc)
+
+        # Theoretical data
+        outpath_proc = f"{OUT_DIR}total_drift_dist_theory_isostep{iso}_E-inj-exp{E_inj_exp}.dat"
+        save_table(columns_theory, header_theory.strip(), outpath_proc)
+
     if plot:
         # plt.title(fr"Total drift")
         plt.xlabel("x [fix units]")
@@ -407,10 +460,17 @@ def final_drift_distribution_plot(
         # fig.suptitle("Distribution along each spatial axis")
         axes = [ax1, ax2, ax3]
     if savedat:
+        # raw data
         columns_x = []
         columns_y = []
         columns_z = []
         header = ""
+
+        # Processed data
+        columns_x_proc = []
+        columns_y_proc = []
+        columns_z_proc = []
+        header_proc = ""
     for (i, theta_pi_frac) in enumerate(theta_pi_frac_arr):
         theta = theta_pi_frac * np.pi
         filename, filename_iso = construct_base_filename("randw_")
@@ -466,20 +526,58 @@ def final_drift_distribution_plot(
                 if j == 0:
                     header += f" {round_to_one_significant(theta_pi_frac)}"
                     columns_x.append(ax_final_array)
+
+                    header_proc += f" x{round_to_one_significant(theta_pi_frac)} y{round_to_one_significant(theta_pi_frac)}"
+                    y, x, _ = plt.hist(
+                        ax_final_array,
+                        histtype="step",
+                        bins=ax_bins_array[j],
+                        density=True,
+                    )
+                    x = x[:-1]
+                    columns_x_proc.append(x)
+                    columns_x_proc.append(y)
+                    plt.clf()
                 elif j == 1:
                     columns_y.append(ax_final_array)
+
+                    y, x, _ = plt.hist(
+                        ax_final_array,
+                        histtype="step",
+                        bins=ax_bins_array[j],
+                        density=True,
+                    )
+                    x = x[:-1]
+                    columns_y_proc.append(x)
+                    columns_y_proc.append(y)
+                    plt.clf()
                 elif j == 2:
                     columns_z.append(ax_final_array)
+
+                    y, x, _ = plt.hist(
+                        ax_final_array,
+                        histtype="step",
+                        bins=ax_bins_array[j],
+                        density=True,
+                    )
+                    x = x[:-1]
+                    columns_z_proc.append(x)
+                    columns_z_proc.append(y)
+                    plt.clf()
                 else:
                     print("j out of bounds!")
     theta = theta_initial
     iso_stepsize = iso_stepsize_initial
     if savedat:
-        for x, col in zip("xyz", [columns_x, columns_y, columns_z]):
+        for x, col, col_proc in zip("xyz", [columns_x, columns_y, columns_z], [columns_x_proc, columns_y_proc, columns_z_proc]):
             outpath = (
                 f"{OUT_DIR}{x}-axis_drift_dist_isostep{iso}_E-inj-exp{E_inj_exp}.dat"
             )
             save_table(col, header.strip(), outpath)
+            outpath_proc = (
+                f"{OUT_DIR}{x}-axis_drift_dist_stephist_isostep{iso}_E-inj-exp{E_inj_exp}.dat"
+            )
+            save_table(col_proc, header_proc.strip(), outpath_proc)
     if plot:
         handles, labels = ax1.get_legend_handles_labels()
         if legend:
@@ -618,10 +716,11 @@ def D_coeff_estimate(base_filename):
 
 def rw_D_coeff_csv():
     print("Writing Dcoeffs to CSV")
+    global theta
     global theta_pi_frac
     theta_initial = theta
     theta_pi_frac_initial = theta_pi_frac
-    with open("rw_dcoeff.csv", "w") as f:
+    with open("rw_dcoeff_pc.csv", "w") as f:
         writer = csv.writer(f)
         writer.writerow([f"{0.0:.3f}", "inf"])
         theta0_arr = [0.01, 0.1]
@@ -631,7 +730,7 @@ def rw_D_coeff_csv():
                 theta_pi_frac = float(f"{theta0+i*theta0:.3f}")
                 theta = theta_pi_frac * np.pi
                 filename, filename_iso = construct_base_filename("randw_")
-                writer.writerow([f"{theta_pi_frac:.3f}", D_coeff_estimate(filename)])
+                writer.writerow([f"{theta_pi_frac:.3f}", f"{D_coeff_estimate(filename)}"])
         writer.writerow([f"{1.0:.3f}", D_coeff_estimate(filename_iso)])
     theta = theta_initial
     theta_pi_frac = theta_pi_frac_initial
@@ -641,21 +740,21 @@ def pyplotlab():
     total_final_drift_distribution_plot([1.0, 0.7, 0.5, 0.3], iso=True)
     total_final_drift_distribution_plot([0.1, 0.07, 0.05, 0.03], iso=True)
 
-    final_drift_distribution_plot([1.0, 0.5], iso=True, legend=True)
-    final_drift_distribution_plot([0.05, 0.01], iso=True, legend=True)
+    #final_drift_distribution_plot([1.0, 0.5], iso=True, legend=True)
+    #final_drift_distribution_plot([0.05, 0.01], iso=True, legend=True)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    average_drift_plot([0.7, 0.5, 0.3], ax=ax1)
-    average_drift_plot([0.3, 0.2, 0.1], ax=ax2)
-    plt.show()
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    average_drift_plot([0.3], ax=ax1)
-    average_drift_plot([0.1], ax=ax2)
-    plt.show()
+    #fig, (ax1, ax2) = plt.subplots(1, 2)
+    #average_drift_plot([0.7, 0.5, 0.3], ax=ax1)
+    #average_drift_plot([0.3, 0.2, 0.1], ax=ax2)
+    #plt.show()
+    #fig, (ax1, ax2) = plt.subplots(1, 2)
+    #average_drift_plot([0.3], ax=ax1)
+    #average_drift_plot([0.1], ax=ax2)
+    #plt.show()
 
-    total_final_drift_distribution_plot([1.0, 0.5, 0.1], iso=False)
-    final_drift_distribution_plot([0.5], iso=False)
-    final_drift_distribution_plot([0.1], iso=False)
+    #total_final_drift_distribution_plot([1.0, 0.5, 0.1], iso=False)
+    #final_drift_distribution_plot([0.5], iso=False)
+    #final_drift_distribution_plot([0.1], iso=False)
 
 
 def saveplotdat():
@@ -675,11 +774,29 @@ def saveplotdat():
     total_final_drift_distribution_plot(
            theta_pi_frac_all_corr_step, iso=False, savedat=True, plot=False
     )
-    final_drift_distribution_plot(theta_pi_frac_all_iso_step, iso=True, savedat=True, plot=False)
-    final_drift_distribution_plot(theta_pi_frac_all_corr_step, iso=False, savedat=True, plot=False)
+    #final_drift_distribution_plot(theta_pi_frac_all_iso_step, iso=True, savedat=True, plot=False)
+    #final_drift_distribution_plot(theta_pi_frac_all_corr_step, iso=False, savedat=True, plot=False)
 
-    average_drift_plot(theta_pi_frac_all_iso_step, iso=True, plot=False, savedat=True)
-    average_drift_plot(theta_pi_frac_all_corr_step, iso=False, plot=False, savedat=True)
+    #average_drift_plot(theta_pi_frac_all_iso_step, iso=True, plot=False, savedat=True)
+    #average_drift_plot(theta_pi_frac_all_corr_step, iso=False, plot=False, savedat=True)
+
+
+def saveplotdat_higher_E():
+    theta_pi_frac_array = [0.1, 0.5, 1.0]
+    
+    total_final_drift_distribution_plot(
+           theta_pi_frac_array, iso=False, savedat=True, plot=False
+    )
+    final_drift_distribution_plot(theta_pi_frac_array, iso=False, savedat=True, plot=False)
+
+
+def pyplotlab_higher_E():
+    theta_pi_frac_array = [0.1, 0.5, 1.0]
+    
+    total_final_drift_distribution_plot(
+           theta_pi_frac_array, iso=False, savedat=False, plot=True
+    )
+    final_drift_distribution_plot(theta_pi_frac_array, iso=False, savedat=False, plot=True)
 
 
 if __name__ == "__main__":
@@ -691,7 +808,7 @@ if __name__ == "__main__":
     #    "randw_"
     #)  # construct base filename of the correct data file(s)
     # print("D theory (yr): ", D_coeff_year(1e10))
-    # print("D theory (pc^2/yr): ", D_coeff_pc2pyr(1e10))
+    # print("D theory (pc^2/yr): ", D_coeff_pc2pyr(1e10)0
     # print("D est (pc^2/yr): ", D_coeff_estimate(filename_iso))
     # print("R larmor theory (yr): ", R_larmor_year(1e10))
     # print("R larmor theory (pc): ", R_larmor_pc(1e10))
@@ -701,14 +818,16 @@ if __name__ == "__main__":
     ####################################################
     ### Compute corresponding diffusion coefficients ###
     ####################################################
-    # rw_D_coeff_csv()
+    rw_D_coeff_csv()
 
     #####################
     ### Test plotting ###
     #####################
     #pyplotlab()
+    #pyplotlab_higher_E()
 
     #################################
     # Save plot data for production #
     #################################
-    saveplotdat()
+    #saveplotdat()
+    #saveplotdat_higher_E()

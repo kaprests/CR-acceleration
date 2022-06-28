@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.integrate as integrate
 from numbers import Number
 
 import os.path
@@ -100,23 +101,24 @@ def spectrum_plot(v_or_gamma, theta_max_pi_frac_array, gamma_set, savedat=False,
 
         if plot:
             # E vs F from 'enumerate' data file
-            ax1.step(E, N0/(N_tot*E), label=fr"$\theta_{{\mathrm{{max}} }}/\pi = {theta_max_pi_frac}$")
+            ax1.step(E, (N0/(N_tot*E)) / np.sum(N0/(N_tot*E)), label=fr"$\theta_{{\mathrm{{max}} }}/\pi = {theta_max_pi_frac}$")
+
             # E vs F from 'enumerate' data file
-            ax2.step(E, E**2 * N0/(N_tot*E), label=fr"$\theta_{{\mathrm{{max}} }}/\pi = {theta_max_pi_frac}$")
+            ax2.step(E, E**2 * N0/(N_tot*E) / np.sum(E**2 * N0/(N_tot*E)), 
+                    label=fr"$\theta_{{\mathrm{{max}} }}/\pi = {theta_max_pi_frac}$")
             # Escape probability
-            ax3.step(E, N0/N_gte_E, label=fr"$\theta_{{\mathrm{{max}} }}/\pi = {theta_max_pi_frac}$")
+            ax3.step(E, N0/N_gte_E / np.sum(N0/N_gte_E), label=fr"$\theta_{{\mathrm{{max}} }}/\pi = {theta_max_pi_frac}$")
         if savedat:
             if header == "": 
                 header += "E"
             header += f" {round_to_one_significant(theta_max_pi_frac)}"
             E_columns.append(E)
-            spec_columns.append(N0/(N_tot*E))
-            spec_square_columns.append(E**2 * N0/(N_tot*E))
-            pesc_columns.append(N0/N_gte_E)
+            spec_columns.append((N0/(N_tot*E)) / np.sum(N0/(N_tot*E)))
+            spec_square_columns.append((E**2 * N0/(N_tot*E)) / np.sum(E**2 * N0/(N_tot*E)) )
+            pesc_columns.append((N0/N_gte_E) / np.sum(N0/N_gte_E) )
 
     if plot:
-        ax1_y0 = (N0/(N_tot*E))[0] * E[0]**2
-        ax1.plot(E, ax1_y0/(E**2), label=r"~$1/E^2$")
+        ax1.plot(E, E[0]**2/(E**2), label=r"~$1/E^2$")
         ax1.grid(ls="--")
         ax1.set_xscale("log")
         ax1.set_yscale("log")
@@ -138,6 +140,8 @@ def spectrum_plot(v_or_gamma, theta_max_pi_frac_array, gamma_set, savedat=False,
         ax3.set_ylabel(r"$P_{\mathrm{esc}}(E)$")
         ax3.legend()
     if savedat:
+        ref_header = "E ref"
+        ref_columns = [E, E[0]**2/(E**2)]
         E_col = E_columns[0]
         for col in E_columns[1:]:
             if len(col) > len(E_col):
@@ -145,6 +149,7 @@ def spectrum_plot(v_or_gamma, theta_max_pi_frac_array, gamma_set, savedat=False,
         save_table([E_col]+spec_columns, header.strip(), f"{OUT_DIR}{basename}spectrum_data.dat")
         save_table([E_col]+spec_square_columns, header.strip(), f"{OUT_DIR}{basename}spectrum_square_data.dat")
         save_table([E_col]+pesc_columns, header.strip(), f"{OUT_DIR}{basename}pesc_data.dat")
+        save_table(ref_columns, ref_header.strip(), f"{OUT_DIR}{basename}spectrum_ref.dat")
     if __name__ == "__main__":
         figname = (
                 f"{basename}"
@@ -314,7 +319,7 @@ def aniso_spectrum_cross_angle_plot(v_or_gamma, theta_max_pi_frac_array, gamma_s
             theta, down_cross0, down_cross, up_cross = data
 
         # E vs F from 'enumerate' data file
-        ax1.step(E, N0/(N_tot*E), label=fr"$\theta_{{\mathrm{{max}} }}/\pi = {theta_max_pi_frac}$")
+        ax1.step(E, N0/(N_tot*E) / np.sum(N0/(N_tot*E)), label=fr"$\theta_{{\mathrm{{max}} }}/\pi = {theta_max_pi_frac}$")
 
         if aniso:
             ax2.set_xlim(right=0.1)
@@ -322,7 +327,8 @@ def aniso_spectrum_cross_angle_plot(v_or_gamma, theta_max_pi_frac_array, gamma_s
         else:
             ax2.step(theta, down_cross/np.sum(down_cross), label=fr"$\theta_{{\mathrm{{max}} }}/\pi = {theta_max_pi_frac}$")
 
-    ax1_y0 = (N0/(N_tot*E))[0] * E[0]**2
+    #ax1_y0 = (N0/(N_tot*E))[0] * E[0]**2
+    ax1_y0 = E[0]**2
     ax1.plot(E, ax1_y0/(E**2), label=r"~$1/E^2$")
     ax1.grid(ls="--")
     ax1.set_xscale("log")
@@ -394,15 +400,15 @@ def saveplotdat():
     spectrum_plot("injmod2", [1.0, 0.1], False, plot=False, savedat=True)
 
     # Ultra-relativistic spectra
-    spectrum_plot(100, [0.0031, 0.006, 0.01, 0.1, 0.5, 1.0], True, plot=False, savedat=True)
+    spectrum_plot(100, [0.0031, 0.006, 0.01, 0.02, 0.03, 0.05, 0.1, 0.5, 1.0], True, plot=False, savedat=True)
 
     # Non-rel cross angles
     cross_angle_distribution_plot(0.01, [1.0, 0.1], False, plot=False, savedat=True)
 
     ### Ultra-rel cross angles
-    cross_angle_distribution_plot(100, [0.0031, 0.006, 0.01, 0.1, 0.5, 1.0], True, plot=False, savedat=True)
+    cross_angle_distribution_plot(100, [0.0031, 0.006, 0.01, 0.02, 0.03, 0.05, 0.1, 0.5, 1.0], True, plot=False, savedat=True)
 
 
 if __name__ == "__main__":
-    pyplotlab()
-    #saveplotdat()
+    #pyplotlab()
+    saveplotdat()
